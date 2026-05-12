@@ -235,17 +235,17 @@ export default function Sidebar({ onClose }) {
 
   const theme = {
     aside: dark
-      ? "bg-[#0f172a] border-slate-800"
+      ? "bg-[#0d0d12] border-slate-800"
       : "bg-[#f8fafc] border-slate-200",
-    text: dark ? "text-slate-400" : "text-slate-500",
+    text: dark ? "text-slate-300" : "text-slate-900",
     active: dark
-      ? "bg-indigo-500/10 text-indigo-400"
-      : "bg-white shadow-sm border border-slate-200 text-indigo-600",
+      ? "bg-indigo-100/10 text-indigo-300"
+      : "bg-white shadow-sm border border-slate-200 text-indigo-700",
     hover: dark
       ? "hover:bg-slate-800/50 hover:text-slate-200"
       : "hover:bg-white hover:text-slate-900",
     logo: dark ? "text-white" : "text-slate-900",
-    label: dark ? "text-slate-600" : "text-slate-400",
+    label: dark ? "text-slate-400" : "text-slate-700",
     divider: dark ? "border-slate-800/50" : "border-slate-200",
   };
 
@@ -256,16 +256,16 @@ export default function Sidebar({ onClose }) {
       {/* Logo */}
       <div className="px-6 py-8">
         <div className="flex items-center gap-3">
-          <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-blue-100 to-indigo-100 flex items-center justify-center text-white font-black text-sm shadow-md">
+          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-100 to-indigo-100 flex items-center justify-center text-white font-black text-sm shadow-md">
             <img src={logo} alt="Logo" className="w-5 h-5" />
           </div>
           <div>
             <span
-              className={`font-bold text-base tracking-tight ${theme.logo}`}
+              className={`font-bold text-lg tracking-tight ${theme.logo}`}
             >
               GetRankRise
             </span>
-            <p className={`text-[10px] truncate max-w-[130px] ${theme.label}`}>
+            <p className={`text-[15px] truncate max-w-[130px] ${theme.label}`}>
               {clinicName}
             </p>
           </div>
@@ -275,7 +275,7 @@ export default function Sidebar({ onClose }) {
       {/* Main Nav */}
       <nav className="flex-1 px-4 space-y-1 overflow-y-auto custom-scrollbar">
         <p
-          className={`px-3 pb-2 text-[10px] font-bold uppercase tracking-[0.15em] ${theme.label}`}
+          className={`px-3 pb-2 text-[13px] font-bold uppercase tracking-[0.15em] ${theme.label}`}
         >
           Overview
         </p>

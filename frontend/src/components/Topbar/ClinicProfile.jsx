@@ -42,13 +42,13 @@ function ClinicProfile() {
   }, []);
 
   const theme = {
-    text: dark ? "text-slate-100" : "text-slate-900",
+    text: dark ? "text-slate-200" : "text-slate-900",
     btn: dark
       ? "bg-slate-800/40 border-slate-700 hover:bg-slate-700/60 shadow-sm"
       : "bg-white border-slate-200 hover:bg-slate-50 hover:shadow-sm",
     popup: dark
-      ? "bg-slate-900 border-slate-800 shadow-2xl"
-      : "bg-white border-slate-200 shadow-xl",
+      ? "bg-slate-900 border-slate-400 shadow-3xl"
+      : "bg-white border-slate-300 shadow-xl",
     divider: dark ? "border-slate-800" : "border-slate-100",
   };
 
@@ -66,7 +66,7 @@ function ClinicProfile() {
           <span className={`text-xs font-bold leading-tight ${theme.text}`}>
             {clinicName}
           </span>
-          <span className="text-[10px] text-indigo-500 font-bold uppercase tracking-wide">
+          <span className="text-[13px] text-indigo-700 font-bold uppercase tracking-wide">
             Admin
           </span>
         </div>
@@ -85,28 +85,28 @@ function ClinicProfile() {
               {initial}
             </div>
             <div className="overflow-hidden">
-              <p className={`text-sm font-bold truncate ${theme.text}`}>
+              <p className={`text-lg font-bold truncate ${theme.text}`}>
                 {clinicName}
               </p>
-              <p className="text-[10px] text-slate-500 truncate">{userEmail}</p>
+              <p className="text-[13px] text-slate-500 truncate">{userEmail}</p>
             </div>
           </div>
           <div className={`space-y-3 pt-3 border-t ${theme.divider}`}>
             <div className="flex justify-between items-center">
-              <span className="text-[10px] text-slate-500 font-medium">
+              <span className="text-[13px] text-slate-400 font-medium">
                 Unread Alerts
               </span>
               <span
-                className={`text-[10px] font-bold ${unreadCount > 0 ? "text-red-400" : "text-emerald-400"}`}
+                className={`text-[13px] font-bold ${unreadCount > 0 ? "text-red-600" : "text-emerald-400"}`}
               >
                 {unreadCount > 0 ? `${unreadCount} new` : "All clear"}
               </span>
             </div>
             <div className="flex justify-between items-center">
-              <span className="text-[10px] text-slate-500 font-medium">
+              <span className="text-[13px] text-slate-400 font-medium">
                 Plan
               </span>
-              <span className="text-[10px] font-bold text-indigo-500 uppercase">
+              <span className="text-[13px] font-bold text-indigo-700 uppercase">
                 Premium
               </span>
             </div>
