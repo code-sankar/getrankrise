@@ -1,12 +1,19 @@
 {
   "name": "backend",
+  "type": "module",
   "version": "1.0.0",
-  "main": "index.js",
+  "main": "server.js",
   "scripts": {
-    "dev": "nodemon -r dotenv/config --experimental-json-modules src/index.js",
-    "start": "node src/index.js"
+    "dev": "nodemon -r dotenv/config --experimental-json-modules src/server.js",
+    "start": "node src/server.js"
   },
-  "keywords": ["user authentication", "backend", "nodejs", "express", "postgresql"],
+  "keywords": [
+    "user authentication",
+    "backend",
+    "nodejs",
+    "express",
+    "postgresql"
+  ],
   "author": "Sankar",
   "license": "ISC",
   "description": "This is the backend for the user authentication system. It is built using Node.js, Express, and PostgreSQL.",
@@ -22,6 +29,7 @@
     "jsonwebtoken": "^9.0.3",
     "morgan": "^1.10.1",
     "pg": "^8.20.0",
+    "pg-connection-string": "^2.12.0",
     "sequelize": "^6.37.8",
     "sequelize-cli": "^6.6.5",
     "uuid": "^14.0.0"

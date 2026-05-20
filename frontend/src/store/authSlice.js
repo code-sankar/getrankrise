@@ -1,29 +1,3 @@
-// import { createSlice } from "@reduxjs/toolkit";
-
-// const initialState = {
-//   status: false,
-//   userData: null,
-// };
-
-// const authSlice = createSlice({
-//   name: "auth",
-//   initialState,
-//   reducers: {
-//     setUser: (state, action) => {
-//       state.status = true;
-//       state.userData = action.payload;
-//     },
-//     unSetUser: (state) => {
-//       state.status = true;
-//       state.userData = null;
-//     },
-//   },
-// });
-
-// export const { setUser, unSetUser } = authSlice.actions;
-// export default authSlice.reducer;
-
-
 import { createSlice } from "@reduxjs/toolkit";
 
 // ── Load initial state from localStorage ─────────────────────────────────────
@@ -36,6 +10,8 @@ const userEmail  = localStorage.getItem("userEmail")  || null;
 const authSlice = createSlice({
   name: "auth",
   initialState: {
+    status: false,
+    userData: null,
     token,           // JWT token (or mock token for now)
     clinicName,      // e.g. "Bright Smile Dental"
     userEmail,       // e.g. "sarah@brightsmile.com"
@@ -45,6 +21,14 @@ const authSlice = createSlice({
   },
   reducers: {
 
+    setUser: (state, action) => {
+      state.status = true;
+      state.userData = action.payload;
+    },
+    unSetUser: (state) => {
+      state.status = true;
+      state.userData = null;
+    },
     // Called when login starts (shows loading state)
     loginStart(state) {
       state.loading = true;
@@ -103,6 +87,8 @@ const authSlice = createSlice({
 
 export const {
   loginStart,
+  setUser,
+  unSetUser,
   loginSuccess,
   loginFailure,
   logout,

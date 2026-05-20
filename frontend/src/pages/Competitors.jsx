@@ -182,7 +182,7 @@ export default function Competitors() {
     ? "bg-slate-900 border-slate-800"
     : "bg-white border-slate-200 shadow-sm";
   const textPrimary = dark ? "text-white" : "text-slate-900";
-  const textMuted = dark ? "text-slate-400" : "text-slate-500";
+  const textMuted = dark ? "text-slate-300" : "text-slate-500";
   const divider = dark ? "divide-slate-800" : "divide-slate-100";
   const tableHead = dark
     ? "bg-slate-800/50 text-slate-400"

@@ -27,20 +27,16 @@ function LoginPopup({ route, message = "Login to continue..." }, ref) {
     formState: { errors },
   } = useForm();
 
-  useImperativeHandle(
-    ref,
-    () => {
-      return {
-        open() {
-          setShowPopup(true);
-        },
-        close() {
-          handleClose();
-        },
-      };
-    },
-    []
-  );
+  useImperativeHandle(ref, () => {
+    return {
+      open() {
+        setShowPopup(true);
+      },
+      close() {
+        handleClose();
+      },
+    };
+  }, []);
 
   useEffect(() => {
     if (showPopup) {
@@ -90,87 +86,138 @@ function LoginPopup({ route, message = "Login to continue..." }, ref) {
           <dialog
             ref={dialog}
             onClose={handleClose}
-            className="mx-auto w-[90%] backdrop:backdrop-blur-sm sm:w-[60%] lg:w-[40%] xl:w-[30%] overflow-y-auto bg-gray-900/80 text-white"
+            className="mx-auto w-[92%] sm:w-[60%] lg:w-[45%] xl:w-[32%] max-w-md rounded-2xl bg-gradient-to-b from-[#181236]/95 to-[#0f0a24]/98 text-white border border-white/[0.08] backdrop:backdrop-blur-md shadow-[0_25px_60px_-15px_rgba(0,0,0,0.7)] p-0 overflow-hidden outline-none animate-[fadeIn_0.2s_ease-out]"
           >
-            <div className="mx-8 my-6 mb-8 flex flex-col relative">
+            {/* Modal Content Wrapper */}
+            <div className="relative p-6 sm:p-8 flex flex-col w-full selection:bg-pink-500/30">
+              {/* Premium Close Button Component */}
               <button
                 autoFocus
                 type="button"
                 onClick={handleClose}
-                className="absolute right-0 top-1 h-7 w-7 focus:border-dotted hover:border-dotted hover:border"
+                className="absolute right-4 top-4 p-1.5 text-slate-400 hover:text-white bg-white/[0.03] hover:bg-white/[0.08] border border-white/[0.05] rounded-xl transition-all duration-200 outline-none focus:ring-2 focus:ring-pink-500/40"
+                aria-label="Close modal"
               >
-                <IoClose className="w-7 h-7" />
+                <IoClose className="w-5 h-5" />
               </button>
-              <Logo />
-              <h6 className="mx-auto mt-6 mb-2 text-2xl font-semibold">
-                {message}
-              </h6>
-              <h6 className="mx-auto text-md mb-3">
-                Don't have an Account yet?{" "}
-                <Link
-                  to="/signup"
-                  className="font-semibold text-blue-600 hover:text-blue-400"
-                >
-                  Sign up now
-                </Link>
-              </h6>
+
+              {/* Logo Presentation Area */}
+              <div className="flex justify-center mb-5 mt-2">
+                <div className="relative p-2 rounded-xl bg-white/[0.01] border border-white/[0.04]">
+                  <Logo />
+                </div>
+              </div>
+
+              {/* Context Title Header */}
+              <div className="space-y-1 text-center mb-6">
+                <h2 className="text-xl sm:text-2xl font-extrabold tracking-tight bg-gradient-to-r from-white via-slate-100 to-slate-400 bg-clip-text text-transparent px-6">
+                  {message}
+                </h2>
+              </div>
+
+              {/* Global Error Banner */}
               {error && (
-                <p className="text-red-600 mt-4 text-center">{error}</p>
+                <div className="flex items-center gap-2 bg-red-500/10 border border-red-500/20 text-red-400 text-xs sm:text-sm py-2.5 px-4 rounded-xl text-center mb-5">
+                  <span className="w-1.5 h-1.5 rounded-full bg-red-400 animate-pulse shrink-0" />
+                  <p className="w-full text-center font-medium">{error}</p>
+                </div>
               )}
-              <form
-                onSubmit={handleSubmit(login)}
-                className="mx-auto mt-2 flex w-full max-w-sm flex-col px-4"
-              >
-                <Input
-                  label="Email Address"
-                  placeholder="Enter your email"
-                  type="email"
-                  className="px-2 rounded-lg"
-                  required
-                  {...register("email", {
-                    required: true,
-                    validate: {
-                      matchPattern: (value) =>
-                        /^\w+([.-]?\w+)*@\w+([.-]?\w+)*(\.\w{2,3})+$/.test(
-                          value
-                        ) || "Email address must be a valid address",
-                    },
-                  })}
-                />
-                {errors.email && (
-                  <p className="text-red-600 px-2 mt-1">
-                    {errors.email.message}
-                  </p>
-                )}
-                {errors.email?.type === "required" && (
-                  <p className="text-red-600 px-2 mt-1">Email is required</p>
-                )}
-                <Input
-                  label="Password"
-                  className="px-2 rounded-lg"
-                  className2="pt-5"
-                  type="password"
-                  placeholder="Enter your password"
-                  required
-                  {...register("password", {
-                    required: true,
-                  })}
-                />
-                {errors.password?.type === "required" && (
-                  <p className="text-red-600 px-2 mt-1">Password is required</p>
-                )}
+
+              {/* Main Login Form Input Deck */}
+              <form onSubmit={handleSubmit(login)} className="space-y-4 w-full">
+                {/* Email input field */}
+                <div className="space-y-1">
+                  <Input
+                    label="Email Address"
+                    placeholder="name@example.com"
+                    type="email"
+                    className="w-full px-4 py-2.5 bg-[#0a0618]/90 border border-white/[0.08] rounded-xl text-white placeholder-slate-600 focus:outline-none focus:border-pink-500/80 focus:ring-4 focus:ring-pink-500/10 transition-all duration-200"
+                    required
+                    {...register("email", {
+                      required: true,
+                      validate: {
+                        matchPattern: (value) =>
+                          /^\w+([.-]?\w+)*@\w+([.-]?\w+)*(\.\w{2,3})+$/.test(
+                            value,
+                          ) || "Email address must be a valid address",
+                      },
+                    })}
+                  />
+                  {errors.email?.type === "required" && (
+                    <p className="text-red-400 text-xs font-medium pt-1 px-1 flex items-center gap-1">
+                      <span>⚠️</span> Email is required
+                    </p>
+                  )}
+                  {errors.email?.message && (
+                    <p className="text-red-400 text-xs font-medium pt-1 px-1 flex items-center gap-1">
+                      <span>⚠️</span> {errors.email.message}
+                    </p>
+                  )}
+                </div>
+
+                {/* Password input field */}
+                <div className="space-y-1">
+                  <Input
+                    label="Password"
+                    type="password"
+                    placeholder="••••••••"
+                    className="w-full px-4 py-2.5 bg-[#0a0618]/90 border border-white/[0.08] rounded-xl text-white placeholder-slate-600 focus:outline-none focus:border-pink-500/80 focus:ring-4 focus:ring-pink-500/10 transition-all duration-200"
+                    className2="pt-1"
+                    required
+                    {...register("password", {
+                      required: true,
+                    })}
+                  />
+                  {errors.password?.type === "required" && (
+                    <p className="text-red-400 text-xs font-medium pt-1 px-1 flex items-center gap-1">
+                      <span>⚠️</span> Password is required
+                    </p>
+                  )}
+                </div>
+
+                {/* Submit Action Button */}
                 <Button
                   type="submit"
                   disabled={loading}
-                  className="mt-6 disabled:cursor-not-allowed py-2 rounded-lg"
-                  bgColor={loading ? "bg-pink-800" : "bg-pink-600"}
+                  className="w-full mt-2 py-2.5 rounded-xl font-semibold text-white shadow-lg shadow-pink-600/10 active:scale-[0.98] transition-all duration-200 flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed border border-white/10 hover:brightness-110"
+                  bgColor={
+                    loading
+                      ? "bg-pink-950/60"
+                      : "bg-gradient-to-r from-pink-600 via-pink-500 to-rose-500"
+                  }
                 >
-                  {loading ? <span>{icons.loading}</span> : "Sign in"}
+                  {loading ? (
+                    <span className="h-5 w-5 animate-spin flex items-center justify-center opacity-80">
+                      {icons.loading}
+                    </span>
+                  ) : (
+                    "Sign in"
+                  )}
                 </Button>
               </form>
+
+              {/* Custom Decorative Divider */}
+              <div className="relative flex items-center my-5">
+                <div className="flex-grow border-t border-white/[0.04]"></div>
+                <span className="flex-shrink mx-3 text-[10px] font-bold text-slate-500 tracking-widest uppercase">
+                  OR
+                </span>
+                <div className="flex-grow border-t border-white/[0.04]"></div>
+              </div>
+
+              {/* Secondary Redirect Action Footer */}
+              <p className="text-center text-sm text-slate-400">
+                Don't have an Account yet?{" "}
+                <Link
+                  to="/signup"
+                  className="inline-block font-bold text-pink-400 hover:text-pink-300 transition-colors duration-200 underline underline-offset-4 decoration-pink-500/40 hover:decoration-pink-400"
+                >
+                  Sign up now
+                </Link>
+              </p>
             </div>
           </dialog>,
-          document.getElementById("popup-models")
+          document.getElementById("popup-models"),
         )}
     </div>
   );
