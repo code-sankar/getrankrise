@@ -67,22 +67,22 @@ function Login() {
   };
 
   return (
-    <div className="relative min-h-screen w-full overflow-hidden bg-[#0a0516] text-white flex items-center justify-center p-4 sm:p-6 selection:bg-pink-500/30">
+    <div className="relative min-h-screen w-full overflow-hidden bg-[#030712] text-white flex items-center justify-center p-4 sm:p-6 selection:bg-blue-500/30">
       
       {/* Premium Ambient Light Background Effects */}
-      <div className="absolute top-[-10%] left-[-10%] w-[50%] h-[50%] rounded-full bg-pink-600/10 blur-[120px] pointer-events-none" />
-      <div className="absolute bottom-[-10%] right-[-10%] w-[50%] h-[50%] rounded-full bg-violet-600/10 blur-[120px] pointer-events-none" />
+      <div className="absolute top-[-10%] left-[-10%] w-[50%] h-[50%] rounded-full bg-blue-600/10 blur-[120px] pointer-events-none" />
+      <div className="absolute bottom-[-10%] right-[-10%] w-[50%] h-[50%] rounded-full bg-cyan-600/10 blur-[120px] pointer-events-none" />
       
       {/* Subtly Textured Background Grid */}
       <div className="absolute inset-0 bg-[linear-gradient(to_right,#ffffff03_1px,transparent_1px),linear-gradient(to_bottom,#ffffff03_1px,transparent_1px)] bg-[size:32px_32px] pointer-events-none" />
 
       {/* Main Glassmorphic Login Card */}
-      <div className="relative w-full max-w-md bg-gradient-to-b from-[#161130]/80 to-[#100b24]/90 backdrop-blur-xl border border-white/[0.06] rounded-2xl p-6 sm:p-10 shadow-[0_25px_50px_-12px_rgba(0,0,0,0.5)] transition-all duration-300">
+      <div className="relative w-full max-w-md bg-gradient-to-b from-[#0d121f]/80 to-[#06080d]/90 backdrop-blur-xl border border-white/[0.06] rounded-2xl p-6 sm:p-10 shadow-[0_25px_50px_-12px_rgba(0,0,0,0.5)] transition-all duration-300">
         
         {/* Logo Section */}
         <div className="flex justify-center mb-8">
           <Link to="/" className="group flex items-center transition-transform duration-300 ease-out hover:scale-105">
-            <div className="relative p-2 rounded-xl bg-white/[0.02] border border-white/[0.05] shadow-inner group-hover:border-pink-500/30 transition-colors duration-300">
+            <div className="relative p-2 rounded-xl bg-white/[0.02] border border-white/[0.05] shadow-inner group-hover:border-blue-500/30 transition-colors duration-300">
               <Logo />
             </div>
           </Link>
@@ -99,8 +99,8 @@ function Login() {
         </div>
 
         {/* Demo Credentials Tip Box */}
-        <div className="bg-pink-500/5 border border-pink-500/20 rounded-xl p-3 mb-6 text-xs text-pink-300 space-y-1">
-          <p className="font-semibold text-pink-400 flex items-center gap-1">✨ Frontend Demo Mode</p>
+        <div className="bg-blue-500/5 border border-blue-500/20 rounded-xl p-3 mb-6 text-xs text-blue-300 space-y-1">
+          <p className="font-semibold text-blue-400 flex items-center gap-1">✨ Frontend Demo Mode</p>
           <p>Email: <span className="text-white font-mono">{DEMO_USER.email}</span></p>
           <p>Password: <span className="text-white font-mono">{DEMO_USER.password}</span></p>
         </div>
@@ -122,7 +122,7 @@ function Login() {
               label="Email Address"
               placeholder="name@example.com"
               type="email"
-              className="w-full px-4 py-3 bg-[#0d091a]/80 border border-white/[0.08] rounded-xl text-white placeholder-slate-600 focus:outline-none focus:border-pink-500/80 focus:ring-4 focus:ring-pink-500/10 transition-all duration-200 shadow-inner"
+              className="w-full px-4 py-3 bg-[#050910]/80 border border-white/[0.08] rounded-xl text-white placeholder-slate-600 focus:outline-none focus:border-blue-500/80 focus:ring-4 focus:ring-blue-500/10 transition-all duration-200 shadow-inner"
               required
               {...register("email", {
                 required: true,
@@ -151,7 +151,7 @@ function Login() {
               label="Password"
               type="password"
               placeholder="••••••••"
-              className="w-full px-4 py-3 bg-[#0d091a]/80 border border-white/[0.08] rounded-xl text-white placeholder-slate-600 focus:outline-none focus:border-pink-500/80 focus:ring-4 focus:ring-pink-500/10 transition-all duration-200 shadow-inner"
+              className="w-full px-4 py-3 bg-[#050910]/80 border border-white/[0.08] rounded-xl text-white placeholder-slate-600 focus:outline-none focus:border-blue-500/80 focus:ring-4 focus:ring-blue-500/10 transition-all duration-200 shadow-inner"
               className2="pt-1 text-slate-300 font-medium"
               required
               {...register("password", {
@@ -169,8 +169,8 @@ function Login() {
           <Button
             type="submit"
             disabled={loading}
-            className="w-full mt-4 py-3 rounded-xl font-semibold text-white shadow-lg shadow-pink-600/10 active:scale-[0.98] transition-all duration-200 flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed border border-white/10 hover:brightness-110"
-            bgColor={loading ? "bg-pink-950/60" : "bg-gradient-to-r from-pink-600 via-pink-500 to-rose-500"}
+            className="w-full mt-4 py-3 rounded-xl font-semibold text-white shadow-lg shadow-blue-600/10 active:scale-[0.98] transition-all duration-200 flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed border border-white/10 hover:brightness-110"
+            bgColor={loading ? "bg-blue-950/60" : "bg-gradient-to-r from-blue-600 via-blue-500 to-cyan-500"}
           >
             {loading ? (
               <span className="h-5 w-5 animate-spin flex items-center justify-center opacity-80">
@@ -194,7 +194,7 @@ function Login() {
           Don't have an Account yet?{" "}
           <Link
             to="/signup"
-            className="inline-block font-bold text-pink-400 hover:text-pink-300 transition-colors duration-200 underline underline-offset-4 decoration-pink-500/40 hover:decoration-pink-400"
+            className="inline-block font-bold text-blue-400 hover:text-blue-300 transition-colors duration-200 underline underline-offset-4 decoration-blue-500/40 hover:decoration-blue-400"
           >
             Sign up now
           </Link>

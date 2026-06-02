@@ -48,22 +48,22 @@ function SignUp() {
   };
 
   return (
-    <div className="relative min-h-screen w-full overflow-hidden bg-[#0a0516] text-white flex items-center justify-center p-4 sm:p-8 selection:bg-pink-500/30">
+    <div className="relative min-h-screen w-full overflow-hidden bg-[#030712] text-white flex items-center justify-center p-4 sm:p-8 selection:bg-blue-500/30">
       
       {/* Premium Ambient Light Background Effects */}
-      <div className="absolute top-[-10%] right-[-10%] w-[50%] h-[50%] rounded-full bg-pink-600/10 blur-[120px] pointer-events-none" />
-      <div className="absolute bottom-[-10%] left-[-10%] w-[50%] h-[50%] rounded-full bg-violet-600/10 blur-[120px] pointer-events-none" />
+      <div className="absolute top-[-10%] right-[-10%] w-[50%] h-[50%] rounded-full bg-blue-600/10 blur-[120px] pointer-events-none" />
+      <div className="absolute bottom-[-10%] left-[-10%] w-[50%] h-[50%] rounded-full bg-cyan-600/10 blur-[120px] pointer-events-none" />
       
       {/* Subtly Textured Background Grid */}
       <div className="absolute inset-0 bg-[linear-gradient(to_right,#ffffff03_1px,transparent_1px),linear-gradient(to_bottom,#ffffff03_1px,transparent_1px)] bg-[size:32px_32px] pointer-events-none" />
 
       {/* Main Glassmorphic Card (Slightly wider to comfortably accommodate grid layouts) */}
-      <div className="relative w-full max-w-xl bg-gradient-to-b from-[#161130]/80 to-[#100b24]/90 backdrop-blur-xl border border-white/[0.06] rounded-2xl p-6 sm:p-10 shadow-[0_25px_50px_-12px_rgba(0,0,0,0.5)] my-8">
+      <div className="relative w-full max-w-xl bg-gradient-to-b from-[#0d121f]/80 to-[#06080d]/90 backdrop-blur-xl border border-white/[0.06] rounded-2xl p-6 sm:p-10 shadow-[0_25px_50px_-12px_rgba(0,0,0,0.5)] my-8">
         
         {/* Logo Section */}
         <div className="flex justify-center mb-6">
           <Link to="/" className="group flex items-center transition-transform duration-300 ease-out hover:scale-105">
-            <div className="relative p-2 rounded-xl bg-white/[0.02] border border-white/[0.05] shadow-inner group-hover:border-pink-500/30 transition-colors duration-300">
+            <div className="relative p-2 rounded-xl bg-white/[0.02] border border-white/[0.05] shadow-inner group-hover:border-blue-500/30 transition-colors duration-300">
               <Logo />
             </div>
           </Link>
@@ -97,7 +97,7 @@ function SignUp() {
               <Input
                 label="Full Name"
                 required
-                className="w-full px-4 py-3 bg-[#0d091a]/80 border border-white/[0.08] rounded-xl text-white placeholder-slate-600 focus:outline-none focus:border-pink-500/80 focus:ring-4 focus:ring-pink-500/10 transition-all duration-200 shadow-inner"
+                className="w-full px-4 py-3 bg-[#050910]/80 border border-white/[0.08] rounded-xl text-white placeholder-slate-600 focus:outline-none focus:border-blue-500/80 focus:ring-4 focus:ring-blue-500/10 transition-all duration-200 shadow-inner"
                 placeholder="Enter your full name"
                 {...register("fullName", {
                   required: true,
@@ -124,7 +124,7 @@ function SignUp() {
               <Input
                 label="Username"
                 required
-                className="w-full px-4 py-3 bg-[#0d091a]/80 border border-white/[0.08] rounded-xl text-white placeholder-slate-600 focus:outline-none focus:border-pink-500/80 focus:ring-4 focus:ring-pink-500/10 transition-all duration-200 shadow-inner"
+                className="w-full px-4 py-3 bg-[#050910]/80 border border-white/[0.08] rounded-xl text-white placeholder-slate-600 focus:outline-none focus:border-blue-500/80 focus:ring-4 focus:ring-blue-500/10 transition-all duration-200 shadow-inner"
                 placeholder="Choose a username"
                 {...register("username", {
                   required: true,
@@ -153,7 +153,7 @@ function SignUp() {
               label="Email Address"
               type="email"
               placeholder="name@example.com"
-              className="w-full px-4 py-3 bg-[#0d091a]/80 border border-white/[0.08] rounded-xl text-white placeholder-slate-600 focus:outline-none focus:border-pink-500/80 focus:ring-4 focus:ring-pink-500/10 transition-all duration-200 shadow-inner"
+              className="w-full px-4 py-3 bg-[#050910]/80 border border-white/[0.08] rounded-xl text-white placeholder-slate-600 focus:outline-none focus:border-blue-500/80 focus:ring-4 focus:ring-blue-500/10 transition-all duration-200 shadow-inner"
               required
               {...register("email", {
                 required: true,
@@ -182,7 +182,7 @@ function SignUp() {
               label="Password"
               type="password"
               placeholder="••••••••"
-              className="w-full px-4 py-3 bg-[#0d091a]/80 border border-white/[0.08] rounded-xl text-white placeholder-slate-600 focus:outline-none focus:border-pink-500/80 focus:ring-4 focus:ring-pink-500/10 transition-all duration-200 shadow-inner"
+              className="w-full px-4 py-3 bg-[#050910]/80 border border-white/[0.08] rounded-xl text-white placeholder-slate-600 focus:outline-none focus:border-blue-500/80 focus:ring-4 focus:ring-blue-500/10 transition-all duration-200 shadow-inner"
               required
               {...register("password", {
                 required: true,
@@ -203,7 +203,7 @@ function SignUp() {
                 label="Avatar Profile"
                 type="file"
                 required
-                className="w-full text-sm text-slate-400 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-pink-500/10 file:text-pink-400 hover:file:bg-pink-500/20 px-3 py-2 bg-[#0d091a]/40 border border-white/[0.08] rounded-xl cursor-pointer"
+                className="w-full text-sm text-slate-400 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-blue-500/10 file:text-blue-400 hover:file:bg-blue-500/20 px-3 py-2 bg-[#050910]/40 border border-white/[0.08] rounded-xl cursor-pointer"
                 {...register("avatar", {
                   required: true,
                   validate: (file) => {
@@ -232,7 +232,7 @@ function SignUp() {
               <Input
                 label="Cover Image (Optional)"
                 type="file"
-                className="w-full text-sm text-slate-400 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-violet-500/10 file:text-violet-400 hover:file:bg-violet-500/20 px-3 py-2 bg-[#0d091a]/40 border border-white/[0.08] rounded-xl cursor-pointer"
+                className="w-full text-sm text-slate-400 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-cyan-500/10 file:text-cyan-400 hover:file:bg-cyan-500/20 px-3 py-2 bg-[#050910]/40 border border-white/[0.08] rounded-xl cursor-pointer"
                 {...register("coverImage", {
                   required: false,
                   validate: (file) => {
@@ -257,8 +257,8 @@ function SignUp() {
           <Button
             type="submit"
             disabled={loading}
-            className="w-full mt-6 py-3 rounded-xl font-semibold text-white shadow-lg shadow-pink-600/10 active:scale-[0.98] transition-all duration-200 flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed border border-white/10 hover:brightness-110"
-            bgColor={loading ? "bg-pink-950/60" : "bg-gradient-to-r from-pink-600 via-pink-500 to-rose-500"}
+            className="w-full mt-6 py-3 rounded-xl font-semibold text-white shadow-lg shadow-blue-600/10 active:scale-[0.98] transition-all duration-200 flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed border border-white/10 hover:brightness-110"
+            bgColor={loading ? "bg-blue-950/60" : "bg-gradient-to-r from-blue-600 via-blue-500 to-cyan-500"}
           >
             {loading ? (
               <span className="h-5 w-5 animate-spin flex items-center justify-center opacity-80">
@@ -282,7 +282,7 @@ function SignUp() {
           Already have an Account?{" "}
           <Link
             to="/login"
-            className="inline-block font-bold text-pink-400 hover:text-pink-300 transition-colors duration-200 underline underline-offset-4 decoration-pink-500/40 hover:decoration-pink-400"
+            className="inline-block font-bold text-blue-400 hover:text-blue-300 transition-colors duration-200 underline underline-offset-4 decoration-blue-500/40 hover:decoration-blue-400"
           >
             Sign in now
           </Link>

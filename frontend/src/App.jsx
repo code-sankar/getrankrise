@@ -15,6 +15,7 @@ import ContactUs from "./pages/ContactUs.jsx";
 import FAQ from "./pages/QandA.jsx";
 import PageNotFound from "./components/PageNotFound.jsx";
 import SignUp from "./pages/SignUp.jsx";
+import LandingPage from "./pages/landingPage/LandingPage.jsx";
 // Reads isAuthenticated directly from Redux store — no more localStorage checks
 function PrivateRoute({ children }) {
   const isAuthenticated = useSelector((state) => state.auth.isAuthenticated);
@@ -27,7 +28,7 @@ export default function App() {
       <BrowserRouter>
         <Routes>
           {/* Public */}
-          <Route path="/" element={<LoginPage />} />
+          <Route path="/" element={<LandingPage />} />
           <Route path="/login" element={<LoginPage />} />
           <Route path="/signup" element={<SignUp />} />
 

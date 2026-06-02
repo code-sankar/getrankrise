@@ -6,7 +6,7 @@ import cookieParser from "cookie-parser";
 import { env }      from "./config/env.js";
 
 // ── Routes (we will import these as we build them) ────────────────────────────
-// import authRoutes         from "./routes/auth.routes.js";
+ import authRoutes         from "./routes/auth.routes.js";
 // import clinicRoutes       from "./routes/clinic.routes.js";
 // import reviewRoutes       from "./routes/review.routes.js";
 // import requestRoutes      from "./routes/request.routes.js";
@@ -54,7 +54,7 @@ app.get("/health", (req, res) => {
 });
 
 // ── API Routes — mounted under /api/v1 ───────────────────────────────────────
-// app.use("/api/v1/auth",          authRoutes);
+ app.use("/api/v1/auth",          authRoutes);
 // app.use("/api/v1/clinic",        clinicRoutes);
 // app.use("/api/v1/reviews",       reviewRoutes);
 // app.use("/api/v1/requests",      requestRoutes);
