@@ -1,62 +1,66 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Sidebar from "../components/Sidebar.jsx";
 import TopBar from "../components/TopBar.jsx";
 import { useTheme } from "../context/ThemeContext.jsx";
-import { useDispatch } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import { updateClinicName } from "../store/authSlice.js";
+import {
+  getUserClinic,
+  updateUserClinic,
+  getUserSettings,
+  updateUserSettings,
+  changeUserPassword,
+  logoutUser,
+} from "../hooks/user.hook.js";
+import { toast } from "react-toastify";
 
-const initialSettings = {
-  clinicName: "Bright Smile Dental",
-  ownerName: "Dr. Sarah Johnson",
-  alertEmail: "sarah@brightsmile.com",
-  phone: "+1 (555) 201-3344",
-  googleBusinessUrl: "https://g.page/brightsmile-dental",
-  googleReviewLink: "https://search.google.com/local/reviews?placeid=xxx",
+// ── Defaults — used until /clinic/me hydrates the form ─────────────────────────
+const defaultClinic = {
+  clinicName:        "",
+  ownerName:         "",
+  alertEmail:        "",
+  phone:             "",
+  location:          "",
+  googleBusinessUrl: "",
+  googleReviewLink:  "",
 };
 
-const initialNotifications = {
-  urgentAlerts: true,
+const defaultNotifications = {
+  urgentAlerts:   true,
   newReviewAlert: true,
-  weeklyReport: false,
-  monthlyReport: true,
+  weeklyReport:   false,
+  monthlyReport:  true,
 };
 
-// Reusable Components
+// ── Plan catalogue — matches the GetRankRise spec (Free / Starter / Premium) ─
+const PLANS = [
+  { id: "free",     name: "Free",     price: "$0",  features: ["20 stored reviews", "View-only mode", "Basic analytics"] },
+  { id: "starter",  name: "Starter",  price: "$49", features: ["Full AI engine", "24h sync", "3 competitors", "50 SMS / mo"] },
+  { id: "premium",  name: "Premium",  price: "$99", features: ["Real-time sync", "10 competitors", "500 SMS & WhatsApp / mo"] },
+];
+
+// ── Reusable UI ──────────────────────────────────────────────────────────────
 function SectionHeader({ title, description, dark }) {
   return (
     <div className="mb-6">
-      <h2
-        className={`text-base font-semibold ${dark ? "text-white" : "text-slate-900"}`}
-      >
-        {title}
-      </h2>
+      <h2 className={`text-base font-semibold ${dark ? "text-white" : "text-slate-900"}`}>{title}</h2>
       <p className="text-slate-500 text-sm mt-0.5">{description}</p>
     </div>
   );
 }
 
-function InputField({
-  label,
-  name,
-  type = "text",
-  value,
-  onChange,
-  placeholder,
-  hint,
-  dark,
-}) {
+function InputField({ label, name, type = "text", value, onChange, placeholder, hint, dark, disabled }) {
   return (
     <div className="w-full">
-      <label className="block text-xs font-semibold text-slate-500 uppercase tracking-widest mb-2">
-        {label}
-      </label>
+      <label className="block text-xs font-semibold text-slate-500 uppercase tracking-widest mb-2">{label}</label>
       <input
         type={type}
         name={name}
-        value={value}
+        value={value ?? ""}
         onChange={onChange}
         placeholder={placeholder}
-        className={`w-full px-4 py-3 border rounded-xl text-sm transition-colors outline-none focus:border-blue-500 ${
+        disabled={disabled}
+        className={`w-full px-4 py-3 border rounded-xl text-sm transition-colors outline-none focus:border-blue-500 disabled:opacity-60 ${
           dark
             ? "bg-slate-950 border-slate-800 text-slate-100 placeholder-slate-600"
             : "bg-slate-50 border-slate-200 text-slate-900 placeholder-slate-400"
@@ -69,15 +73,9 @@ function InputField({
 
 function Toggle({ label, description, enabled, onToggle, dark }) {
   return (
-    <div
-      className={`flex items-center justify-between gap-4 py-4 border-b last:border-0 ${dark ? "border-slate-800" : "border-slate-100"}`}
-    >
+    <div className={`flex items-center justify-between gap-4 py-4 border-b last:border-0 ${dark ? "border-slate-800" : "border-slate-100"}`}>
       <div>
-        <p
-          className={`text-sm font-medium ${dark ? "text-slate-200" : "text-slate-800"}`}
-        >
-          {label}
-        </p>
+        <p className={`text-sm font-medium ${dark ? "text-slate-200" : "text-slate-800"}`}>{label}</p>
         <p className="text-slate-500 text-xs mt-0.5">{description}</p>
       </div>
       <button
@@ -85,9 +83,7 @@ function Toggle({ label, description, enabled, onToggle, dark }) {
         onClick={onToggle}
         className={`relative flex-shrink-0 w-11 h-6 rounded-full transition-colors duration-200 ${enabled ? "bg-blue-600" : dark ? "bg-slate-700" : "bg-slate-300"}`}
       >
-        <span
-          className={`absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform duration-200 ${enabled ? "translate-x-5" : "translate-x-0"}`}
-        />
+        <span className={`absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform duration-200 ${enabled ? "translate-x-5" : "translate-x-0"}`} />
       </button>
     </div>
   );
@@ -96,13 +92,43 @@ function Toggle({ label, description, enabled, onToggle, dark }) {
 export default function Settings() {
   const { dark } = useTheme();
   const dispatch = useDispatch();
-  const [settings, setSettings] = useState(initialSettings);
-  const [notifications, setNotifications] = useState(initialNotifications);
-  const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [saving, setSaving] = useState(false);
-  const [savedMsg, setSavedMsg] = useState("");
-  const [activeTab, setActiveTab] = useState("clinic");
 
+  // ── Redux selectors ──────────────────────────────────────────────────────
+  const authUser     = useSelector((s) => s.auth.user);
+  const userClinic   = useSelector((s) => s.user.userClinic);
+  const userSettings = useSelector((s) => s.user.userSettings);
+  const userSub      = useSelector((s) => s.user.userSubscription);
+
+  // ── Local form state ─────────────────────────────────────────────────────
+  const [settings,      setSettings]      = useState(defaultClinic);
+  const [notifications, setNotifications] = useState(defaultNotifications);
+  const [pwd,           setPwd]           = useState({ current: "", next: "", confirm: "" });
+  const [sidebarOpen,   setSidebarOpen]   = useState(false);
+  const [saving,        setSaving]        = useState(false);
+  const [savingPwd,     setSavingPwd]     = useState(false);
+  const [savedMsg,      setSavedMsg]      = useState("");
+  const [activeTab,     setActiveTab]     = useState("clinic");
+
+  // ── Load clinic + notification settings on mount ─────────────────────────
+  useEffect(() => {
+    getUserClinic(dispatch).catch(() => {});
+    getUserSettings(dispatch).catch(() => {});
+  }, [dispatch]);
+
+  // ── Hydrate local form when Redux updates ────────────────────────────────
+  useEffect(() => {
+    if (userClinic) {
+      setSettings((prev) => ({ ...prev, ...userClinic }));
+    }
+  }, [userClinic]);
+
+  useEffect(() => {
+    if (userSettings) {
+      setNotifications((prev) => ({ ...prev, ...userSettings }));
+    }
+  }, [userSettings]);
+
+  // ── Handlers ─────────────────────────────────────────────────────────────
   const handleSettingsChange = (e) => {
     setSettings({ ...settings, [e.target.name]: e.target.value });
     setSavedMsg("");
@@ -116,372 +142,299 @@ export default function Settings() {
   const handleSave = async (e) => {
     e.preventDefault();
     setSaving(true);
-    await new Promise((r) => setTimeout(r, 1000));
-    dispatch(updateClinicName(settings.clinicName));
-    setSavedMsg("Settings saved successfully!");
-    setSaving(false);
+
+    try {
+      if (activeTab === "clinic" || activeTab === "account") {
+        await updateUserClinic(dispatch, settings);
+        if (settings.clinicName) {
+          dispatch(updateClinicName(settings.clinicName));
+        }
+      }
+      if (activeTab === "notifications") {
+        await updateUserSettings(dispatch, notifications);
+      }
+      setSavedMsg("Settings saved successfully!");
+    } catch (err) {
+      // Hook already toasted
+      console.error("Save settings failed:", err?.message);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handlePasswordChange = async () => {
+    if (!pwd.current || !pwd.next) {
+      toast.error("Please fill in both password fields.");
+      return;
+    }
+    if (pwd.next !== pwd.confirm) {
+      toast.error("New password and confirmation do not match.");
+      return;
+    }
+    setSavingPwd(true);
+    try {
+      await changeUserPassword(pwd.current, pwd.next);
+      setPwd({ current: "", next: "", confirm: "" });
+    } catch (err) {
+      // Hook already toasted
+      console.error("Password change failed:", err?.message);
+    } finally {
+      setSavingPwd(false);
+    }
+  };
+
+  const handleLogout = async () => {
+    if (!confirm("Are you sure you want to sign out?")) return;
+    await logoutUser(dispatch);
+    window.location.href = "/login";
   };
 
   const TABS = [
-    { id: "clinic", label: "Clinic Profile" },
+    { id: "clinic",        label: "Business Profile" },
     { id: "notifications", label: "Notifications" },
-    { id: "account", label: "Account & Profile" },
-    { id: "billing", label: "Billing" },
+    { id: "account",       label: "Account" },
+    { id: "billing",       label: "Plan & Billing" },
   ];
 
   const cardBg = dark
     ? "bg-slate-900 border-slate-800"
     : "bg-white border-slate-200 shadow-sm";
 
+  // Current plan (defaults to "free" if no subscription loaded)
+  const currentPlanId = userSub?.plan || "free";
+  const currentPlan   = PLANS.find((p) => p.id === currentPlanId) || PLANS[0];
+
   return (
-    <div
-          className={`h-screen overflow-hidden flex transition-colors duration-300 ${
-            dark ? "bg-slate-950" : "bg-slate-50"
-          }`}
-        >
-          {/* Sidebar - Desktop */}
-          <aside className="hidden lg:block w-64 flex-shrink-0 border-r border-slate-200 dark:border-slate-800">
-            <Sidebar />
+    <div className={`h-screen overflow-hidden flex transition-colors duration-300 ${dark ? "bg-slate-950" : "bg-slate-50"}`}>
+      <aside className="hidden lg:block w-64 flex-shrink-0 border-r border-slate-200 dark:border-slate-800">
+        <Sidebar />
+      </aside>
+
+      {sidebarOpen && (
+        <>
+          <div className="lg:hidden fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[60]" onClick={() => setSidebarOpen(false)} />
+          <aside className="lg:hidden fixed inset-y-0 left-0 w-64 z-[70]">
+            <Sidebar onClose={() => setSidebarOpen(false)} />
           </aside>
-    
-          {/* Sidebar - Mobile Overlay & Component */}
-          {sidebarOpen && (
-            <>
-              <div
-                className="lg:hidden fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[60]"
-                onClick={() => setSidebarOpen(false)}
-              />
-              <aside className="lg:hidden fixed inset-y-0 left-0 w-64 z-[70] transform transition-transform duration-300">
-                <Sidebar onClose={() => setSidebarOpen(false)} />
-              </aside>
-            </>
-          )}
-    
-          {/* Main Content Area - Scrollable Container */}
-          <div className="flex-1 flex flex-col min-w-0 h-full overflow-y-auto custom-scrollbar">
-            
-            {/* Mobile Header - Scrolls with content */}
-            <header
-              className={`lg:hidden flex items-center justify-between p-4 border-b flex-shrink-0 ${
-                dark ? "bg-slate-900 border-slate-800" : "bg-white border-slate-100"
-              }`}
-            >
-              <span className="font-black tracking-tight text-indigo-600 text-lg">
-                GetRankRise
-              </span>
+        </>
+      )}
+
+      <div className="flex-1 flex flex-col min-w-0 h-full overflow-y-auto custom-scrollbar">
+        <header className={`lg:hidden flex items-center justify-between p-4 border-b flex-shrink-0 ${dark ? "bg-slate-900 border-slate-800" : "bg-white border-slate-100"}`}>
+          <span className="font-black tracking-tight text-indigo-600 text-lg">GetRankRise</span>
+          <button onClick={() => setSidebarOpen(true)} className={`p-2 rounded-xl ${dark ? "bg-slate-800 text-slate-100" : "bg-slate-100 text-slate-700"}`}>
+            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+            </svg>
+          </button>
+        </header>
+
+        <TopBar title="Settings" />
+
+        <main className="flex-1 p-4 sm:p-6 lg:p-10 w-full max-w-5xl mx-auto">
+          <div className="mb-8">
+            <h1 className={`text-2xl font-bold ${dark ? "text-white" : "text-slate-900"}`}>Settings</h1>
+            <p className="text-slate-500 text-sm mt-1">Manage your business profile, billing, and preferences</p>
+          </div>
+
+          {/* Tab Navigation */}
+          <div className={`flex overflow-x-auto no-scrollbar gap-1 p-1 mb-8 rounded-xl border ${dark ? "bg-slate-900 border-slate-800" : "bg-slate-200/50 border-slate-200"}`}>
+            {TABS.map((tab) => (
               <button
-                onClick={() => setSidebarOpen(true)}
-                className={`p-2 rounded-xl transition-colors duration-200 active:scale-95 ${
-                  dark
-                    ? "bg-slate-800 text-slate-100 hover:bg-slate-700"
-                    : "bg-slate-100 text-slate-700 hover:bg-slate-200"
+                key={tab.id}
+                type="button"
+                onClick={() => { setActiveTab(tab.id); setSavedMsg(""); }}
+                className={`flex-1 min-w-fit py-2.5 px-4 rounded-lg text-sm font-bold transition-all ${
+                  activeTab === tab.id
+                    ? dark ? "bg-slate-800 text-white shadow-sm" : "bg-white text-blue-600 shadow-sm"
+                    : "text-slate-500 hover:text-slate-700"
                 }`}
               >
-                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
-                </svg>
+                {tab.label}
               </button>
-            </header>
-    
-            {/* TopBar - Sticky over the content */}
-            <div className="sticky top-0 z-50">
-              <TopBar title="Settings" onMenuClick={() => setSidebarOpen(true)} />
-            </div>
+            ))}
+          </div>
 
-        <main className="flex-1 p-4 sm:p-6 lg:p-10">
-          <div className="max-w-4xl mx-auto">
-            <div className="mb-8">
-              <h1
-                className={`text-2xl sm:text-3xl font-bold tracking-tight ${dark ? "text-white" : "text-slate-900"}`}
-              >
-                Settings
-              </h1>
-              <p className="text-slate-500 text-sm mt-1">
-                Manage your account, billing, and clinic preferences
-              </p>
-            </div>
+          <form onSubmit={handleSave} className="space-y-6">
+            {/* ── CLINIC / BUSINESS PROFILE TAB ───────────────────────── */}
+            {activeTab === "clinic" && (
+              <div className={`border rounded-2xl p-6 sm:p-8 space-y-8 ${cardBg}`}>
+                <SectionHeader dark={dark} title="Business Profile" description="Used in review request messages sent to customers" />
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                  <InputField dark={dark} label="Business Name"  name="clinicName" value={settings.clinicName} onChange={handleSettingsChange} />
+                  <InputField dark={dark} label="Phone"           name="phone"       type="tel" value={settings.phone} onChange={handleSettingsChange} />
+                  <InputField dark={dark} label="Owner Name"      name="ownerName"   value={settings.ownerName} onChange={handleSettingsChange} />
+                  <InputField dark={dark} label="Alert Email"     name="alertEmail"  type="email" value={settings.alertEmail} onChange={handleSettingsChange} />
+                  <InputField dark={dark} label="Location"        name="location"    value={settings.location} onChange={handleSettingsChange} placeholder="City, Country" />
+                </div>
+                <div className={`pt-8 border-t ${dark ? "border-slate-800" : "border-slate-100"}`}>
+                  <SectionHeader dark={dark} title="Google Integration" description="Connect your Google Business Profile" />
+                  <div className="space-y-6">
+                    <InputField dark={dark} label="Business Profile URL" name="googleBusinessUrl" value={settings.googleBusinessUrl} onChange={handleSettingsChange} placeholder="https://g.page/..." />
+                    <InputField dark={dark} label="Review Link"          name="googleReviewLink"  value={settings.googleReviewLink}  onChange={handleSettingsChange} placeholder="https://search.google.com/local/writereview?..." />
+                  </div>
+                </div>
+              </div>
+            )}
 
-            {/* Tab Navigation */}
-            <div
-              className={`flex overflow-x-auto no-scrollbar gap-1 p-1 mb-8 rounded-xl border ${dark ? "bg-slate-900 border-slate-800" : "bg-slate-200/50 border-slate-200"}`}
-            >
-              {TABS.map((tab) => (
-                <button
-                  key={tab.id}
-                  type="button"
-                  onClick={() => {
-                    setActiveTab(tab.id);
-                    setSavedMsg("");
-                  }}
-                  className={`flex-1 min-w-fit py-2.5 px-4 rounded-lg text-sm font-bold transition-all ${
-                    activeTab === tab.id
-                      ? dark
-                        ? "bg-slate-800 text-white shadow-sm"
-                        : "bg-white text-blue-600 shadow-sm"
-                      : "text-slate-500 hover:text-slate-700"
-                  }`}
-                >
-                  {tab.label}
-                </button>
-              ))}
-            </div>
+            {/* ── NOTIFICATIONS TAB ──────────────────────────────────── */}
+            {activeTab === "notifications" && (
+              <div className={`border rounded-2xl p-6 sm:p-8 ${cardBg}`}>
+                <SectionHeader dark={dark} title="Notification Preferences" description="Choose how you want to stay updated" />
+                <Toggle dark={dark} label="Urgent Review Alerts" description="Email immediately for 1–3 star reviews"      enabled={notifications.urgentAlerts}   onToggle={() => handleToggle("urgentAlerts")} />
+                <Toggle dark={dark} label="New Review Alerts"    description="Get notified the moment a new review arrives"  enabled={notifications.newReviewAlert} onToggle={() => handleToggle("newReviewAlert")} />
+                <Toggle dark={dark} label="Weekly Performance Report" description="Snapshot of new reviews, ratings, response rate" enabled={notifications.weeklyReport}  onToggle={() => handleToggle("weeklyReport")} />
+                <Toggle dark={dark} label="Monthly Recap"        description="Trend report plus competitor benchmarking"     enabled={notifications.monthlyReport}  onToggle={() => handleToggle("monthlyReport")} />
+              </div>
+            )}
 
-            <form onSubmit={handleSave} className="space-y-6">
-              {/* --- CLINIC PROFILE TAB --- */}
-              {activeTab === "clinic" && (
-                <div
-                  className={`border rounded-2xl p-6 sm:p-8 space-y-8 ${cardBg}`}
-                >
-                  <SectionHeader
-                    dark={dark}
-                    title="Clinic Profile"
-                    description="Used in review request messages sent to patients"
-                  />
+            {/* ── ACCOUNT TAB ────────────────────────────────────────── */}
+            {activeTab === "account" && (
+              <div className="space-y-6">
+                <div className={`border rounded-2xl p-6 sm:p-8 space-y-6 ${cardBg}`}>
+                  <SectionHeader dark={dark} title="Account" description="Your sign-in details" />
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                    <InputField
-                      dark={dark}
-                      label="Clinic Name"
-                      name="clinicName"
-                      value={settings.clinicName}
-                      onChange={handleSettingsChange}
-                    />
-                    <InputField
-                      dark={dark}
-                      label="Clinic Phone"
-                      name="phone"
-                      type="tel"
-                      value={settings.phone}
-                      onChange={handleSettingsChange}
-                    />
-                  </div>
-                  <div
-                    className={`pt-8 border-t ${dark ? "border-slate-800" : "border-slate-100"}`}
-                  >
-                    <SectionHeader
-                      dark={dark}
-                      title="Google Integration"
-                      description="Connect your Google Business Profile"
-                    />
-                    <div className="space-y-6">
-                      <InputField
-                        dark={dark}
-                        label="Business Profile URL"
-                        name="googleBusinessUrl"
-                        value={settings.googleBusinessUrl}
-                        onChange={handleSettingsChange}
-                      />
-                      <InputField
-                        dark={dark}
-                        label="Review Link"
-                        name="googleReviewLink"
-                        value={settings.googleReviewLink}
-                        onChange={handleSettingsChange}
-                      />
-                    </div>
+                    <InputField dark={dark} label="Name"  value={authUser?.name  || ""} disabled />
+                    <InputField dark={dark} label="Email" value={authUser?.email || ""} disabled hint="To change your email, contact support" />
                   </div>
                 </div>
-              )}
 
-              {/* --- NOTIFICATIONS TAB --- */}
-              {activeTab === "notifications" && (
-                <div className={`border rounded-2xl p-6 sm:p-8 ${cardBg}`}>
-                  <SectionHeader
-                    dark={dark}
-                    title="Notification Preferences"
-                    description="Choose how you want to stay updated"
-                  />
-                  <Toggle
-                    dark={dark}
-                    label="Urgent Review Alerts"
-                    description="Email immediately for 1-3 star reviews"
-                    enabled={notifications.urgentAlerts}
-                    onToggle={() => handleToggle("urgentAlerts")}
-                  />
-                  <Toggle
-                    dark={dark}
-                    label="Weekly Summary"
-                    description="Weekly email performance report"
-                    enabled={notifications.weeklyReport}
-                    onToggle={() => handleToggle("weeklyReport")}
-                  />
-                </div>
-              )}
-
-              {/* --- ACCOUNT & PROFILE TAB --- */}
-              {activeTab === "account" && (
-                <div className="space-y-6">
-                  {/* User Profile Info */}
-                  <div className={`border rounded-2xl p-6 sm:p-8 ${cardBg}`}>
-                    <SectionHeader
+                <div className={`border rounded-2xl p-6 sm:p-8 space-y-5 ${cardBg}`}>
+                  <SectionHeader dark={dark} title="Security" description="Update your account password" />
+                  <div className="max-w-md space-y-4">
+                    <InputField
                       dark={dark}
-                      title="Personal Profile"
-                      description="Manage your personal information and identity"
+                      label="Current Password"
+                      type="password"
+                      placeholder="••••••••"
+                      value={pwd.current}
+                      onChange={(e) => setPwd({ ...pwd, current: e.target.value })}
                     />
-                    <div className="flex items-center gap-6 mb-8">
-                      <div className="w-20 h-20 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-600 font-bold text-2xl border-4 border-white shadow-sm">
-                        SJ
-                      </div>
-                      <button
-                        type="button"
-                        className="text-sm font-bold text-blue-600 hover:underline"
-                      >
-                        Change Photo
-                      </button>
-                    </div>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                      <InputField
-                        dark={dark}
-                        label="Full Name"
-                        name="ownerName"
-                        value={settings.ownerName}
-                        onChange={handleSettingsChange}
-                      />
-                      <InputField
-                        dark={dark}
-                        label="Account Email"
-                        name="alertEmail"
-                        type="email"
-                        value={settings.alertEmail}
-                        onChange={handleSettingsChange}
-                      />
-                    </div>
-                  </div>
-
-                  {/* Security */}
-                  <div
-                    className={`border rounded-2xl p-6 sm:p-8 space-y-5 ${cardBg}`}
-                  >
-                    <SectionHeader
+                    <InputField
                       dark={dark}
-                      title="Security"
-                      description="Update your account password"
+                      label="New Password"
+                      type="password"
+                      placeholder="At least 8 characters"
+                      value={pwd.next}
+                      onChange={(e) => setPwd({ ...pwd, next: e.target.value })}
                     />
-                    <div className="max-w-md space-y-4">
-                      <InputField
-                        dark={dark}
-                        label="Current Password"
-                        type="password"
-                        placeholder="••••••••"
-                      />
-                      <InputField
-                        dark={dark}
-                        label="New Password"
-                        type="password"
-                        placeholder="••••••••"
-                      />
-                      <button
-                        type="button"
-                        className="px-5 py-2.5 bg-blue-600 text-white rounded-xl text-sm font-bold"
-                      >
-                        Update Password
-                      </button>
-                    </div>
-                  </div>
-
-                  {/* Danger Zone */}
-                  <div
-                    className={`border border-red-900/20 rounded-2xl p-6 sm:p-8 ${dark ? "bg-red-500/5" : "bg-red-50/50 shadow-sm"}`}
-                  >
-                    <SectionHeader
+                    <InputField
                       dark={dark}
-                      title="Danger Zone"
-                      description="Permanent actions for your account"
+                      label="Confirm New Password"
+                      type="password"
+                      placeholder="Re-enter your new password"
+                      value={pwd.confirm}
+                      onChange={(e) => setPwd({ ...pwd, confirm: e.target.value })}
                     />
                     <button
                       type="button"
+                      onClick={handlePasswordChange}
+                      disabled={savingPwd}
+                      className="px-5 py-2.5 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-sm font-bold transition-all disabled:opacity-50"
+                    >
+                      {savingPwd ? "Updating..." : "Update Password"}
+                    </button>
+                  </div>
+                </div>
+
+                <div className={`border border-red-900/20 rounded-2xl p-6 sm:p-8 ${dark ? "bg-red-500/5" : "bg-red-50/50 shadow-sm"}`}>
+                  <SectionHeader dark={dark} title="Danger Zone" description="Permanent actions for your account" />
+                  <div className="flex flex-wrap gap-3">
+                    <button
+                      type="button"
+                      onClick={handleLogout}
+                      className="px-4 py-2 border border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 text-sm font-bold rounded-lg transition-all"
+                    >
+                      Sign Out
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => toast.info("Account deletion requests are handled by support@getrankrise.com")}
                       className="px-4 py-2 border border-red-200 text-red-600 hover:bg-red-600 hover:text-white text-sm font-bold rounded-lg transition-all"
                     >
                       Delete Account
                     </button>
                   </div>
                 </div>
-              )}
+              </div>
+            )}
 
-              {/* --- BILLING TAB --- */}
-              {activeTab === "billing" && (
-                <div className="space-y-6">
-                  <div className={`border rounded-2xl p-6 sm:p-8 ${cardBg}`}>
-                    <SectionHeader
-                      dark={dark}
-                      title="Current Plan"
-                      description="You are currently on the Professional Plan"
-                    />
-                    <div
-                      className={`p-6 rounded-2xl border ${dark ? "bg-slate-950 border-slate-800" : "bg-slate-50 border-slate-200"}`}
-                    >
-                      <div className="flex justify-between items-center">
-                        <div>
-                          <p className="text-xl font-bold text-blue-600">
-                            $49/month
-                          </p>
-                          <p
-                            className={`text-sm ${dark ? "text-slate-400" : "text-slate-600"}`}
-                          >
-                            Next billing date: May 28, 2026
-                          </p>
-                        </div>
-                        <button
-                          type="button"
-                          className={`px-4 py-2 rounded-lg text-sm font-bold border ${dark ? "border-slate-700 text-white" : "border-slate-300 text-slate-700"}`}
-                        >
-                          Manage Subscription
-                        </button>
+            {/* ── BILLING TAB ────────────────────────────────────────── */}
+            {activeTab === "billing" && (
+              <div className="space-y-6">
+                <div className={`border rounded-2xl p-6 sm:p-8 ${cardBg}`}>
+                  <SectionHeader dark={dark} title="Current Plan" description={`You are currently on the ${currentPlan.name} plan`} />
+                  <div className={`p-6 rounded-2xl border ${dark ? "bg-slate-950 border-slate-800" : "bg-slate-50 border-slate-200"}`}>
+                    <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-4">
+                      <div>
+                        <p className="text-2xl font-bold text-blue-600">{currentPlan.price}<span className="text-sm font-medium text-slate-500"> / mo</span></p>
+                        <ul className="mt-2 space-y-1">
+                          {currentPlan.features.map((f) => (
+                            <li key={f} className={`text-xs ${dark ? "text-slate-400" : "text-slate-600"}`}>• {f}</li>
+                          ))}
+                        </ul>
                       </div>
+                      <button
+                        type="button"
+                        onClick={() => toast.info("Plan management opens soon — contact sales for now")}
+                        className={`px-4 py-2 rounded-lg text-sm font-bold border ${dark ? "border-slate-700 text-white hover:bg-slate-800" : "border-slate-300 text-slate-700 hover:bg-slate-100"}`}
+                      >
+                        Manage Subscription
+                      </button>
                     </div>
                   </div>
+                </div>
 
-                  <div className={`border rounded-2xl p-6 sm:p-8 ${cardBg}`}>
-                    <SectionHeader
-                      dark={dark}
-                      title="Billing History"
-                      description="Download your recent invoices"
-                    />
-                    <div className="space-y-3">
-                      {[1, 2, 3].map((i) => (
+                {/* Plan comparison */}
+                <div className={`border rounded-2xl p-6 sm:p-8 ${cardBg}`}>
+                  <SectionHeader dark={dark} title="All Plans" description="Upgrade or downgrade anytime" />
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    {PLANS.map((p) => {
+                      const isCurrent = p.id === currentPlanId;
+                      return (
                         <div
-                          key={i}
-                          className={`flex justify-between items-center p-4 rounded-xl border ${dark ? "border-slate-800" : "border-slate-100"}`}
+                          key={p.id}
+                          className={`p-5 rounded-xl border transition-all ${
+                            isCurrent
+                              ? "border-blue-500 ring-2 ring-blue-500/20"
+                              : dark ? "border-slate-800" : "border-slate-200"
+                          }`}
                         >
-                          <div className="text-sm font-medium">
-                            Invoice #GRR-00{i}
-                          </div>
-                          <div className="text-sm text-slate-500">
-                            April 0{i}, 2026
-                          </div>
-                          <button
-                            type="button"
-                            className="text-blue-600 text-sm font-bold"
-                          >
-                            Download
-                          </button>
+                          <p className={`text-sm font-bold ${dark ? "text-white" : "text-slate-900"}`}>{p.name}</p>
+                          <p className="text-xl font-bold text-blue-600 mt-1">{p.price}<span className="text-xs text-slate-500"> /mo</span></p>
+                          <ul className="mt-3 space-y-1.5">
+                            {p.features.map((f) => (
+                              <li key={f} className={`text-[11px] ${dark ? "text-slate-400" : "text-slate-600"}`}>• {f}</li>
+                            ))}
+                          </ul>
+                          {isCurrent && <p className="mt-3 text-[10px] font-bold text-blue-500 uppercase tracking-widest">Current Plan</p>}
                         </div>
-                      ))}
-                    </div>
+                      );
+                    })}
                   </div>
                 </div>
-              )}
 
-              {/* Save Button */}
-              {(activeTab === "clinic" ||
-                activeTab === "notifications" ||
-                activeTab === "account") && (
-                <div className="flex items-center gap-4 pt-2">
-                  <button
-                    type="submit"
-                    disabled={saving}
-                    className="px-8 py-3 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-sm font-bold shadow-lg shadow-blue-600/20 transition-all active:scale-95 disabled:opacity-60"
-                  >
-                    {saving ? "Saving..." : "Save Changes"}
-                  </button>
-                  {savedMsg && (
-                    <span className="text-emerald-500 text-sm font-bold">
-                      ✓ {savedMsg}
-                    </span>
-                  )}
+                <div className={`border rounded-2xl p-6 sm:p-8 ${cardBg}`}>
+                  <SectionHeader dark={dark} title="Billing History" description="Your invoices appear here once you have an active paid plan" />
+                  <p className="text-sm text-slate-500">No invoices yet.</p>
                 </div>
-              )}
-            </form>
-          </div>
+              </div>
+            )}
+
+            {/* Save Button (only for editable tabs) */}
+            {(activeTab === "clinic" || activeTab === "notifications") && (
+              <div className="flex items-center gap-4 pt-2">
+                <button
+                  type="submit"
+                  disabled={saving}
+                  className="px-8 py-3 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-sm font-bold shadow-lg shadow-blue-600/20 transition-all active:scale-95 disabled:opacity-60"
+                >
+                  {saving ? "Saving..." : "Save Changes"}
+                </button>
+                {savedMsg && <span className="text-emerald-500 text-sm font-medium">✓ {savedMsg}</span>}
+              </div>
+            )}
+          </form>
         </main>
       </div>
     </div>

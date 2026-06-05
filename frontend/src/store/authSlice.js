@@ -1,84 +1,94 @@
 import { createSlice } from "@reduxjs/toolkit";
 
 // ── Load initial state from localStorage ─────────────────────────────────────
-// This means if the user refreshes the page, they stay logged in
-const token      = localStorage.getItem("token")      || null;
-const clinicName = localStorage.getItem("clinicName") || null;
-const userEmail  = localStorage.getItem("userEmail")  || null;
-// ─────────────────────────────────────────────────────────────────────────────
+// Token is the only thing we persist. Everything else (clinicName, userEmail,
+// user object) gets re-hydrated from /auth/me on app load by AppBootstrap.
+const token = localStorage.getItem("token") || null;
 
 const authSlice = createSlice({
   name: "auth",
   initialState: {
-    status: false,
-    userData: null,
-    token,           // JWT token (or mock token for now)
-    clinicName,      // e.g. "Bright Smile Dental"
-    userEmail,       // e.g. "sarah@brightsmile.com"
-    isAuthenticated: !!token, // true if token exists
-    loading: false,
-    error: null,
+    token,
+    user:            null,   // { id, name, email, role }
+    clinicName:      null,
+    userEmail:       null,
+    isAuthenticated: !!token,
+    bootstrapped:    false,  // becomes true once AppBootstrap finishes the /auth/me probe
+    loading:         false,
+    error:           null,
   },
   reducers: {
-
-    setUser: (state, action) => {
-      state.status = true;
-      state.userData = action.payload;
-    },
-    unSetUser: (state) => {
-      state.status = true;
-      state.userData = null;
-    },
-    // Called when login starts (shows loading state)
+    // Called when login starts
     loginStart(state) {
       state.loading = true;
       state.error   = null;
     },
 
-    // Called when login succeeds
+    // Called when login or register succeeds — payload shape matches backend response
+    // { accessToken, user: { id, name, email, role, clinicName } }
     loginSuccess(state, action) {
-      const { token, clinicName, userEmail } = action.payload;
-      state.token           = token;
-      state.clinicName      = clinicName;
-      state.userEmail       = userEmail;
+      const { accessToken, user } = action.payload;
+      state.token           = accessToken;
+      state.user            = {
+        id:    user.id,
+        name:  user.name,
+        email: user.email,
+        role:  user.role,
+      };
+      state.userEmail       = user.email;
+      state.clinicName      = user.clinicName || null;
       state.isAuthenticated = true;
+      state.bootstrapped    = true;
       state.loading         = false;
       state.error           = null;
 
-      // Persist to localStorage so state survives page refresh
-      localStorage.setItem("token",      token);
-      localStorage.setItem("clinicName", clinicName);
-      localStorage.setItem("userEmail",  userEmail);
+      localStorage.setItem("token", accessToken);
     },
 
-    // Called when login fails
     loginFailure(state, action) {
       state.loading = false;
-      state.error   = action.payload; // error message string
+      state.error   = action.payload;
+    },
+
+    // Used by AppBootstrap after /auth/me succeeds
+    // payload: { user: {...}, clinic: { clinicName, ... } | null }
+    hydrateSession(state, action) {
+      const { user, clinic } = action.payload;
+      state.user = {
+        id:    user.id,
+        name:  user.name,
+        email: user.email,
+        role:  user.role,
+      };
+      state.userEmail       = user.email;
+      state.clinicName      = clinic?.clinicName || null;
+      state.isAuthenticated = true;
+      state.bootstrapped    = true;
+    },
+
+    // Called once the bootstrap probe finishes, whether or not a session was found
+    setBootstrapped(state) {
+      state.bootstrapped = true;
     },
 
     // Called when user logs out
     logout(state) {
       state.token           = null;
+      state.user            = null;
       state.clinicName      = null;
       state.userEmail       = null;
       state.isAuthenticated = false;
       state.loading         = false;
       state.error           = null;
-
-      // Clear localStorage
+      state.bootstrapped    = true;
       localStorage.removeItem("token");
-      localStorage.removeItem("clinicName");
-      localStorage.removeItem("userEmail");
     },
 
     // Called when clinic name is updated in Settings
     updateClinicName(state, action) {
       state.clinicName = action.payload;
-      localStorage.setItem("clinicName", action.payload);
     },
 
-    // Clear any auth errors (e.g. when user starts typing again)
     clearError(state) {
       state.error = null;
     },
@@ -87,10 +97,10 @@ const authSlice = createSlice({
 
 export const {
   loginStart,
-  setUser,
-  unSetUser,
   loginSuccess,
   loginFailure,
+  hydrateSession,
+  setBootstrapped,
   logout,
   updateClinicName,
   clearError,

@@ -1,25 +1,19 @@
 import React, { useState } from "react";
 import { useDispatch } from "react-redux";
 import { useForm } from "react-hook-form";
-// 1. Import loginSuccess instead of setUser to trigger the correct reducer states
-import { loginSuccess } from "../../store/authSlice"; 
+import {
+  loginStart,
+  loginSuccess,
+  loginFailure,
+} from "../../store/authSlice";
 import { Link, useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
+import axiosInstance from "../../utils/axios.helper.js";
+import { getFriendlyError } from "../../utils/parseErrorMsg.js";
 import Logo from "../Logo";
 import Input from "../Input";
 import Button from "../Button";
 import { icons } from "../../assets/Icons.jsx";
-
-// Define your static mock user credentials matching your slice requirements
-const DEMO_USER = {
-  email: "demo@example.com",
-  password: "password123",
-  profile: {
-    token: "mock_jwt_access_token_xyz789", // authSlice looks for 'token'
-    clinicName: "Bright Smile Dental",     // authSlice tracks clinicName
-    userEmail: "demo@example.com"          // authSlice tracks userEmail
-  }
-};
 
 function Login() {
   const dispatch = useDispatch();
@@ -31,39 +25,37 @@ function Login() {
     register,
     handleSubmit,
     formState: { errors },
-  } = useForm({
-    defaultValues: {
-      email: DEMO_USER.email,
-      password: DEMO_USER.password
-    }
-  });
+  } = useForm();
 
   const login = async (data) => {
     setError("");
     setLoading(true);
+    dispatch(loginStart());
 
-    // Simulate network lag for realism (500ms)
-    setTimeout(() => {
-      if (data.email === DEMO_USER.email && data.password === DEMO_USER.password) {
-        
-        // 2. Dispatch loginSuccess with the payload keys your reducer expects.
-        // This will automatically set isAuthenticated to true AND handle localStorage for you!
-        dispatch(loginSuccess(DEMO_USER.profile));
-        
-        toast.success("Logged in successfully with Demo Account!");
-        setLoading(false);
-        
-        // 3. This navigation will now execute perfectly without getting blocked
-        navigate("/dashboard");
-      } else {
-        setLoading(false);
-        if (data.email !== DEMO_USER.email) {
-          setError("User does not exist");
-        } else {
-          setError("Invalid password");
-        }
+    try {
+      const response = await axiosInstance.post("/auth/login", {
+        email:    data.email,
+        password: data.password,
+      });
+
+      // Backend successResponse shape: { success, data: { accessToken, user } }
+      const payload = response?.data?.data;
+      if (!payload?.accessToken) {
+        throw new Error("Unexpected response from server");
       }
-    }, 500);
+
+      dispatch(loginSuccess(payload));
+      toast.success("Welcome back!");
+      navigate("/dashboard");
+    } catch (err) {
+      const msg = getFriendlyError(
+        err?.response?.data?.message || err?.message
+      );
+      setError(msg || "Could not sign you in. Please try again.");
+      dispatch(loginFailure(msg));
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -91,18 +83,11 @@ function Login() {
         {/* Title Group */}
         <div className="space-y-1.5 text-center mb-6">
           <h2 className="text-2xl sm:text-3xl font-extrabold tracking-tight bg-gradient-to-r from-white via-slate-100 to-slate-400 bg-clip-text text-transparent">
-            Welcome Back
+            Welcome back
           </h2>
-          <p className="text-sm text-slate-300 font-medium">
-            Log in to your account to continue
+          <p className="text-sm text-slate-400 font-medium">
+            Sign in to your GetRankRise account
           </p>
-        </div>
-
-        {/* Demo Credentials Tip Box */}
-        <div className="bg-blue-500/5 border border-blue-500/20 rounded-xl p-3 mb-6 text-xs text-blue-300 space-y-1">
-          <p className="font-semibold text-blue-400 flex items-center gap-1">✨ Frontend Demo Mode</p>
-          <p>Email: <span className="text-white font-mono">{DEMO_USER.email}</span></p>
-          <p>Password: <span className="text-white font-mono">{DEMO_USER.password}</span></p>
         </div>
 
         {/* Global Error Banner */}
@@ -113,23 +98,21 @@ function Login() {
           </div>
         )}
 
-        {/* Form Body */}
+        {/* Form */}
         <form onSubmit={handleSubmit(login)} className="space-y-5">
-          
-          {/* Email input Wrapper */}
           <div className="space-y-1">
             <Input
               label="Email Address"
               placeholder="name@example.com"
               type="email"
-              className="w-full px-4 py-3 bg-[#050910]/80 border border-white/[0.08] rounded-xl text-white placeholder-slate-600 focus:outline-none focus:border-blue-500/80 focus:ring-4 focus:ring-blue-500/10 transition-all duration-200 shadow-inner"
+              className="w-full px-4 py-2.5 bg-[#0a0618]/90 border border-white/[0.08] rounded-xl text-white placeholder-slate-600 focus:outline-none focus:border-blue-500/80 focus:ring-4 focus:ring-blue-500/10 transition-all duration-200"
               required
               {...register("email", {
                 required: true,
                 validate: {
                   matchPattern: (value) =>
                     /^\w+([.-]?\w+)*@\w+([.-]?\w+)*(\.\w{2,3})+$/.test(value) ||
-                    "Email address must be a valid address",
+                    "Enter a valid email address",
                 },
               })}
             />
@@ -145,18 +128,14 @@ function Login() {
             )}
           </div>
 
-          {/* Password Input Wrapper */}
           <div className="space-y-1">
             <Input
               label="Password"
               type="password"
               placeholder="••••••••"
-              className="w-full px-4 py-3 bg-[#050910]/80 border border-white/[0.08] rounded-xl text-white placeholder-slate-600 focus:outline-none focus:border-blue-500/80 focus:ring-4 focus:ring-blue-500/10 transition-all duration-200 shadow-inner"
-              className2="pt-1 text-slate-300 font-medium"
+              className="w-full px-4 py-2.5 bg-[#0a0618]/90 border border-white/[0.08] rounded-xl text-white placeholder-slate-600 focus:outline-none focus:border-blue-500/80 focus:ring-4 focus:ring-blue-500/10 transition-all duration-200"
               required
-              {...register("password", {
-                required: true,
-              })}
+              {...register("password", { required: true })}
             />
             {errors.password?.type === "required" && (
               <p className="text-red-400 text-xs font-medium pt-1 px-1 flex items-center gap-1">
@@ -165,12 +144,15 @@ function Login() {
             )}
           </div>
 
-          {/* Submit Action Button */}
           <Button
             type="submit"
             disabled={loading}
-            className="w-full mt-4 py-3 rounded-xl font-semibold text-white shadow-lg shadow-blue-600/10 active:scale-[0.98] transition-all duration-200 flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed border border-white/10 hover:brightness-110"
-            bgColor={loading ? "bg-blue-950/60" : "bg-gradient-to-r from-blue-600 via-blue-500 to-cyan-500"}
+            className="w-full mt-2 py-2.5 rounded-xl font-semibold text-white shadow-lg shadow-blue-600/10 active:scale-[0.98] transition-all duration-200 flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed border border-white/10 hover:brightness-110"
+            bgColor={
+              loading
+                ? "bg-blue-950/60"
+                : "bg-gradient-to-r from-blue-600 via-blue-500 to-cyan-500"
+            }
           >
             {loading ? (
               <span className="h-5 w-5 animate-spin flex items-center justify-center opacity-80">
@@ -182,16 +164,16 @@ function Login() {
           </Button>
         </form>
 
-        {/* Custom Decorative Divider */}
         <div className="relative flex items-center my-6">
           <div className="flex-grow border-t border-white/[0.04]"></div>
-          <span className="flex-shrink mx-4 text-xs font-semibold text-slate-400 tracking-widest uppercase">OR</span>
+          <span className="flex-shrink mx-3 text-[10px] font-bold text-slate-500 tracking-widest uppercase">
+            OR
+          </span>
           <div className="flex-grow border-t border-white/[0.04]"></div>
         </div>
 
-        {/* Interactive Footer Link */}
         <p className="text-center text-sm text-slate-400">
-          Don't have an Account yet?{" "}
+          Don't have an account yet?{" "}
           <Link
             to="/signup"
             className="inline-block font-bold text-blue-400 hover:text-blue-300 transition-colors duration-200 underline underline-offset-4 decoration-blue-500/40 hover:decoration-blue-400"

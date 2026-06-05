@@ -1,0 +1,71 @@
+import { useEffect } from "react";
+import { useDispatch, useSelector } from "react-redux";
+import axiosInstance from "../utils/axios.helper.js";
+import { hydrateSession, setBootstrapped, logout } from "../store/authSlice.js";
+
+/**
+ * AppBootstrap
+ * ──────────────────────────────────────────────────────────────────────────
+ * Runs once on app mount. If we have a token in localStorage, calls /auth/me
+ * to verify it's still valid and hydrate the Redux store with user + clinic.
+ *
+ * If the probe fails (token expired, network error, etc.), clears local state
+ * and marks the app as bootstrapped so PrivateRoute can redirect to /login.
+ *
+ * Until bootstrapped === true, App.jsx shows a centered loading spinner so
+ * we don't flash the login page for half a second before redirecting back
+ * to the dashboard.
+ */
+export default function AppBootstrap({ children }) {
+  const dispatch       = useDispatch();
+  const token          = useSelector((state) => state.auth.token);
+  const bootstrapped   = useSelector((state) => state.auth.bootstrapped);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    const probe = async () => {
+      // No token? Nothing to hydrate. Mark bootstrapped immediately.
+      if (!token) {
+        dispatch(setBootstrapped());
+        return;
+      }
+
+      try {
+        const { data } = await axiosInstance.get("/auth/me");
+        if (cancelled) return;
+        if (data?.data) {
+          dispatch(hydrateSession(data.data));
+        } else {
+          dispatch(setBootstrapped());
+        }
+      } catch (err) {
+        if (cancelled) return;
+        // 401 already handled by axios interceptor; this catches network errors etc.
+        // Either way, clear session so PrivateRoute sends us to /login.
+        console.warn("Session probe failed:", err?.message);
+        dispatch(logout());
+      }
+    };
+
+    probe();
+    return () => { cancelled = true; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Centered loading spinner while we figure out who you are
+  if (!bootstrapped) {
+    return (
+      <div className="min-h-screen w-full flex items-center justify-center bg-[#030712]">
+        <div className="flex flex-col items-center gap-4">
+          <div className="w-10 h-10 rounded-full border-2 border-slate-700 border-t-blue-500 animate-spin" />
+          <p className="text-xs text-slate-500 font-medium tracking-widest uppercase">
+            Loading GetRankRise
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  return children;
+}
