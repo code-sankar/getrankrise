@@ -40,6 +40,18 @@ const Clinic = sequelize.define(
       type:      DataTypes.STRING(200),
       allowNull: true,
     },
+    // 2-letter ISO country code (e.g. "IN", "US"). Drives SMS/WhatsApp provider
+    // routing in services/sms/index.js — "IN" routes via MSG91, otherwise Twilio.
+    // clinic.controller.js already whitelists this field for updates; the column
+    // was previously missing from the model, so values were silently dropped.
+    countryCode: {
+      type:      DataTypes.STRING(2),
+      allowNull: true,
+      set(value) {
+        // Normalise to uppercase so routing comparisons are consistent
+        this.setDataValue("countryCode", value ? String(value).toUpperCase() : value);
+      },
+    },
     googleBusinessUrl: {
       type:      DataTypes.TEXT,
       allowNull: true,
@@ -58,10 +70,13 @@ const Clinic = sequelize.define(
         monthlyReport: true,
       },
     },
-    // Subscription plan
+    // Subscription plan — MUST stay in sync with config/plans.js (PLANS).
+    // New clinics start on the free tier; upgrades happen via the subscription
+    // endpoint. Changing these values requires a DB migration (the ENUM type
+    // already exists in Postgres) — see migrations/20260615_fix_clinic_plan_enum.sql
     plan: {
-      type:         DataTypes.ENUM("starter", "growth", "agency"),
-      defaultValue: "starter",
+      type:         DataTypes.ENUM("free", "starter", "premium"),
+      defaultValue: "free",
     },
     isActive: {
       type:         DataTypes.BOOLEAN,

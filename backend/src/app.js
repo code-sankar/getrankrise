@@ -5,6 +5,7 @@ import morgan       from "morgan";
 import cookieParser from "cookie-parser";
 import rateLimit    from "express-rate-limit";
 import { env }      from "./config/env.js";
+import { handleWebhook } from "./controllers/billing.controller.js";
 
 // ── Routes ────────────────────────────────────────────────────────────────────
 import authRoutes         from "./routes/auth.routes.js";
@@ -15,12 +16,21 @@ import requestRoutes      from "./routes/request.routes.js";
 import notificationRoutes from "./routes/notification.routes.js";
 import analyticsRoutes    from "./routes/analytics.routes.js";
 import subscriptionRoutes from "./routes/subscription.routes.js";
+import billingRoutes from "./routes/billing.routes.js";
+import competitorRoutes from "./routes/competitor.routes.js";
 
 // ── Middleware ────────────────────────────────────────────────────────────────
 import { sanitize }     from "./middleware/sanitize.middleware.js";
 import { errorHandler } from "./middleware/error.middleware.js";
 
 const app = express();
+
+
+app.post(
+  "/api/v1/billing/webhook",
+  express.raw({ type: "application/json", limit: "1mb" }),
+  handleWebhook
+);
 
 // ── Trust proxy ───────────────────────────────────────────────────────────────
 // Required for correct req.ip behind load balancers / reverse proxies.
@@ -125,7 +135,8 @@ app.use("/api/v1/requests",      requestRoutes);
 app.use("/api/v1/notifications", notificationRoutes);
 app.use("/api/v1/analytics",     analyticsRoutes);
 app.use("/api/v1/subscription",  subscriptionRoutes);
-
+app.use("/api/v1/billing", billingRoutes);
+app.use("/api/v1/competitors", competitorRoutes);
 // ── 404 handler ───────────────────────────────────────────────────────────────
 app.use((req, res) => {
   res.status(404).json({
@@ -133,6 +144,8 @@ app.use((req, res) => {
     message: `Route ${req.originalUrl} not found`,
   });
 });
+
+app.use(express.json({ limit: "100kb" }));
 
 // ── Global error handler — must be last ──────────────────────────────────────
 app.use(errorHandler);

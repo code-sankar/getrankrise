@@ -108,3 +108,19 @@ export const validate = (schema, source = "body") => (req, res, next) => {
   req[source] = value;
   next();
 };
+
+// ── COMPETITORS ───────────────────────────────────────────────────────────────
+export const addCompetitorSchema = Joi.object({
+  name:       Joi.string().trim().min(2).max(150).required(),
+  platform:   Joi.string().valid("Google", "Yelp", "Facebook").default("Google"),
+  externalId: Joi.string().trim().max(255).allow("", null),
+  profileUrl: Joi.string().uri().max(2048).allow("", null),
+  location:   Joi.string().trim().max(200).allow("", null),
+});
+
+export const updateCompetitorSchema = Joi.object({
+  name:       Joi.string().trim().min(2).max(150),
+  location:   Joi.string().trim().max(200).allow("", null),
+  profileUrl: Joi.string().uri().max(2048).allow("", null),
+  isActive:   Joi.boolean(),
+}).min(1); // at least one field

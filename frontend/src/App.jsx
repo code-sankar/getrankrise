@@ -17,6 +17,8 @@ import FAQ from "./pages/QandA.jsx";
 import PageNotFound from "./components/PageNotFound.jsx";
 import SignUp from "./pages/SignUp.jsx";
 import LandingPage from "./pages/landingPage/LandingPage.jsx";
+import UpgradeModal from "./components/billing/UpgradeModal.jsx";
+
 
 // Reads isAuthenticated directly from Redux store.
 // AppBootstrap guarantees this value is settled before children mount.
@@ -36,6 +38,7 @@ export default function App() {
     <ThemeProvider>
       <BrowserRouter>
         <AppBootstrap>
+          <UpgradeModal />
           <Routes>
             {/* Public */}
             <Route path="/" element={<LandingPage />} />

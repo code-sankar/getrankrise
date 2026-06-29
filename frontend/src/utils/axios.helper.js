@@ -12,12 +12,13 @@
 import axios from "axios";
 import { toast } from "react-toastify";
 import { parseErrorMessage, getFriendlyError } from "./parseErrorMsg.js";
+import { showUpgradeModal } from "../store/upgradeModalSlice.js";
 
 // ── Base instance ─────────────────────────────────────────────────────────────
 const axiosInstance = axios.create({
-  baseURL:         import.meta.env.VITE_API_URL || "http://localhost:5000/api/v1",
+  baseURL: import.meta.env.VITE_API_URL || "http://localhost:5000/api/v1",
   withCredentials: true, // sends httpOnly cookies (refresh token)
-  timeout:         10000,
+  timeout: 10000,
   headers: {
     "Content-Type": "application/json",
   },
@@ -35,13 +36,12 @@ axiosInstance.interceptors.request.use(
   },
   (error) => {
     return Promise.reject(error);
-  }
+  },
 );
 
 // ── Response Interceptor ──────────────────────────────────────────────────────
 // Handles token expiry, retries the original request with a fresh token
 axiosInstance.interceptors.response.use(
-
   // ── Success — pass through ────────────────────────────────────────────────
   (response) => response,
 
@@ -54,14 +54,14 @@ axiosInstance.interceptors.response.use(
     }
 
     const originalRequest = error.config;
-    const errorMsg        = parseErrorMessage(error.response.data);
-    const status          = error.response.status;
+    const errorMsg = parseErrorMessage(error.response.data);
+    const status = error.response.status;
 
     // ── Token Expired — try to refresh silently ───────────────────────────
     if (
       status === 401 &&
       errorMsg === "TokenExpiredError" &&
-      !originalRequest._retry  // prevent infinite retry loop
+      !originalRequest._retry // prevent infinite retry loop
     ) {
       originalRequest._retry = true;
 
@@ -70,7 +70,7 @@ axiosInstance.interceptors.response.use(
         const { data } = await axios.post(
           `${import.meta.env.VITE_API_URL || "http://localhost:5000/api/v1"}/auth/refresh-token`,
           {},
-          { withCredentials: true }
+          { withCredentials: true },
         );
 
         const newToken = data.data.accessToken;
@@ -79,12 +79,12 @@ axiosInstance.interceptors.response.use(
         localStorage.setItem("token", newToken);
 
         // Update default headers for future requests
-        axiosInstance.defaults.headers.common["Authorization"] = `Bearer ${newToken}`;
+        axiosInstance.defaults.headers.common["Authorization"] =
+          `Bearer ${newToken}`;
 
         // Retry the original failed request with new token
         originalRequest.headers["Authorization"] = `Bearer ${newToken}`;
         return axiosInstance(originalRequest);
-
       } catch (refreshError) {
         // Refresh failed — session is fully expired
         console.error("Token refresh failed:", refreshError);
@@ -106,7 +106,20 @@ axiosInstance.interceptors.response.use(
 
     // ── 403 Forbidden ─────────────────────────────────────────────────────
     if (status === 403) {
-      toast.error(getFriendlyError("FORBIDDEN"));
+      const code = error.response?.data?.code;
+
+      if (code === "UPGRADE_REQUIRED" || code === "SUBSCRIPTION_INACTIVE") {
+        store.dispatch(
+          showUpgradeModal({
+            currentPlan: error.response.data.currentPlan,
+            requiredPlans: error.response.data.requiredPlans,
+            message: error.response.data.message,
+          }),
+        );
+        // Don't toast — the modal is the UX
+      } else {
+        toast.error(getFriendlyError("FORBIDDEN"));
+      }
       return Promise.reject(error);
     }
 
@@ -123,7 +136,7 @@ axiosInstance.interceptors.response.use(
     }
 
     return Promise.reject(error);
-  }
+  },
 );
 
 export default axiosInstance;

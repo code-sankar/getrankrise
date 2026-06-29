@@ -9,6 +9,8 @@ import Clinic       from "./Clinic.js";
 import Review       from "./Review.js";
 import Request      from "./Request.js";
 import Notification from "./Notification.js";
+import Competitor         from "./Competitor.js";
+import CompetitorSnapshot from "./CompetitorSnapshot.js";
 
 // ── Associations ──────────────────────────────────────────────────────────────
 
@@ -32,11 +34,14 @@ Request.belongsTo(Clinic, { foreignKey: "clinicId", as: "clinic" });
 User.hasMany(Notification,  { foreignKey: "userId", as: "notifications", onDelete: "CASCADE" });
 Notification.belongsTo(User, { foreignKey: "userId", as: "user" });
 
+// add to the Associations section
+// Clinic → Competitors (one to many)
+Clinic.hasMany(Competitor,  { foreignKey: "clinicId", as: "competitors", onDelete: "CASCADE" });
+Competitor.belongsTo(Clinic, { foreignKey: "clinicId", as: "clinic" });
+
+// Competitor → Snapshots (one to many)
+Competitor.hasMany(CompetitorSnapshot,  { foreignKey: "competitorId", as: "snapshots", onDelete: "CASCADE" });
+CompetitorSnapshot.belongsTo(Competitor, { foreignKey: "competitorId", as: "competitor" });
+
 // ── Export all models ─────────────────────────────────────────────────────────
-export {
-  User,
-  Clinic,
-  Review,
-  Request,
-  Notification,
-};
+export { User, Clinic, Review, Request, Notification, Competitor, CompetitorSnapshot };
