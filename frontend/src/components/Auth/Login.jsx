@@ -14,6 +14,7 @@ import Logo from "../Logo";
 import Input from "../Input";
 import Button from "../Button";
 import { icons } from "../../assets/Icons.jsx";
+import { MOCK_TOKEN, DEMO_EMAIL, DEMO_PASSWORD, MOCK_USER } from "../../mocks/mockAuth.js";
 
 function Login() {
   const dispatch = useDispatch();
@@ -31,6 +32,18 @@ function Login() {
     setError("");
     setLoading(true);
     dispatch(loginStart());
+
+    // ── Demo login: bypass the backend when the demo credentials are used ──
+    if (
+      data.email.trim().toLowerCase() === DEMO_EMAIL &&
+      data.password === DEMO_PASSWORD
+    ) {
+      dispatch(loginSuccess({ accessToken: MOCK_TOKEN, user: MOCK_USER }));
+      toast.success("Signed in with the demo account");
+      navigate("/dashboard");
+      setLoading(false);
+      return;
+    }
 
     try {
       const response = await axiosInstance.post("/auth/login", {

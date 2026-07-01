@@ -155,7 +155,7 @@ export const getCompetitor = async (req, res) => {
 // initial sync so the row shows real metrics immediately.
 export const addCompetitor = async (req, res) => {
   try {
-    const limits = getLimitsFor(req.clinic.plan);
+   const limits = req.subscription?.limits ?? getLimitsFor(req.clinic.plan);
 
     // ── Plan count cap ─────────────────────────────────────────────────────
     // requireFeature("competitorTracking") on the route already blocks Free.

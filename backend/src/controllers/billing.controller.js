@@ -166,6 +166,14 @@ async function upsertSubscription(sub) {
        canceled_at             = NULL`,
     [clinicId, planType, status, sub.customer_id, sub.id, priceId, periodStart, periodEnd]
   );
+
+  // Keep clinics.plan in sync for admin/analytics reads. Enforcement no longer
+  // depends on this column, so a failure here must never fail the webhook.
+  try {
+    await pool.query(`UPDATE clinics SET plan = $2 WHERE id = $1`, [clinicId, planType]);
+  } catch (e) {
+    console.warn("[paddle] clinic.plan mirror failed:", e.message);
+  }
 }
 
 async function markCanceled(sub) {

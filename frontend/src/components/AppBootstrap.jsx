@@ -1,7 +1,13 @@
 import { useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import axiosInstance from "../utils/axios.helper.js";
-import { hydrateSession, setBootstrapped, logout } from "../store/authSlice.js";
+import {
+  hydrateSession,
+  setBootstrapped,
+  logout,
+  loginSuccess,
+} from "../store/authSlice.js";
+import { isMockToken, MOCK_TOKEN, MOCK_USER } from "../mocks/mockAuth.js";
 
 /**
  * AppBootstrap
@@ -12,19 +18,25 @@ import { hydrateSession, setBootstrapped, logout } from "../store/authSlice.js";
  * If the probe fails (token expired, network error, etc.), clears local state
  * and marks the app as bootstrapped so PrivateRoute can redirect to /login.
  *
- * Until bootstrapped === true, App.jsx shows a centered loading spinner so
- * we don't flash the login page for half a second before redirecting back
- * to the dashboard.
+ * Demo login: when the stored token is the mock sentinel (set by the login
+ * form when the demo credentials are used), we re-hydrate the demo session
+ * and skip the /auth/me probe so it survives page refreshes with no backend.
  */
 export default function AppBootstrap({ children }) {
-  const dispatch       = useDispatch();
-  const token          = useSelector((state) => state.auth.token);
-  const bootstrapped   = useSelector((state) => state.auth.bootstrapped);
+  const dispatch     = useDispatch();
+  const token        = useSelector((state) => state.auth.token);
+  const bootstrapped = useSelector((state) => state.auth.bootstrapped);
 
   useEffect(() => {
     let cancelled = false;
 
     const probe = async () => {
+      // ── Demo session: skip the network probe, restore the fake session ───
+      if (isMockToken(token)) {
+        dispatch(loginSuccess({ accessToken: MOCK_TOKEN, user: MOCK_USER }));
+        return;
+      }
+
       // No token? Nothing to hydrate. Mark bootstrapped immediately.
       if (!token) {
         dispatch(setBootstrapped());

@@ -6,6 +6,7 @@ import {
   serverErrorResponse,
 } from "../utils/apiResponse.js";
 import { capStoredReviews } from "../middleware/tierCap.middleware.js";
+import { getSubscriptionState } from "../services/subscription/subscriptionState.service.js";
 import { generateReply } from "../services/ai/ai.service.js";
 import { auditFromReq, AUDIT_EVENTS } from "../utils/auditLog.js";
 
@@ -31,7 +32,9 @@ export const listReviews = async (req, res) => {
     if (status === "unreplied") where.replied = false;
 
     // ── Free tier hard cap on stored reviews returned ──────────────────────
-    const planCap = capStoredReviews(req.clinic);
+    // Plan comes from the subscription (single source of truth), not clinic.plan.
+    const sub     = await getSubscriptionState(req.clinic.id);
+    const planCap = capStoredReviews(sub);
     if (planCap !== null) {
       limit = Math.min(limit, planCap - offset);
       if (limit <= 0) {
@@ -104,7 +107,7 @@ export const replyToReview = async (req, res) => {
 };
 
 // ── POST /api/v1/reviews/:id/ai-reply ────────────────────────────────────────
-// Gated by requireFeature("aiRepliesEnabled") in route definition
+// Gated by requireFeature("aiRepliesEnabled") in the route definition
 export const generateAiReply = async (req, res) => {
   try {
     const { id } = req.params;
