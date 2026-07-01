@@ -146,14 +146,15 @@ export default function Hero() {
       <div className="relative z-10 w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col items-center text-center">
 
         {/* Eyebrow badge */}
-        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#111622]/60 border border-gray-800/80 text-[11px] text-gray-400 mb-9 hover:border-gray-700/80 transition-colors cursor-pointer tracking-wide backdrop-blur-sm">
+        {/* <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#111622]/60 border border-gray-800/80 text-[11px] text-gray-400 mb-9 hover:border-gray-700/80 transition-colors cursor-pointer tracking-wide backdrop-blur-sm">
           <span className="relative flex w-1.5 h-1.5">
             <span className="motion-safe:animate-ping absolute inline-flex h-full w-full rounded-full bg-[#3b82f6] opacity-60" />
             <span className="relative inline-flex w-1.5 h-1.5 rounded-full bg-[#3b82f6]" />
           </span>
           <span>New — AI Review Responder v2</span>
+          <span>Just shipped: AI Responder v2 is here!</span>
           <ArrowRight size={11} className="text-gray-500" />
-        </div>
+        </div> */}
 
         {/* Headline */}
         <h1 className="text-[42px] sm:text-[76px] font-semibold tracking-tight text-white mb-7 max-w-4xl mx-auto leading-[1.08]">
