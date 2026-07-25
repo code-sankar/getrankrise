@@ -1,11 +1,20 @@
 /**
- * reviews.hook.js
- * All API calls related to reviews.
- * Dispatches to both userSlice and reviewsSlice after responses.
+ * reviews.hook.js — Phase 3 rewrite.
  *
- * Usage:
- *   import { getUserReviews, replyToReview } from "../hooks/reviews.hook";
- *   await getUserReviews(dispatch);
+ * THE BUG THIS FIXES (would have crashed the Dashboard on first real data):
+ *
+ *   Backend GET /reviews returns
+ *       { success, message, data: { reviews: [...], total, limit, offset, cappedByPlan } }
+ *
+ *   The old hook did `dispatch(fetchReviewsSuccess(response.data.data))` —
+ *   pushing the whole ENVELOPE OBJECT into state.list. The first component to
+ *   call selectFilteredReviews would then run `.filter()` on an object and
+ *   throw. Invisible today only because the fetch fails silently against an
+ *   empty table and the (now deleted) mock list papered over it.
+ *
+ * This version unwraps the envelope, normalises each row through
+ * normalizeReview() (backend field names → component field names), and
+ * dispatches the typed payload fetchReviewsSuccess expects.
  */
 
 import { toast } from "react-toastify";
@@ -22,52 +31,63 @@ import {
   fetchReviewsSuccess,
   fetchReviewsFailure,
   markReplied,
+  normalizeReview,
 } from "../store/reviewsSlice.js";
 
+// ── Shared unwrap + normalise ────────────────────────────────────────────────
+const toPayload = (envelope = {}) => ({
+  reviews: (envelope.reviews ?? []).map(normalizeReview),
+  total: envelope.total ?? envelope.reviews?.length ?? 0,
+  cappedByPlan: Boolean(envelope.cappedByPlan),
+});
+
 // ── Fetch all reviews for the clinic ─────────────────────────────────────────
-export const getUserReviews = async (dispatch) => {
+export const getUserReviews = async (dispatch, params = {}) => {
   dispatch(fetchReviewsStart());
   try {
-    const response = await axiosInstance.get("/reviews");
-    if (response?.data?.data) {
-      const reviews = response.data.data;
-      // Dispatch to both slices so Dashboard and Profile both stay in sync
-      dispatch(addUserReviews(reviews));
-      dispatch(fetchReviewsSuccess(reviews));
-      return response.data;
-    }
+    const response = await axiosInstance.get("/reviews", { params });
+    const payload = toPayload(response?.data?.data);
+
+    // Both slices get the SAME normalised rows so Dashboard and Profile agree.
+    dispatch(addUserReviews(payload.reviews));
+    dispatch(fetchReviewsSuccess(payload));
+    return payload;
   } catch (error) {
     const msg = getFriendlyError(error.response?.data?.message);
-    dispatch(fetchReviewsFailure(msg));
+    dispatch(fetchReviewsFailure(msg || "Could not load reviews."));
     console.error("getUserReviews error:", error);
+    // No toast here: the Dashboard renders the error state inline, and this
+    // runs on every page mount — a toast on each navigation would be noise.
   }
 };
 
-// ── Clear reviews from store (e.g. on logout) ─────────────────────────────────
+// ── Fetch reviews filtered by platform (server-side) ─────────────────────────
+export const getReviewsByPlatform = async (dispatch, platform) =>
+  getUserReviews(dispatch, { platform });
+
+// ── Clear reviews from store (e.g. on logout) ────────────────────────────────
 export const clearUserReviews = (dispatch) => {
   dispatch(removeUserReviews());
 };
 
-// ── Post a reply to a review ──────────────────────────────────────────────────
+// ── Post a reply to a review ─────────────────────────────────────────────────
 export const replyToReview = async (dispatch, reviewId, replyText) => {
   try {
     const response = await axiosInstance.post(`/reviews/${reviewId}/reply`, {
       reply: replyText,
     });
     if (response?.data) {
-      // Update both slices so review shows as replied everywhere
       dispatch(toggleUserReviewReplied(reviewId));
       dispatch(markReplied(reviewId));
-
-      // Log this as an activity
-      dispatch(addSingleUserActivity({
-        _id:    Date.now().toString(),
-        action: "Replied to a patient review",
-        time:   "Just now",
-        icon:   "💬",
-        type:   "success",
-      }));
-
+      dispatch(
+        addSingleUserActivity({
+          _id: Date.now().toString(),
+          action: "Replied to a patient review",
+          time: "Just now",
+          icon: "💬",
+          type: "success",
+        })
+      );
       toast.success("Reply posted successfully!");
       return response.data;
     }
@@ -80,35 +100,28 @@ export const replyToReview = async (dispatch, reviewId, replyText) => {
 };
 
 // ── Generate AI reply for a review ───────────────────────────────────────────
+// PHASE 3 CONTRACT CHANGE: this now THROWS on failure instead of resolving
+// undefined. The old shape let ReviewCard treat "backend failed" and "backend
+// returned a draft" as the same happy path, which is how the canned-template
+// fallback snuck in. Callers must catch; the hook has already toasted.
 export const generateAIReply = async (reviewId, reviewText) => {
   try {
     const response = await axiosInstance.post(`/reviews/${reviewId}/ai-reply`, {
       reviewText,
     });
-    if (response?.data?.data) {
-      return response.data.data.reply; // returns the generated reply string
+    const reply = response?.data?.data?.reply;
+    if (!reply) {
+      throw new Error("AI service returned an empty reply");
     }
+    return reply;
   } catch (error) {
     const msg = getFriendlyError(error.response?.data?.message);
-    toast.error(msg);
+    // 403 UPGRADE_REQUIRED already opened the upgrade modal via the axios
+    // interceptor — don't stack a toast on top of it.
+    if (error.response?.status !== 403) {
+      toast.error(msg || "Could not generate an AI reply. Please try again.");
+    }
     console.error("generateAIReply error:", error);
     throw error;
-  }
-};
-
-// ── Fetch reviews filtered by platform ───────────────────────────────────────
-export const getReviewsByPlatform = async (dispatch, platform) => {
-  dispatch(fetchReviewsStart());
-  try {
-    const response = await axiosInstance.get("/reviews", {
-      params: { platform },
-    });
-    if (response?.data?.data) {
-      dispatch(fetchReviewsSuccess(response.data.data));
-      return response.data;
-    }
-  } catch (error) {
-    dispatch(fetchReviewsFailure(error.message));
-    console.error("getReviewsByPlatform error:", error);
   }
 };

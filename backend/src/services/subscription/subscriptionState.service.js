@@ -5,19 +5,48 @@
 // Every plan/feature enforcement read in the app must go through this helper so
 // there is exactly ONE place that decides what plan a clinic is on. The billing
 // webhook writes the `subscriptions` table; this reads it. We deliberately do
-// NOT read clinics.plan for enforcement anymore — that column drifted out of
-// sync with billing and caused paid customers to stay locked out of features.
+// NOT read clinics.plan for enforcement — that column drifted out of sync with
+// billing and caused paid customers to stay locked out of features.
 //
 // A clinic with no subscriptions row has never been through checkout, which by
-// definition means it is on the Free tier and in good standing.
+// definition means it is on the Free tier and in good standing. Since Phase 0
+// every new clinic gets its row transactionally at registration
+// (provisionSubscription.service.js), so the fallback below is now genuinely a
+// defensive path rather than the common case it used to be.
+//
+// PHASE 0 CHANGE: reads go through the Subscription model on the shared
+// Sequelize connection instead of a second pg.Pool.
 
-import { pool } from "../../db/pool.js";
+import { Subscription } from "../../models/index.js";
 import { getLimitsFor, PLANS } from "../../config/plans.js";
 
 const ACTIVE_STATUSES = new Set(["active", "trialing"]);
 
 /**
+ * Builds the normalized state object. Kept separate so callers that already
+ * hold a Subscription instance (e.g. inside a transaction) can reuse the shape
+ * without a second query.
+ *
+ * @param {import("../../models/Subscription.js").default|null} row
+ */
+export function toSubscriptionState(row) {
+  const plan = row?.planType || PLANS.FREE;
+  const status = row?.subscriptionStatus || "active";
+
+  return {
+    plan,
+    status,
+    isActive: ACTIVE_STATUSES.has(status),
+    limits: getLimitsFor(plan),
+    currentPeriodEnd: row?.currentPeriodEnd || null,
+    exists: Boolean(row),
+  };
+}
+
+/**
  * @param {string} clinicId
+ * @param {object} [options]
+ * @param {import("sequelize").Transaction} [options.transaction]
  * @returns {Promise<{
  *   plan: string,
  *   status: string,
@@ -27,37 +56,17 @@ const ACTIVE_STATUSES = new Set(["active", "trialing"]);
  *   exists: boolean
  * }>}
  */
-export async function getSubscriptionState(clinicId) {
+export async function getSubscriptionState(clinicId, { transaction } = {}) {
   if (!clinicId) {
     // Defensive: no clinic → treat as Free so callers can still render limits.
-    const plan = PLANS.FREE;
-    return {
-      plan,
-      status: "active",
-      isActive: true,
-      limits: getLimitsFor(plan),
-      currentPeriodEnd: null,
-      exists: false,
-    };
+    return toSubscriptionState(null);
   }
 
-  const { rows } = await pool.query(
-    `SELECT plan_type, subscription_status, current_period_end
-       FROM subscriptions
-      WHERE clinic_id = $1`,
-    [clinicId]
-  );
+  const row = await Subscription.findOne({
+    where: { clinicId },
+    attributes: ["planType", "subscriptionStatus", "currentPeriodEnd"],
+    transaction,
+  });
 
-  const row = rows[0] || null;
-  const plan = row?.plan_type || PLANS.FREE;
-  const status = row?.subscription_status || "active";
-
-  return {
-    plan,
-    status,
-    isActive: ACTIVE_STATUSES.has(status),
-    limits: getLimitsFor(plan),
-    currentPeriodEnd: row?.current_period_end || null,
-    exists: Boolean(row),
-  };
+  return toSubscriptionState(row);
 }

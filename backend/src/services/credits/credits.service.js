@@ -1,5 +1,21 @@
 // backend/src/services/credits/credits.service.js
-import { pool } from "../../db/pool.js";
+//
+// PHASE 0 CHANGE — execution path only, semantics identical.
+//
+// Every query moved from `pool.query(sql, params)` to
+// `sequelize.query(sql, { bind })`. Sequelize's `bind` option uses the same
+// $1/$2 placeholder syntax as node-postgres and passes them as real bound
+// parameters, so the SQL below is UNCHANGED from the pg version — including the
+// conditional UPDATE that provides the atomicity guarantee.
+//
+// This is deliberately raw SQL rather than Sequelize model methods. The
+// reserve-before-send guarantee depends on the check and the write happening in
+// a single statement; expressing it as findOne() + update() would reintroduce
+// exactly the race this was built to prevent. Using the ORM here would be worse
+// code, not better.
+
+import { QueryTypes } from "sequelize";
+import { sequelize } from "../../config/db.js";
 import { getLimitsFor } from "../../config/plans.js";
 
 /**
@@ -25,48 +41,62 @@ export async function reserveCredits({ clinicId, channel, amount = 1 }) {
   }
 
   // 1. Pull plan + status. Single query, no transaction needed yet.
-  const { rows } = await pool.query(
+  const rows = await sequelize.query(
     `SELECT plan_type, subscription_status,
             sms_credits_used, whatsapp_credits_used,
             credits_reset_at, current_period_start
        FROM subscriptions
       WHERE clinic_id = $1`,
-    [clinicId]
+    { bind: [clinicId], type: QueryTypes.SELECT }
   );
+
   if (rows.length === 0) {
+    // Since Phase 0 every clinic is provisioned a row at registration, so this
+    // now means genuine data corruption (or a clinic created by a script that
+    // bypassed provisionFreeSubscription). Callers must still handle it —
+    // request.controller.js quotaError() renders undefined fields otherwise.
     return { reserved: false, reason: "NO_SUBSCRIPTION" };
   }
 
   const sub = rows[0];
   const limits = getLimitsFor(sub.plan_type);
-  const limit  = channel === "sms" ? limits.smsPerMonth : limits.whatsAppPerMonth;
+  const limit = channel === "sms" ? limits.smsPerMonth : limits.whatsAppPerMonth;
 
   // Free tier (or any plan with 0 quota) → no need to even attempt UPDATE
   if (!limit || limit === 0) {
     return {
-      reserved:     false,
-      reason:       "PLAN_DOES_NOT_INCLUDE_CHANNEL",
-      currentPlan:  sub.plan_type,
+      reserved: false,
+      reason: "PLAN_DOES_NOT_INCLUDE_CHANNEL",
+      currentPlan: sub.plan_type,
       channel,
-      limit:        0,
+      limit: 0,
     };
   }
 
   if (!["active", "trialing"].includes(sub.subscription_status)) {
     return {
       reserved: false,
-      reason:   "SUBSCRIPTION_INACTIVE",
-      currentPlan:        sub.plan_type,
+      reason: "SUBSCRIPTION_INACTIVE",
+      currentPlan: sub.plan_type,
       subscriptionStatus: sub.subscription_status,
     };
   }
 
   // 2. Atomic reserve. Two column names depending on channel.
+  //
+  // `usedCol` is interpolated rather than bound because Postgres cannot bind an
+  // identifier — only values. It is safe here because it is selected from a
+  // two-element literal whitelist above and never touches user input.
   const usedCol = channel === "sms" ? "sms_credits_used" : "whatsapp_credits_used";
 
   // The WHERE clause is the gate:
   //   - if reset is due, treat current usage as 0
   //   - otherwise, must have headroom: used + amount <= limit
+  //
+  // Note: when current_period_start IS NULL (a clinic that has never been
+  // through checkout) every comparison against it is NULL, so the reset branch
+  // never fires. That is correct — such a clinic is on Free, whose limit is 0,
+  // and the early return above means we never reach this statement.
   const sql = `
     UPDATE subscriptions
        SET ${usedCol} = CASE
@@ -98,23 +128,28 @@ export async function reserveCredits({ clinicId, channel, amount = 1 }) {
     RETURNING ${usedCol} AS used
   `;
 
-  const result = await pool.query(sql, [clinicId, limit, amount, channel]);
+  // QueryTypes.SELECT returns the RETURNING rows as a plain array. An empty
+  // array means the WHERE predicate rejected the reservation — i.e. no headroom.
+  const result = await sequelize.query(sql, {
+    bind: [clinicId, limit, amount, channel],
+    type: QueryTypes.SELECT,
+  });
 
-  if (result.rowCount === 0) {
+  if (result.length === 0) {
     return {
-      reserved:    false,
-      reason:      "QUOTA_EXCEEDED",
+      reserved: false,
+      reason: "QUOTA_EXCEEDED",
       currentPlan: sub.plan_type,
       channel,
       limit,
-      used:        channel === "sms" ? sub.sms_credits_used : sub.whatsapp_credits_used,
+      used: channel === "sms" ? sub.sms_credits_used : sub.whatsapp_credits_used,
     };
   }
 
-  const used = result.rows[0].used;
+  const used = Number(result[0].used);
   return {
-    reserved:  true,
-    plan:      sub.plan_type,
+    reserved: true,
+    plan: sub.plan_type,
     channel,
     limit,
     used,
@@ -129,11 +164,11 @@ export async function reserveCredits({ clinicId, channel, amount = 1 }) {
 export async function refundCredits({ clinicId, channel, amount = 1 }) {
   const col = channel === "sms" ? "sms_credits_used" : "whatsapp_credits_used";
   try {
-    await pool.query(
+    await sequelize.query(
       `UPDATE subscriptions
           SET ${col} = GREATEST(${col} - $2, 0)
         WHERE clinic_id = $1`,
-      [clinicId, amount]
+      { bind: [clinicId, amount], type: QueryTypes.UPDATE }
     );
   } catch (err) {
     console.error(`[credits] refund failed for clinic ${clinicId}:`, err.message);
@@ -144,37 +179,42 @@ export async function refundCredits({ clinicId, channel, amount = 1 }) {
  * Read-only snapshot for the frontend (settings, dashboard pill, etc.).
  */
 export async function getCreditSummary(clinicId) {
-  const { rows } = await pool.query(
+  const rows = await sequelize.query(
     `SELECT plan_type, subscription_status,
             sms_credits_used, whatsapp_credits_used,
             current_period_start, current_period_end, credits_reset_at
        FROM subscriptions
       WHERE clinic_id = $1`,
-    [clinicId]
+    { bind: [clinicId], type: QueryTypes.SELECT }
   );
+
   if (rows.length === 0) return null;
 
-  const sub    = rows[0];
+  const sub = rows[0];
   const limits = getLimitsFor(sub.plan_type);
 
   // If period has rolled over but the lazy-reset hasn't fired yet, report 0.
   const periodHasRolled =
-    sub.credits_reset_at && sub.current_period_start &&
+    sub.credits_reset_at &&
+    sub.current_period_start &&
     new Date(sub.credits_reset_at) < new Date(sub.current_period_start);
 
+  const smsUsed = periodHasRolled ? 0 : Number(sub.sms_credits_used);
+  const waUsed = periodHasRolled ? 0 : Number(sub.whatsapp_credits_used);
+
   return {
-    plan:               sub.plan_type,
-    status:             sub.subscription_status,
-    currentPeriodEnd:   sub.current_period_end,
+    plan: sub.plan_type,
+    status: sub.subscription_status,
+    currentPeriodEnd: sub.current_period_end,
     sms: {
-      used:      periodHasRolled ? 0 : sub.sms_credits_used,
-      limit:     limits.smsPerMonth,
-      remaining: Math.max(limits.smsPerMonth - (periodHasRolled ? 0 : sub.sms_credits_used), 0),
+      used: smsUsed,
+      limit: limits.smsPerMonth,
+      remaining: Math.max(limits.smsPerMonth - smsUsed, 0),
     },
     whatsapp: {
-      used:      periodHasRolled ? 0 : sub.whatsapp_credits_used,
-      limit:     limits.whatsAppPerMonth,
-      remaining: Math.max(limits.whatsAppPerMonth - (periodHasRolled ? 0 : sub.whatsapp_credits_used), 0),
+      used: waUsed,
+      limit: limits.whatsAppPerMonth,
+      remaining: Math.max(limits.whatsAppPerMonth - waUsed, 0),
     },
   };
 }

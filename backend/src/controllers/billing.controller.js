@@ -1,5 +1,14 @@
 // backend/src/controllers/billing.controller.js
-import { pool } from "../db/pool.js";
+//
+// PHASE 0 CHANGE: this was the last consumer of src/db/pool.js. All queries now
+// run through the Subscription / WebhookEvent models on the shared Sequelize
+// connection. Behaviour is unchanged; the notable improvement is that
+// upsertSubscription() now runs inside a transaction, so the subscriptions
+// write and the clinics.plan mirror can no longer half-apply.
+
+import { QueryTypes } from "sequelize";
+import { sequelize } from "../config/db.js";
+import { Subscription, WebhookEvent, Clinic } from "../models/index.js";
 import {
   createTransaction,
   verifyWebhookSignature,
@@ -19,19 +28,19 @@ const PRICE_MAP = () => ({
 // ── POST /api/v1/billing/create-checkout ──────────────────────────────────
 export const createCheckout = async (req, res) => {
   try {
-    const { plan } = req.body;                  // 'starter' | 'premium'
-    const priceId  = PRICE_MAP()[plan];
+    const { plan } = req.body; // 'starter' | 'premium'
+    const priceId = PRICE_MAP()[plan];
     if (!priceId) return badRequestResponse(res, "Invalid plan");
 
     const clinicId = req.clinic.id;
-    const userId   = req.user.id;
+    const userId = req.user.id;
 
     // Reuse existing Paddle customer if we already have one
-    const { rows } = await pool.query(
-      "SELECT gateway_customer_id FROM subscriptions WHERE clinic_id = $1",
-      [clinicId]
-    );
-    const customerId = rows[0]?.gateway_customer_id || null;
+    const existing = await Subscription.findOne({
+      where: { clinicId },
+      attributes: ["gatewayCustomerId"],
+    });
+    const customerId = existing?.gatewayCustomerId || null;
 
     const { transactionId, checkoutUrl } = await createTransaction({
       priceId,
@@ -43,7 +52,7 @@ export const createCheckout = async (req, res) => {
 
     return successResponse(res, {
       message: "Checkout created",
-      data:    { transactionId, checkoutUrl, plan },
+      data: { transactionId, checkoutUrl, plan },
     });
   } catch (err) {
     console.error("createCheckout error:", err);
@@ -54,11 +63,20 @@ export const createCheckout = async (req, res) => {
 // ── POST /api/v1/billing/webhook ──────────────────────────────────────────
 // IMPORTANT: this route must receive the RAW body (Buffer), not parsed JSON,
 // because the signature is computed over the exact bytes Paddle sent.
+//
+// It is mounted ONCE, in app.js, BEFORE express.json() is applied. As of
+// Phase 0 the duplicate registration inside billing.routes.js is gone — that
+// copy sat behind the global express.json(), so had it ever become the live
+// route, req.body would have arrived as a parsed object instead of a Buffer and
+// every signature check would have failed silently.
 export const handleWebhook = async (req, res) => {
   const sigHeader = req.headers["paddle-signature"];
-  const rawBody   = req.body instanceof Buffer
-    ? req.body.toString("utf8")
-    : typeof req.body === "string" ? req.body : "";
+  const rawBody =
+    req.body instanceof Buffer
+      ? req.body.toString("utf8")
+      : typeof req.body === "string"
+        ? req.body
+        : "";
 
   if (!verifyWebhookSignature(rawBody, sigHeader, process.env.PADDLE_WEBHOOK_SECRET)) {
     console.warn("[paddle webhook] invalid signature");
@@ -66,34 +84,46 @@ export const handleWebhook = async (req, res) => {
   }
 
   let event;
-  try { event = JSON.parse(rawBody); }
-  catch { return res.status(400).send("Invalid JSON"); }
+  try {
+    event = JSON.parse(rawBody);
+  } catch {
+    return res.status(400).send("Invalid JSON");
+  }
 
   // Idempotency guard — Paddle retries until 2xx, so the same event_id
   // can arrive multiple times. We record + reject duplicates.
-  const eventId   = event.event_id;
+  const eventId = event.event_id;
   const eventType = event.event_type;
   if (!eventId || !eventType) return res.status(400).send("Malformed event");
 
   try {
-    const ins = await pool.query(
-      `INSERT INTO webhook_events (provider, event_id, event_type, payload)
-       VALUES ('paddle', $1, $2, $3)
-       ON CONFLICT (event_id) DO NOTHING
-       RETURNING id`,
-      [eventId, eventType, event]
+    // INSERT ... ON CONFLICT DO NOTHING. Sequelize's ignoreDuplicates maps to
+    // exactly that; a conflict yields a row with a null primary key, which is
+    // how we detect the duplicate without a second round trip.
+    const [record] = await WebhookEvent.bulkCreate(
+      [
+        {
+          provider: "paddle",
+          eventId,
+          eventType,
+          payload: event,
+        },
+      ],
+      { ignoreDuplicates: true, returning: true }
     );
-    if (ins.rowCount === 0) {
+
+    if (!record || record.id === null) {
       // Already processed — return 200 so Paddle stops retrying
       return res.status(200).send("Duplicate, ignored");
     }
 
     await processEvent(event);
 
-    await pool.query(
-      "UPDATE webhook_events SET processed_at = NOW() WHERE event_id = $1",
-      [eventId]
+    await WebhookEvent.update(
+      { processedAt: new Date() },
+      { where: { eventId } }
     );
+
     return res.status(200).send("OK");
   } catch (err) {
     console.error("[paddle webhook] processing error:", err);
@@ -139,72 +169,96 @@ async function processEvent(event) {
 // ── Subscription writers ──────────────────────────────────────────────────
 async function upsertSubscription(sub) {
   const clinicId = sub.custom_data?.clinic_id;
-  if (!clinicId) { console.error("[paddle] missing clinic_id in custom_data"); return; }
+  if (!clinicId) {
+    console.error("[paddle] missing clinic_id in custom_data");
+    return;
+  }
 
-  const priceId    = sub.items?.[0]?.price?.id;
-  const planType   = priceIdToPlan(priceId);
-  if (!planType) { console.error(`[paddle] unknown price ID: ${priceId}`); return; }
+  const priceId = sub.items?.[0]?.price?.id;
+  const planType = priceIdToPlan(priceId);
+  if (!planType) {
+    console.error(`[paddle] unknown price ID: ${priceId}`);
+    return;
+  }
 
   const periodStart = sub.current_billing_period?.starts_at || null;
-  const periodEnd   = sub.current_billing_period?.ends_at   || null;
-  const status      = sub.status;          // 'active' | 'trialing' | etc.
+  const periodEnd = sub.current_billing_period?.ends_at || null;
+  const status = sub.status; // 'active' | 'trialing' | etc.
 
-  await pool.query(
-    `INSERT INTO subscriptions (
-       clinic_id, plan_type, subscription_status,
-       gateway_customer_id, gateway_subscription_id, gateway_price_id,
-       current_period_start, current_period_end
-     ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8)
-     ON CONFLICT (clinic_id) DO UPDATE SET
-       plan_type               = EXCLUDED.plan_type,
-       subscription_status     = EXCLUDED.subscription_status,
-       gateway_customer_id     = EXCLUDED.gateway_customer_id,
-       gateway_subscription_id = EXCLUDED.gateway_subscription_id,
-       gateway_price_id        = EXCLUDED.gateway_price_id,
-       current_period_start    = EXCLUDED.current_period_start,
-       current_period_end      = EXCLUDED.current_period_end,
-       canceled_at             = NULL`,
-    [clinicId, planType, status, sub.customer_id, sub.id, priceId, periodStart, periodEnd]
-  );
+  // Raw upsert rather than Subscription.upsert(): we need ON CONFLICT
+  // (clinic_id) specifically, and we must NOT overwrite the credit counters —
+  // a plan change mid-period must not silently refund a customer's used sends.
+  // Sequelize's upsert() would include every model attribute in the update set.
+  await sequelize.transaction(async (transaction) => {
+    await sequelize.query(
+      `INSERT INTO subscriptions (
+         clinic_id, plan_type, subscription_status,
+         gateway_customer_id, gateway_subscription_id, gateway_price_id,
+         current_period_start, current_period_end
+       ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8)
+       ON CONFLICT (clinic_id) DO UPDATE SET
+         plan_type               = EXCLUDED.plan_type,
+         subscription_status     = EXCLUDED.subscription_status,
+         gateway_customer_id     = EXCLUDED.gateway_customer_id,
+         gateway_subscription_id = EXCLUDED.gateway_subscription_id,
+         gateway_price_id        = EXCLUDED.gateway_price_id,
+         current_period_start    = EXCLUDED.current_period_start,
+         current_period_end      = EXCLUDED.current_period_end,
+         canceled_at             = NULL`,
+      {
+        bind: [
+          clinicId,
+          planType,
+          status,
+          sub.customer_id,
+          sub.id,
+          priceId,
+          periodStart,
+          periodEnd,
+        ],
+        type: QueryTypes.INSERT,
+        transaction,
+      }
+    );
 
-  // Keep clinics.plan in sync for admin/analytics reads. Enforcement no longer
-  // depends on this column, so a failure here must never fail the webhook.
-  try {
-    await pool.query(`UPDATE clinics SET plan = $2 WHERE id = $1`, [clinicId, planType]);
-  } catch (e) {
-    console.warn("[paddle] clinic.plan mirror failed:", e.message);
-  }
+    // Keep clinics.plan in sync for admin/analytics reads. Enforcement no longer
+    // depends on this column, so a failure here must never fail the webhook —
+    // hence the inner catch. It stays inside the transaction so a successful
+    // mirror commits atomically with the subscription write.
+    try {
+      await Clinic.update({ plan: planType }, { where: { id: clinicId }, transaction });
+    } catch (e) {
+      console.warn("[paddle] clinic.plan mirror failed:", e.message);
+    }
+  });
 }
 
 async function markCanceled(sub) {
   // Paddle keeps service running until current_period_end. Status stays
   // 'active' until then; we just record the cancellation timestamp.
-  await pool.query(
-    `UPDATE subscriptions
-       SET subscription_status = $2,
-           canceled_at         = NOW()
-     WHERE gateway_subscription_id = $1`,
-    [sub.id, sub.status]
+  await Subscription.update(
+    { subscriptionStatus: sub.status, canceledAt: new Date() },
+    { where: { gatewaySubscriptionId: sub.id } }
   );
 }
 
 async function updateStatus(sub, status) {
-  await pool.query(
-    `UPDATE subscriptions SET subscription_status = $2
-     WHERE gateway_subscription_id = $1`,
-    [sub.id, status]
+  await Subscription.update(
+    { subscriptionStatus: status },
+    { where: { gatewaySubscriptionId: sub.id } }
   );
 }
 
 async function resetCreditsIfRenewal(txn) {
   // Only reset for subscription renewals, not first-time purchases or one-offs
   if (!txn.subscription_id || txn.origin !== "subscription_recurring") return;
-  await pool.query(
-    `UPDATE subscriptions
-       SET sms_credits_used      = 0,
-           whatsapp_credits_used = 0,
-           credits_reset_at      = NOW()
-     WHERE gateway_subscription_id = $1`,
-    [txn.subscription_id]
+
+  await Subscription.update(
+    {
+      smsCreditsUsed: 0,
+      whatsappCreditsUsed: 0,
+      creditsResetAt: new Date(),
+    },
+    { where: { gatewaySubscriptionId: txn.subscription_id } }
   );
 }

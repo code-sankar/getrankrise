@@ -5,7 +5,11 @@
   "main": "server.js",
   "scripts": {
     "dev": "nodemon -r dotenv/config --experimental-json-modules src/server.js",
-    "start": "node src/server.js"
+    "start": "node src/server.js",
+    "migrate":          "node migrate.js up",
+    "migrate:status":   "node migrate.js status",
+    "migrate:baseline": "node migrate.js baseline",
+    "migrate:check":    "node migrate.js pending"
   },
   "keywords": [
     "user authentication",
@@ -32,6 +36,7 @@
     "pg-connection-string": "^2.12.0",
     "sequelize": "^6.37.8",
     "sequelize-cli": "^6.6.5",
+    "umzug": "^3.8.3",
     "uuid": "^14.0.0"
   },
   "devDependencies": {

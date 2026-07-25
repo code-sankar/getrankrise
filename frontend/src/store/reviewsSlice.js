@@ -1,92 +1,90 @@
-import { createSlice } from "@reduxjs/toolkit";
+/**
+ * reviewsSlice.js — Phase 3 rewrite.
+ *
+ * What changed and why:
+ *
+ *   1. mockReviews is GONE. The slice starts empty and `hydrated` tracks
+ *      whether a fetch has completed. Components use that to distinguish
+ *      "loading" from "genuinely zero reviews" — previously impossible,
+ *      because the mock list made the store look populated from frame one.
+ *
+ *   2. Normalisation lives HERE (normalizeReview), in one exported function.
+ *      The backend speaks { reviewerName, reviewText, reviewDate, replyText };
+ *      every component renders { name, text, date, replied }. One translation
+ *      point, not five ad-hoc ones.
+ *
+ *   3. fetchReviewsSuccess takes the backend envelope
+ *      { reviews, total, cappedByPlan } — NOT a bare array. The old hook
+ *      dispatched the entire envelope into state.list, so the first real
+ *      response would have crashed selectFilteredReviews (.filter on an
+ *      object). Accepting the envelope here makes the contract explicit and
+ *      lets us keep total/cappedByPlan for the free-tier banner.
+ *
+ *   4. selectReviewStats no longer divides by zero. With the mock list gone,
+ *      total === 0 is the NORMAL state until Phase 2 ships — the old selector
+ *      would have rendered "NaN" in three dashboard stat cards.
+ */
 
-const mockReviews = [
-  {
-    id: 1,
-    name: "Jessica R.",
-    rating: 5,
-    text: "Loved the latte art! Staff was super friendly.",
-    date: "2 days ago",
-    platform: "Google",
-    replied: false,
-    reviewCount: 2,
+import { createSlice } from "@reduxjs/toolkit";
+import { formatRelativeDate } from "../utils/formatRelativeDate.js";
+
+// ── Normalisation ─────────────────────────────────────────────────────────────
+// Backend Review model → the shape every component renders. Tolerates already-
+// normalised input (re-dispatch safety) by falling back field-by-field.
+export const normalizeReview = (raw = {}) => ({
+  id: raw.id,
+  name: raw.reviewerName ?? raw.name ?? "Anonymous",
+  rating: Number(raw.rating) || 0,
+  text: raw.reviewText ?? raw.text ?? "",
+  // Human string for display; keep the raw timestamp too so future sorting
+  // doesn't have to parse "3 days ago".
+  date: formatRelativeDate(raw.reviewDate ?? raw.rawDate ?? raw.createdAt),
+  rawDate: raw.reviewDate ?? raw.rawDate ?? raw.createdAt ?? null,
+  platform: raw.platform ?? "Google",
+  replied: Boolean(raw.replied),
+  replyText: raw.replyText ?? null,
+});
+
+const initialState = {
+  list: [], // ← was mockReviews
+  total: 0, // server-side count (may exceed list.length when capped/paginated)
+  cappedByPlan: false, // free tier hit its 20-review ceiling
+  hydrated: false, // true once any fetch has settled (success OR failure)
+  loading: false,
+  error: null,
+  filters: {
+    platform: "All", // "All" | "Google" | "Yelp" | "Facebook"
+    rating: "All", // "All" | "1" | "2" | "3" | "4" | "5"
+    status: "All", // "All" | "Unanswered" | "Answered"
   },
-  {
-    id: 2,
-    name: "Marcus Webb",
-    rating: 2,
-    text: "Long wait times and felt rushed. Not happy.",
-    date: "3 days ago",
-    platform: "Google",
-    replied: false,
-    reviewCount: 5,
-  },
-  {
-    id: 3,
-    name: "Emily Chen",
-    rating: 5,
-    text: "Best clinic in the city! Very professional.",
-    date: "4 days ago",
-    platform: "Yelp",
-    replied: true,
-    reviewCount: 8,
-  },
-  {
-    id: 4,
-    name: "Tom Richards",
-    rating: 4,
-    text: "Great service. Waiting area needs improvement.",
-    date: "5 days ago",
-    platform: "Facebook",
-    replied: false,
-    reviewCount: 1,
-  },
-  {
-    id: 5,
-    name: "Linda Park",
-    rating: 1,
-    text: "Billed incorrectly and staff was rude.",
-    date: "6 days ago",
-    platform: "Google",
-    replied: false,
-    reviewCount: 3,
-  },
-  {
-    id: 6,
-    name: "Sarah M.",
-    rating: 5,
-    text: "Wonderful experience. Dr. Johnson was great!",
-    date: "1 week ago",
-    platform: "Google",
-    replied: true,
-    reviewCount: 4,
-  },
-];
+};
 
 const reviewsSlice = createSlice({
   name: "reviews",
-  initialState: {
-    list: mockReviews, // TODO: replace with real API fetch
-    loading: false,
-    error: null,
-    filters: {
-      platform: "All", // "All" | "Google" | "Yelp" | "Facebook"
-      rating: "All", // "All" | "1" | "2" | "3" | "4" | "5"
-      status: "All", // "All" | "Unanswered" | "Answered"
-    },
-  },
+  initialState,
   reducers: {
     fetchReviewsStart(state) {
       state.loading = true;
       state.error = null;
     },
+
+    // payload: the backend envelope { reviews, total, cappedByPlan }
+    // (the hook normalises each review before dispatching)
     fetchReviewsSuccess(state, action) {
-      state.list = action.payload;
+      const { reviews = [], total = 0, cappedByPlan = false } = action.payload || {};
+      state.list = reviews;
+      state.total = total;
+      state.cappedByPlan = Boolean(cappedByPlan);
       state.loading = false;
+      state.hydrated = true;
     },
+
     fetchReviewsFailure(state, action) {
       state.loading = false;
       state.error = action.payload;
+      state.hydrated = true;
+      // Deliberately NOT clearing state.list: on a transient refetch failure,
+      // stale-but-real data beats a flash to empty.
     },
 
     markReplied(state, action) {
@@ -102,6 +100,12 @@ const reviewsSlice = createSlice({
     clearFilters(state) {
       state.filters = { platform: "All", rating: "All", status: "All" };
     },
+
+    // On logout — prevents the next user briefly seeing the previous
+    // clinic's reviews out of the persisted store.
+    resetReviews() {
+      return initialState;
+    },
   },
 });
 
@@ -112,32 +116,58 @@ export const {
   markReplied,
   setFilter,
   clearFilters,
+  resetReviews,
 } = reviewsSlice.actions;
 
-// ── Selectors (use these in components with useSelector) ──────────────────────
+// ── Selectors ────────────────────────────────────────────────────────────────
+
 export const selectFilteredReviews = (state) => {
   const { list, filters } = state.reviews;
   return list.filter((r) => {
-    if (filters.platform !== "All" && r.platform !== filters.platform)
-      return false;
-    if (filters.rating !== "All" && r.rating !== parseInt(filters.rating))
-      return false;
+    if (filters.platform !== "All" && r.platform !== filters.platform) return false;
+    if (filters.rating !== "All" && r.rating !== parseInt(filters.rating, 10)) return false;
     if (filters.status === "Unanswered" && r.replied) return false;
     if (filters.status === "Answered" && !r.replied) return false;
     return true;
   });
 };
 
+/**
+ * Dashboard stat pills. Guarded: total === 0 is the normal pre-ingestion state
+ * and must render as em-dashes, not NaN.
+ *
+ *   avg        "4.2" | "—"
+ *   coverage   0–100 (% replied)
+ *   sentiment  0–100 (% of 4–5★)
+ *   total      list length, for "n reviews" captions
+ */
 export const selectReviewStats = (state) => {
   const { list } = state.reviews;
   const total = list.length;
+
+  if (total === 0) {
+    return { avg: "—", coverage: 0, sentiment: 0, total: 0, empty: true };
+  }
+
   return {
     avg: (list.reduce((s, r) => s + r.rating, 0) / total).toFixed(1),
     coverage: Math.round((list.filter((r) => r.replied).length / total) * 100),
-    sentiment: Math.round(
-      (list.filter((r) => r.rating >= 4).length / total) * 100,
-    ),
+    sentiment: Math.round((list.filter((r) => r.rating >= 4).length / total) * 100),
+    total,
+    empty: false,
   };
 };
+
+/** Distinguishes the three UI states the Dashboard queue must render. */
+export const selectReviewsViewState = (state) => {
+  const { list, loading, hydrated, error } = state.reviews;
+  if (loading && !hydrated) return "loading"; // first fetch in flight
+  if (error && list.length === 0) return "error"; // fetch failed, nothing cached
+  if (hydrated && list.length === 0) return "empty"; // real, confirmed zero
+  return "ready";
+};
+
+export const selectReviewsCapped = (state) => state.reviews.cappedByPlan;
+export const selectReviewsTotal = (state) => state.reviews.total;
 
 export default reviewsSlice.reducer;

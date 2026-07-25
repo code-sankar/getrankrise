@@ -1,3 +1,9 @@
+import {
+  reserveUsage,
+  refundUsage,
+  usageErrorResponse,
+} from "../services/usage/usage.service.js";
+
 import { Review } from "../models/index.js";
 import {
   successResponse,
@@ -22,32 +28,35 @@ export const listReviews = async (req, res) => {
     const { platform, rating, status } = req.query;
     let { limit, offset } = req.query;
 
-    limit  = Math.min(parseInt(limit, 10)  || 50, 100);
+    limit = Math.min(parseInt(limit, 10) || 50, 100);
     offset = Math.max(parseInt(offset, 10) || 0, 0);
 
     const where = { clinicId: req.clinic.id };
     if (platform) where.platform = platform;
-    if (rating)   where.rating   = parseInt(rating, 10);
-    if (status === "replied")   where.replied = true;
+    if (rating) where.rating = parseInt(rating, 10);
+    if (status === "replied") where.replied = true;
     if (status === "unreplied") where.replied = false;
 
     // ── Free tier hard cap on stored reviews returned ──────────────────────
     // Plan comes from the subscription (single source of truth), not clinic.plan.
-    const sub     = await getSubscriptionState(req.clinic.id);
+    const sub = await getSubscriptionState(req.clinic.id);
     const planCap = capStoredReviews(sub);
     if (planCap !== null) {
       limit = Math.min(limit, planCap - offset);
       if (limit <= 0) {
         return successResponse(res, {
           message: "Free tier limit reached. Upgrade to view more reviews.",
-          data:    { reviews: [], total: planCap, cappedByPlan: true },
+          data: { reviews: [], total: planCap, cappedByPlan: true },
         });
       }
     }
 
     const { count, rows } = await Review.findAndCountAll({
       where,
-      order:  [["reviewDate", "DESC"], ["createdAt", "DESC"]],
+      order: [
+        ["reviewDate", "DESC"],
+        ["createdAt", "DESC"],
+      ],
       limit,
       offset,
     });
@@ -55,8 +64,8 @@ export const listReviews = async (req, res) => {
     return successResponse(res, {
       message: "Reviews fetched",
       data: {
-        reviews:      rows,
-        total:        count,
+        reviews: rows,
+        total: count,
         limit,
         offset,
         cappedByPlan: planCap !== null,
@@ -87,18 +96,22 @@ export const replyToReview = async (req, res) => {
     }
 
     await review.update({
-      replied:   true,
+      replied: true,
       replyText: reply,
       repliedAt: new Date(),
     });
 
     auditFromReq(req, AUDIT_EVENTS.REVIEW_REPLIED, {
-      metadata: { reviewId: review.id, platform: review.platform, rating: review.rating },
+      metadata: {
+        reviewId: review.id,
+        platform: review.platform,
+        rating: review.rating,
+      },
     });
 
     return successResponse(res, {
       message: "Reply posted",
-      data:    review,
+      data: review,
     });
   } catch (err) {
     console.error("replyToReview error:", err);
@@ -109,10 +122,11 @@ export const replyToReview = async (req, res) => {
 // ── POST /api/v1/reviews/:id/ai-reply ────────────────────────────────────────
 // Gated by requireFeature("aiRepliesEnabled") in the route definition
 export const generateAiReply = async (req, res) => {
+  let reserved = false;
   try {
     const { id } = req.params;
     const { reviewText, tone } = req.body;
-
+ 
     // Verify the review actually belongs to this clinic — guards against
     // someone passing an arbitrary review ID
     const review = await Review.findOne({
@@ -121,20 +135,36 @@ export const generateAiReply = async (req, res) => {
     if (!review) {
       return notFoundResponse(res, "Review not found");
     }
-
+ 
+    // ── Reserve BEFORE the OpenAI call ─────────────────────────────────
+    const u = await reserveUsage({ clinicId: req.clinic.id, metric: "ai_reply" });
+    if (!u.reserved) {
+      return usageErrorResponse(res, u);
+    }
+    reserved = true;
+ 
     const { reply, model } = await generateReply({
-      reviewText:    reviewText || review.reviewText,
-      rating:        review.rating,
-      customerName:  review.reviewerName,
-      clinicName:    req.clinic.clinicName,
+      reviewText: reviewText || review.reviewText,
+      rating: review.rating,
+      customerName: review.reviewerName,
+      clinicName: req.clinic.clinicName,
       tone,
     });
-
+ 
     return successResponse(res, {
       message: "Reply generated",
-      data:    { reply, model },
+      data: {
+        reply,
+        model,
+        // Let the UI show "187 of 200 AI replies left this month"
+        usage: { used: u.used, limit: u.limit, remaining: u.remaining },
+      },
     });
   } catch (err) {
+    // OpenAI failed AFTER we reserved → give the unit back.
+    if (reserved) {
+      await refundUsage({ clinicId: req.clinic.id, metric: "ai_reply" });
+    }
     console.error("generateAiReply error:", err);
     return serverErrorResponse(res);
   }
