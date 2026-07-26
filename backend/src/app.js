@@ -1,3 +1,24 @@
+// backend/src/app.js
+//
+// STEP 1 WIRING FIX — changes vs the previous version:
+//   1. Mounts four routers that existed on disk but were never reachable:
+//        /api/v1/oauth      (NEW oauth.routes.js — Google connect flow)
+//        /api/v1/campaigns  (campaign.routes.js — Pulse Campaigns)
+//        /api/v1/usage      (usage.routes.js — metered usage summary)
+//        /api/v1/webhooks   (webhooks.routes.js — inbound Twilio STOP)
+//   2. Deletes the stray app.use(express.json(...)) that sat between the 404
+//      handler and the error handler — dead code that could never execute.
+//
+// INVARIANTS THAT MUST SURVIVE ANY FUTURE EDIT:
+//   * The Paddle webhook is registered FIRST, before express.json(). Its
+//     HMAC-SHA256 signature is computed over the exact raw bytes of the body;
+//     any parser that runs first destroys verification. One webhook route,
+//     here, before the body parser. Never a second one in billing.routes.js.
+//   * /api/v1/webhooks (Twilio inbound) mounts AFTER express.urlencoded —
+//     Twilio posts form-encoded and signs the PARAMS, not raw bytes, so the
+//     normal parser is required, not harmful.
+//   * The 404 handler comes after every route mount; errorHandler is last.
+
 import express      from "express";
 import cors         from "cors";
 import helmet       from "helmet";
@@ -16,8 +37,12 @@ import requestRoutes      from "./routes/request.routes.js";
 import notificationRoutes from "./routes/notification.routes.js";
 import analyticsRoutes    from "./routes/analytics.routes.js";
 import subscriptionRoutes from "./routes/subscription.routes.js";
-import billingRoutes from "./routes/billing.routes.js";
-import competitorRoutes from "./routes/competitor.routes.js";
+import billingRoutes      from "./routes/billing.routes.js";
+import competitorRoutes   from "./routes/competitor.routes.js";
+import oauthRoutes        from "./routes/oauth.routes.js";      // Step 1: new
+import campaignRoutes     from "./routes/campaign.routes.js";   // Step 1: now mounted
+import usageRoutes        from "./routes/usage.routes.js";      // Step 1: now mounted
+import webhookRoutes      from "./routes/webhooks.routes.js";   // Step 1: now mounted
 
 // ── Middleware ────────────────────────────────────────────────────────────────
 import { sanitize }     from "./middleware/sanitize.middleware.js";
@@ -25,7 +50,8 @@ import { errorHandler } from "./middleware/error.middleware.js";
 
 const app = express();
 
-
+// ── Paddle webhook — raw body, BEFORE any parser ─────────────────────────────
+// See invariant block at the top of this file.
 app.post(
   "/api/v1/billing/webhook",
   express.raw({ type: "application/json", limit: "1mb" }),
@@ -52,7 +78,7 @@ app.use(
     },
     crossOriginResourcePolicy: { policy: "cross-origin" },
     referrerPolicy:            { policy: "no-referrer" },
-    // HSTS only meaningful when behind HTTPS — keep helmet default which already includes it in prod
+    // HSTS only meaningful when behind HTTPS — helmet default includes it in prod
   })
 );
 
@@ -67,7 +93,9 @@ const allowedOrigins = (env.CLIENT_URL || "")
 app.use(
   cors({
     origin: (origin, callback) => {
-      // Allow same-origin / curl / mobile apps (no Origin header)
+      // Allow same-origin / curl / mobile apps (no Origin header).
+      // Note: the Google OAuth callback and provider webhooks arrive with no
+      // Origin header, so they pass through here untouched — by design.
       if (!origin) return callback(null, true);
       if (allowedOrigins.includes(origin)) return callback(null, true);
       return callback(new Error("Not allowed by CORS"));
@@ -80,7 +108,7 @@ app.use(
 
 // ── Global rate limit ─────────────────────────────────────────────────────────
 // Catch-all that protects against unauthenticated flooding. Per-route limiters
-// (auth, AI, send) sit on top for tighter caps.
+// (auth, AI, send, oauth callback, inbound SMS) sit on top for tighter caps.
 const globalLimiter = rateLimit({
   windowMs: 60 * 1000,
   max:      env.NODE_ENV === "production" ? 200 : 1000,
@@ -92,7 +120,10 @@ app.use(globalLimiter);
 
 // ── Body parsers ──────────────────────────────────────────────────────────────
 // Keep limits modest — we never accept file uploads on this API.
-app.use(express.json({ limit: "100kb" }));
+// (Campaign CSV imports travel as a JSON string field and fit comfortably:
+// campaign.routes.js caps csvText at 300KB via Joi, so the JSON limit below
+// must stay ≥ that. 400kb gives the rest of the body headroom.)
+app.use(express.json({ limit: "400kb" }));
 app.use(express.urlencoded({ extended: true, limit: "100kb" }));
 app.use(cookieParser());
 
@@ -100,8 +131,8 @@ app.use(cookieParser());
 app.use(sanitize);
 
 // ── Request logging ───────────────────────────────────────────────────────────
-// In dev: full pretty logs. In production: redacted Apache combined format —
-// never logs request bodies (which can contain passwords/tokens).
+// In dev: full pretty logs. In production: redacted format — never logs
+// request bodies (which can contain passwords/tokens).
 if (env.NODE_ENV === "development") {
   app.use(morgan("dev"));
 } else {
@@ -135,8 +166,13 @@ app.use("/api/v1/requests",      requestRoutes);
 app.use("/api/v1/notifications", notificationRoutes);
 app.use("/api/v1/analytics",     analyticsRoutes);
 app.use("/api/v1/subscription",  subscriptionRoutes);
-app.use("/api/v1/billing", billingRoutes);
-app.use("/api/v1/competitors", competitorRoutes);
+app.use("/api/v1/billing",       billingRoutes);
+app.use("/api/v1/competitors",   competitorRoutes);
+app.use("/api/v1/oauth",         oauthRoutes);     // Google connect flow
+app.use("/api/v1/campaigns",     campaignRoutes);  // Pulse Campaigns
+app.use("/api/v1/usage",         usageRoutes);     // metered usage summary
+app.use("/api/v1/webhooks",      webhookRoutes);   // inbound Twilio (STOP)
+
 // ── 404 handler ───────────────────────────────────────────────────────────────
 app.use((req, res) => {
   res.status(404).json({
@@ -144,8 +180,6 @@ app.use((req, res) => {
     message: `Route ${req.originalUrl} not found`,
   });
 });
-
-app.use(express.json({ limit: "100kb" }));
 
 // ── Global error handler — must be last ──────────────────────────────────────
 app.use(errorHandler);

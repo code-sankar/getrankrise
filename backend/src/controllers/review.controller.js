@@ -1,3 +1,21 @@
+// backend/src/controllers/review.controller.js
+//
+// PHASE 8 CHANGE — replyToReview now PUBLISHES to Google (GBP v4 updateReply
+// via replyPublish.service.js) with save-always semantics:
+//
+//   attempt publish → save the reply locally REGARDLESS of publish outcome
+//   → record the outcome in reply_published_at / reply_publish_error
+//   → phrase the response for what actually happened
+//
+// The reply is never lost to a publish failure: quota-0 (approval gate),
+// disconnected Google, revoked grants, deleted reviews, provider 500s — in
+// every case the reply lands in our DB with replied=true, and the
+// sticky-replied merge rule in reviewSync.service.js keeps it there across
+// syncs until publishing eventually succeeds. That rule was written waiting
+// for this file.
+//
+// listReviews and generateAiReply are unchanged from the Phase 5 copy.
+
 import {
   reserveUsage,
   refundUsage,
@@ -14,6 +32,7 @@ import {
 import { capStoredReviews } from "../middleware/tierCap.middleware.js";
 import { getSubscriptionState } from "../services/subscription/subscriptionState.service.js";
 import { generateReply } from "../services/ai/ai.service.js";
+import { publishReplyForReview } from "../services/reviews/replyPublish.service.js";
 import { auditFromReq, AUDIT_EVENTS } from "../utils/auditLog.js";
 
 // ── GET /api/v1/reviews ───────────────────────────────────────────────────────
@@ -78,6 +97,7 @@ export const listReviews = async (req, res) => {
 };
 
 // ── POST /api/v1/reviews/:id/reply ───────────────────────────────────────────
+// Save-always + best-effort publish. See file header.
 export const replyToReview = async (req, res) => {
   try {
     const { id } = req.params;
@@ -95,10 +115,21 @@ export const replyToReview = async (req, res) => {
       return badRequestResponse(res, "This review has already been replied to");
     }
 
+    // ── 1. Best-effort publish to the source platform ──────────────────────
+    // Never throws — returns { published, ... } (see replyPublish.service.js).
+    const publish = await publishReplyForReview({
+      clinicId: req.clinic.id,
+      review,
+      replyText: reply,
+    });
+
+    // ── 2. Save locally REGARDLESS of publish outcome ──────────────────────
     await review.update({
       replied: true,
       replyText: reply,
       repliedAt: new Date(),
+      replyPublishedAt: publish.published ? new Date() : null,
+      replyPublishError: publish.published ? null : publish.message,
     });
 
     auditFromReq(req, AUDIT_EVENTS.REVIEW_REPLIED, {
@@ -106,12 +137,29 @@ export const replyToReview = async (req, res) => {
         reviewId: review.id,
         platform: review.platform,
         rating: review.rating,
+        publishedToPlatform: publish.published,
+        publishReason: publish.reason ?? null,
+        simulated: publish.simulated ?? false,
       },
     });
 
+    // ── 3. Phrase the truth ────────────────────────────────────────────────
+    const message = publish.published
+      ? publish.simulated
+        ? "Reply posted (mock mode — simulated publish to Google)"
+        : "Reply posted to Google"
+      : publish.message; // every reason's message already says "saved here"
+
     return successResponse(res, {
-      message: "Reply posted",
-      data: review,
+      message,
+      data: {
+        review,
+        publish: {
+          published: publish.published,
+          reason: publish.reason ?? null,
+          simulated: publish.simulated ?? false,
+        },
+      },
     });
   } catch (err) {
     console.error("replyToReview error:", err);
@@ -126,7 +174,7 @@ export const generateAiReply = async (req, res) => {
   try {
     const { id } = req.params;
     const { reviewText, tone } = req.body;
- 
+
     // Verify the review actually belongs to this clinic — guards against
     // someone passing an arbitrary review ID
     const review = await Review.findOne({
@@ -135,14 +183,14 @@ export const generateAiReply = async (req, res) => {
     if (!review) {
       return notFoundResponse(res, "Review not found");
     }
- 
+
     // ── Reserve BEFORE the OpenAI call ─────────────────────────────────
     const u = await reserveUsage({ clinicId: req.clinic.id, metric: "ai_reply" });
     if (!u.reserved) {
       return usageErrorResponse(res, u);
     }
     reserved = true;
- 
+
     const { reply, model } = await generateReply({
       reviewText: reviewText || review.reviewText,
       rating: review.rating,
@@ -150,7 +198,7 @@ export const generateAiReply = async (req, res) => {
       clinicName: req.clinic.clinicName,
       tone,
     });
- 
+
     return successResponse(res, {
       message: "Reply generated",
       data: {

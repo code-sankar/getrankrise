@@ -13,12 +13,20 @@
 //   * review m3 gains a Google-side reply after the first sync of a UTC day
 //     → the GBP-reply import path runs
 //
+// PHASE 8 ADDITION: publishReply — simulates a successful GBP updateReply
+// (same interface as the real provider) so replies posted through the app in
+// mock mode get a replyPublishedAt stamp and the full reply UX is testable
+// with zero credentials. It enforces the same 4096-char limit as Google and
+// carries the same production guard.
+//
 // PRODUCTION GUARD: refuses to run when NODE_ENV=production unless
-// REVIEWS_MOCK_ALLOW_PROD=true. Phase 7's scheduler starts claiming the
-// moment isImplemented flips — a prod deploy with mock mode accidentally on
-// must fail loudly, not silently fill real dashboards with fake patients.
+// REVIEWS_MOCK_ALLOW_PROD=true. The scheduler starts claiming the moment
+// isImplemented flips — a prod deploy with mock mode accidentally on must
+// fail loudly, not silently fill real dashboards with fake patients.
 
 import crypto from "node:crypto";
+
+export const MAX_REPLY_COMMENT = 4096;
 
 const NAMES = [
   "Asha Sharma", "Ravi Patel", "Mina Rao", "Joseph K", "Priya Nair",
@@ -41,14 +49,19 @@ const TEXTS = [
 
 const hashInt = (s) => crypto.createHash("sha256").update(s).digest().readUInt32BE(0);
 
-export async function fetchReviewsPage({ locationId, pageToken }) {
+function guardProd(what) {
   if (process.env.NODE_ENV === "production" && process.env.REVIEWS_MOCK_ALLOW_PROD !== "true") {
     const err = new Error(
-      "Mock review provider invoked in production. Set REVIEWS_MOCK=false (and complete GBP approval) or explicitly allow with REVIEWS_MOCK_ALLOW_PROD=true."
+      `Mock review provider invoked in production (${what}). Set REVIEWS_MOCK=false ` +
+        "(and complete GBP approval) or explicitly allow with REVIEWS_MOCK_ALLOW_PROD=true."
     );
     err.code = "MOCK_IN_PROD";
     throw err;
   }
+}
+
+export async function fetchReviewsPage({ locationId, pageToken }) {
+  guardProd("fetchReviewsPage");
 
   const seed = hashInt(String(locationId || "loc"));
   const count = 22 + (seed % 14); // 22–35 reviews per location, stable
@@ -99,5 +112,39 @@ export async function fetchReviewsPage({ locationId, pageToken }) {
     reviews,
     nextPageToken: end < count ? String(page + 1) : null,
     totalReviewCount: count,
+  };
+}
+
+/**
+ * Simulated GBP updateReply. Same interface and same validation posture as
+ * the real provider (empty rejected, 4096-char truncation), so controller
+ * behaviour is identical in mock and real mode — only the network call is
+ * missing.
+ *
+ * NOTE ON THE ROUND-TRIP: replies "published" here do NOT appear in later
+ * fetchReviewsPage output (that data is deterministic by seed). The
+ * sticky-replied merge rule in reviewSync.service.js is exactly what keeps
+ * such rows replied across syncs — so mock mode incidentally regression-tests
+ * that rule on every sync after a reply.
+ */
+export async function publishReply({ reviewId, comment }) {
+  guardProd("publishReply");
+
+  const trimmed = String(comment ?? "").trim();
+  if (!trimmed) {
+    const err = new Error("Reply comment is empty");
+    err.code = "EMPTY_REPLY";
+    throw err;
+  }
+  if (!reviewId) {
+    const err = new Error("Mock publish requires a reviewId");
+    err.code = "GBP_NOT_FOUND";
+    throw err;
+  }
+
+  return {
+    comment: trimmed.slice(0, MAX_REPLY_COMMENT),
+    updateTime: new Date().toISOString(),
+    simulated: true,
   };
 }

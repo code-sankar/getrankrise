@@ -39,7 +39,7 @@
 import { QueryTypes } from "sequelize";
 import { sequelize } from "../../config/db.js";
 import { PlatformConnection } from "../../models/index.js";
-import { getValidAccessToken } from "../platforms/googleAuth.service.js";
+import { getValidAccessToken } from "../google/googleAuth.service.js";
 import { computeSentiment } from "../../utils/sentiment.js";
 import { getSubscriptionState } from "../subscription/subscriptionState.service.js";
 import { env } from "../../config/env.js";
