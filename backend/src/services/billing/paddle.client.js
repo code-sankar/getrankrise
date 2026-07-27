@@ -1,12 +1,22 @@
 // backend/src/services/billing/paddle.client.js
-import crypto from "crypto";
+//
+// Env hygiene: this file now reads Paddle config from the validated `env`
+// object (config/env.js) instead of raw process.env. env.js soft-checks the
+// Paddle set at boot, so by the time these run the values are guaranteed
+// present-or-all-absent. The checkout success redirect now uses env.CLIENT_URL
+// — the old process.env.FRONTEND_URL (a second name for the same concept that
+// broke checkouts when only CLIENT_URL was set) is gone.
 
-const API_BASE = process.env.PADDLE_ENVIRONMENT === "production"
-  ? "https://api.paddle.com"
-  : "https://sandbox-api.paddle.com";
+import crypto from "crypto";
+import { env } from "../../config/env.js";
+
+const API_BASE =
+  env.PADDLE_ENVIRONMENT === "production"
+    ? "https://api.paddle.com"
+    : "https://sandbox-api.paddle.com";
 
 const headers = () => ({
-  Authorization: `Bearer ${process.env.PADDLE_API_KEY}`,
+  Authorization: `Bearer ${env.PADDLE_API_KEY}`,
   "Content-Type": "application/json",
 });
 
@@ -18,7 +28,7 @@ export async function createTransaction({ priceId, customerId, customerEmail, cl
   const body = {
     items: [{ price_id: priceId, quantity: 1 }],
     custom_data: { clinic_id: clinicId, user_id: userId },
-    checkout: { url: `${process.env.FRONTEND_URL}/dashboard?upgrade=success` },
+    checkout: { url: `${env.CLIENT_URL}/dashboard?upgrade=success` },
   };
 
   if (customerId)        body.customer_id = customerId;
@@ -48,7 +58,7 @@ export async function createTransaction({ priceId, customerId, customerEmail, cl
  *
  * @param {string} rawBody     The raw request body as a UTF-8 string
  * @param {string} sigHeader   Contents of the Paddle-Signature header
- * @param {string} secret      PADDLE_WEBHOOK_SECRET
+ * @param {string} secret      env.PADDLE_WEBHOOK_SECRET
  * @returns {boolean}
  */
 export function verifyWebhookSignature(rawBody, sigHeader, secret) {
@@ -75,7 +85,7 @@ export function verifyWebhookSignature(rawBody, sigHeader, secret) {
 
 /** Maps a Paddle price ID back to our internal plan_type. */
 export function priceIdToPlan(priceId) {
-  if (priceId === process.env.PADDLE_PRICE_ID_STARTER) return "starter";
-  if (priceId === process.env.PADDLE_PRICE_ID_PREMIUM) return "premium";
+  if (priceId === env.PADDLE_PRICE_ID_STARTER) return "starter";
+  if (priceId === env.PADDLE_PRICE_ID_PREMIUM) return "premium";
   return null;
 }

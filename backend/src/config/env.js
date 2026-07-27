@@ -48,6 +48,35 @@ if (googleSet.length === googleVars.length && !process.env.TOKEN_ENCRYPTION_KEY)
   process.exit(1);
 }
 
+// ── Paddle billing prerequisites — soft-checked ──────────────────────────────
+// Same pattern as Google above: billing is optional at boot (a dev box not
+// touching payments runs fine), but it's all-or-nothing. The moment ANY Paddle
+// var is set, the full set required for checkout AND webhook verification must
+// be present — otherwise checkouts silently half-work and every webhook fails
+// signature verification with a 401 that only shows up as failed deliveries in
+// the Paddle dashboard (with customers stuck on Free after paying).
+//
+// Excluded from the set on purpose:
+//   PADDLE_ENVIRONMENT — has a safe default ("sandbox"); never fatal.
+//   CLIENT_URL         — already in REQUIRED above; it's the checkout success
+//                        redirect base (paddle.client.js), so it's guaranteed.
+const paddleVars = [
+  "PADDLE_API_KEY",
+  "PADDLE_WEBHOOK_SECRET",
+  "PADDLE_PRICE_ID_STARTER",
+  "PADDLE_PRICE_ID_PREMIUM",
+];
+const paddleSet = paddleVars.filter((k) => process.env[k]);
+if (paddleSet.length > 0 && paddleSet.length < paddleVars.length) {
+  console.error(
+    `\n❌ Partial Paddle billing config. Found ${paddleSet.join(", ")} but missing ` +
+      `${paddleVars.filter((k) => !process.env[k]).join(", ")}.\n` +
+      "   Set all four or none. A half-configured Paddle integration accepts\n" +
+      "   payments it cannot verify, so we refuse to boot it.\n"
+  );
+  process.exit(1);
+}
+
 // ── Export validated env object — use this everywhere instead of process.env ─
 export const env = {
   // Server
@@ -67,7 +96,9 @@ export const env = {
   ACCESS_TOKEN_EXPIRY: process.env.ACCESS_TOKEN_EXPIRY || "15m",
   REFRESH_TOKEN_EXPIRY: process.env.REFRESH_TOKEN_EXPIRY || "7d",
 
-  // Frontend
+  // Frontend — the single source for the app's public URL. Used for CORS and
+  // as the Paddle checkout success redirect base (see paddle.client.js). The
+  // old FRONTEND_URL alias is gone; everything reads CLIENT_URL now.
   CLIENT_URL: process.env.CLIENT_URL,
 
   // ── Google OAuth (Phase 1) ─────────────────────────────────────────────
@@ -88,13 +119,22 @@ export const env = {
   TOKEN_ENCRYPTION_KEY: process.env.TOKEN_ENCRYPTION_KEY || null,
   TOKEN_ENCRYPTION_KEY_PREVIOUS: process.env.TOKEN_ENCRYPTION_KEY_PREVIOUS || null,
 
+  // ── Paddle billing (Merchant of Record) ────────────────────────────────
+  // Soft-checked above: set all four (API key, webhook secret, both price IDs)
+  // or none. PADDLE_ENVIRONMENT defaults to sandbox; set it to "production" to
+  // hit live Paddle. Consumed by services/billing/paddle.client.js and
+  // controllers/billing.controller.js.
+  PADDLE_ENVIRONMENT: process.env.PADDLE_ENVIRONMENT || "sandbox",
+  PADDLE_API_KEY: process.env.PADDLE_API_KEY || null,
+  PADDLE_WEBHOOK_SECRET: process.env.PADDLE_WEBHOOK_SECRET || null,
+  PADDLE_PRICE_ID_STARTER: process.env.PADDLE_PRICE_ID_STARTER || null,
+  PADDLE_PRICE_ID_PREMIUM: process.env.PADDLE_PRICE_ID_PREMIUM || null,
+
   // Third party (optional — only validated when features are used)
   OPENAI_API_KEY: process.env.OPENAI_API_KEY || null,
   TWILIO_SID: process.env.TWILIO_ACCOUNT_SID || null,
   TWILIO_TOKEN: process.env.TWILIO_AUTH_TOKEN || null,
   TWILIO_PHONE: process.env.TWILIO_PHONE_NUMBER || null,
-  SENDGRID_API_KEY: process.env.SENDGRID_API_KEY || null,
-  STRIPE_SECRET_KEY: process.env.STRIPE_SECRET_KEY || null,
   APIFY_TOKEN: process.env.APIFY_TOKEN,
   DATAFORSEO_LOGIN: process.env.DATAFORSEO_LOGIN,
   DATAFORSEO_PASSWORD: process.env.DATAFORSEO_PASSWORD,

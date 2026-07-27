@@ -2,13 +2,30 @@
  * sms/index.js
  * Provider factory for outbound messaging (SMS + WhatsApp).
  *
- * Strategy: route domestic Indian traffic via MSG91 (cheaper local SMS),
- * everything else via Twilio. Detection is done in this order:
+ * Routing strategy:
+ *   SMS      → domestic Indian traffic via MSG91 (cheaper local SMS),
+ *              everything else via Twilio.
+ *   WhatsApp → ALWAYS Twilio, regardless of country (see note below).
+ *
+ * India detection (SMS only) is done in this order:
  *   1. Explicit country code on the clinic (req.clinic.countryCode)
  *   2. Phone number prefix (+91 → India, otherwise international)
  *
+ * ── Why WhatsApp is Twilio-only for now ─────────────────────────────────────
+ * MSG91's WhatsApp integration is not wired yet (msg91.provider.sendWhatsApp
+ * throws "not implemented"). Previously, a WhatsApp message to an Indian
+ * destination resolved to MSG91 and failed for every recipient — which, for a
+ * Premium clinic in India, silently broke the whole WhatsApp channel. Until a
+ * domestic WhatsApp provider (MSG91 or Gupshup) lands, every WhatsApp message
+ * goes through Twilio. Twilio's WhatsApp API delivers to Indian numbers too, so
+ * this is correct, just not the cheapest possible route.
+ *
+ * TO RESTORE DOMESTIC WHATSAPP LATER: implement sendWhatsApp in the domestic
+ * provider, then drop the `channel === "WhatsApp"` short-circuit in
+ * getProvider() so WhatsApp falls back through the same India routing as SMS.
+ *
  * Every provider exposes the same contract:
- *   sendSms({ to, body, idempotencyKey? }) → { id, provider, status }
+ *   sendSms({ to, body, idempotencyKey? })      → { id, provider, status }
  *   sendWhatsApp({ to, body, idempotencyKey? }) → { id, provider, status }
  *
  * Providers return a { simulated: true } flag when no credentials are present,
@@ -30,16 +47,22 @@ const isIndianNumber = (phone, countryCode) => {
 };
 
 /**
- * Resolves the right provider for a given destination.
+ * Resolves the right provider for a given destination + channel.
+ *
  * @param {Object} ctx
  * @param {string} ctx.phone
  * @param {string} [ctx.countryCode] - 2-letter ISO from clinic profile
+ * @param {string} [ctx.channel]     - "SMS" | "WhatsApp" (defaults to "SMS")
  * @returns {Object} provider module with sendSms / sendWhatsApp
  */
-export const getProvider = ({ phone, countryCode }) => {
-  if (isIndianNumber(phone, countryCode)) {
-    return msg91;
-  }
+export const getProvider = ({ phone, countryCode, channel = "SMS" } = {}) => {
+  // WhatsApp has no domestic provider yet — route it through Twilio for every
+  // destination, including India. See the file header for the rationale and
+  // the steps to re-enable domestic routing once MSG91/Gupshup WhatsApp lands.
+  if (channel === "WhatsApp") return twilio;
+
+  // SMS: domestic Indian traffic → MSG91, everything else → Twilio.
+  if (isIndianNumber(phone, countryCode)) return msg91;
   return twilio;
 };
 
@@ -61,9 +84,12 @@ export const sendMessage = async ({
   countryCode,
   idempotencyKey,
 }) => {
-  const provider = getProvider({ phone: to, countryCode });
+  const provider = getProvider({ phone: to, countryCode, channel });
 
   if (channel === "WhatsApp") {
+    // Defensive: with the channel-aware getProvider above this is always
+    // Twilio, which implements sendWhatsApp. The guard stays so a future
+    // routing change can't silently call an undefined method.
     if (typeof provider.sendWhatsApp !== "function") {
       throw new Error("WhatsApp not supported by selected provider");
     }

@@ -99,23 +99,23 @@ export default function Analytics() {
   const totalPlatform = platforms.reduce((s, p) => s + p.value, 0);
   const lastMonth     = growthData[growthData.length - 1]?.month;
 
-  // ── Fetch — API returns raw reviews, slice derives everything ─────────────
+ // ── Fetch — the server returns the final aggregate; the slice just stores it.
+  // (Phase 4: getRawReviews + client-side derivation are gone. getAnalytics
+  // returns { summaryStats, growthData, ratingBreakdown, platformData,
+  // cappedByPlan } already shaped for the charts.)
   const fetchData = useCallback(async () => {
-  dispatch(fetchAnalyticsStart());
-  try {
-    const rawReviews = await analyticsAPI.getRawReviews(dateRange);
-    // If API returns null, skip dispatch — slice keeps its own initial data
-    if (rawReviews) {
-      dispatch(fetchAnalyticsSuccess(rawReviews));
-    } else {
-      dispatch(fetchAnalyticsFailure(null)); // clears loading, keeps mock data
+    dispatch(fetchAnalyticsStart());
+    try {
+      const aggregate = await analyticsAPI.getAnalytics(dateRange);
+      dispatch(fetchAnalyticsSuccess(aggregate));
+    } catch (err) {
+      dispatch(
+        fetchAnalyticsFailure(
+          err.response?.data?.message || err.message || "Failed to load analytics."
+        )
+      );
     }
-  } catch (err) {
-    dispatch(fetchAnalyticsFailure(
-      err.response?.data?.message || err.message || "Failed to load analytics."
-    ));
-  }
-}, [dispatch, dateRange]);
+  }, [dispatch, dateRange]);
 
   // Re-fetch whenever dateRange changes
   useEffect(() => { fetchData(); }, [fetchData]);

@@ -23,8 +23,9 @@ const SECTIONS = [
           </li>
           <li>
             <strong>Review Data</strong> — Content of patient reviews pulled via
-            the Google Business Profile API, Yelp API, and Facebook Graph API on
-            your behalf.
+            the Google Business Profile API on your behalf. (Support for
+            additional review platforms such as Yelp and Facebook may be added
+            over time.)
           </li>
           <li>
             <strong>Patient Contact Data</strong> — Phone numbers and email
@@ -36,9 +37,9 @@ const SECTIONS = [
             duration and browser type to improve our product.
           </li>
           <li>
-            <strong>Billing Information</strong> — Subscription plan details
-            processed securely via Stripe. We never store full card numbers on
-            our servers.
+            <strong>Billing Information</strong> — Subscription plan details.
+            Payments are processed by Paddle, our Merchant of Record; your card
+            details are handled entirely by Paddle and never reach our servers.
           </li>
           <li>
             <strong>Device & Log Data</strong> — IP address, device type and
@@ -71,8 +72,10 @@ const SECTIONS = [
           </li>
           <li>
             <strong>Review Request Sending</strong> — Patient contact details
-            you provide are used exclusively to send SMS or email review
-            requests via Twilio and SendGrid on your instruction.
+            you provide are used exclusively to send SMS and WhatsApp review
+            requests via Twilio and MSG91 on your instruction. See "Patient
+            Messaging & Opt-Out" below for how recipients can stop these
+            messages.
           </li>
           <li>
             <strong>Analytics & Insights</strong> — Aggregated review data is
@@ -80,9 +83,10 @@ const SECTIONS = [
             share individual clinic data with other clients.
           </li>
           <li>
-            <strong>Account Communication</strong> — We send transactional
-            emails (password resets, billing receipts, urgent review alerts) to
-            the email address on your account.
+            <strong>Account Communication</strong> — We may send account and
+            transactional notices (such as security, billing, or urgent review
+            alerts) to the email address on your account. Billing receipts for
+            paid plans are issued by Paddle.
           </li>
           <li>
             <strong>Security & Fraud Prevention</strong> — Log data is used to
@@ -201,12 +205,12 @@ const SECTIONS = [
             API Terms of Service.
           </li>
           <li>
-            <strong>Twilio</strong> — Used to send SMS review requests to
-            patients on your behalf. Governed by Twilio's Privacy Policy.
+            <strong>Twilio</strong> — Used to send SMS and WhatsApp review
+            requests on your behalf. Governed by Twilio's Privacy Policy.
           </li>
           <li>
-            <strong>SendGrid</strong> — Used to send email review requests and
-            transactional emails. Governed by Twilio SendGrid's Privacy Policy.
+            <strong>MSG91</strong> — Used to route SMS review requests to Indian
+            recipients on your behalf. Governed by MSG91's Privacy Policy.
           </li>
           <li>
             <strong>OpenAI</strong> — Used to generate AI-powered reply drafts.
@@ -215,15 +219,62 @@ const SECTIONS = [
             these terms.
           </li>
           <li>
-            <strong>Stripe</strong> — Used for subscription billing. Card data
-            is handled entirely by Stripe and never touches our servers.
-            Governed by Stripe's Privacy Policy.
+            <strong>Paddle</strong> — Our Merchant of Record for subscription
+            billing. Paddle processes payments and handles applicable taxes;
+            card data is handled entirely by Paddle and never touches our
+            servers. Governed by Paddle's Privacy Policy.
           </li>
         </ul>
         <p className="mt-3">
           We carefully vet all third-party providers and only share the minimum
           data necessary for each service to function.
         </p>
+      </>
+    ),
+  },
+  {
+    id: "messaging-optout",
+    title: "Patient Messaging & Opt-Out",
+    color: "bg-cyan-500",
+    highlight: true,
+    content: (
+      <>
+        <p>
+          When a clinic uses GetRankRise to request a review, we send an SMS or
+          WhatsApp message to the phone number the clinic provides, on the
+          clinic's instruction. We act as a processor for the clinic, which is
+          responsible for having consent to contact you.
+        </p>
+        <ul>
+          <li>
+            <strong>Delivery Providers</strong> — Messages are delivered through
+            Twilio and, for SMS to Indian recipients, MSG91. Your number is
+            shared with these providers only to deliver the message.
+          </li>
+          <li>
+            <strong>How to Opt Out</strong> — You can stop these messages at any
+            time by replying <strong>STOP</strong> (or UNSUBSCRIBE, CANCEL, END,
+            or QUIT) to the message. To resume, reply <strong>START</strong>.
+          </li>
+          <li>
+            <strong>Platform-Wide Suppression</strong> — When you opt out, we add
+            your number to a suppression list that blocks all future review
+            messages sent through GetRankRise — across every business that uses
+            our platform, not only the one that messaged you.
+          </li>
+          <li>
+            <strong>What We Keep</strong> — For an opt-out we retain only the
+            phone number and the fact that it opted out, solely to honor your
+            choice. Patient contact lists uploaded for a send are not retained
+            beyond the sending window (see Data Storage & Retention).
+          </li>
+          <li>
+            <strong>Your Rights</strong> — Laws such as the U.S. TCPA and India's
+            TRAI regulations give you the right not to receive unsolicited
+            commercial messages. To raise a concern about messages you received,
+            contact us at <strong>privacy@getrankrise.com</strong>.
+          </li>
+        </ul>
       </>
     ),
   },
@@ -484,7 +535,7 @@ export default function PrivacyPolicy() {
 
         {/* Sticky TopBar */}
         <div className="sticky top-0 z-50">
-          <TopBar title="Privacy Policy" />
+          <TopBar title="Privacy Policy" onMenuClick={() => setSidebarOpen(true)} />
         </div>
 
         <main className="flex-1 p-6 lg:p-10">
@@ -587,33 +638,15 @@ export default function PrivacyPolicy() {
                   </svg>
                   privacy@getrankrise.com
                 </a>
-                <span className={dark ? "text-slate-700" : "text-slate-300"}>
-                  ·
+                <span className={dark ? "text-slate-700" : "text-slate-300"}>·</span>
+                <span className={dark ? "text-slate-400" : "text-slate-500"}>
+                  We respond within 30 days
                 </span>
-                <a
-                  href="mailto:security@getrankrise.com"
-                  className="flex items-center gap-1.5 text-indigo-500 font-semibold hover:text-indigo-400 transition-colors"
-                >
-                  <svg
-                    className="w-3.5 h-3.5"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"
-                    />
-                  </svg>
-                  security@getrankrise.com
-                </a>
               </div>
               <p
-                className={`text-[10px] ${dark ? "text-slate-600" : "text-slate-400"}`}
+                className={`text-[10px] ${dark ? "text-slate-400" : "text-slate-500"}`}
               >
-                GetRankRise · Data Protection Officer · Response within 30 days
+                © {new Date().getFullYear()} GetRankRise. All rights reserved.
               </p>
             </div>
           </div>

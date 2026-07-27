@@ -27,7 +27,7 @@ const SECTIONS = [
         <ul>
           <li><strong>Review Monitoring</strong> — Aggregation and display of patient reviews from Google, Yelp, and Facebook via their respective APIs.</li>
           <li><strong>AI Reply Generation</strong> — Automated drafting of review responses using large language model technology powered by OpenAI.</li>
-          <li><strong>Review Request Campaigns</strong> — Sending personalised SMS and email messages to patients requesting Google reviews, via Twilio and SendGrid.</li>
+          <li><strong>Review Request Campaigns</strong> — Sending personalised SMS and WhatsApp messages to patients requesting Google reviews. Messages are delivered via Twilio, with SMS to Indian recipients routed via MSG91.</li>
           <li><strong>Analytics & Reporting</strong> — Performance dashboards showing review trends, sentiment scores, response rates, and competitor comparisons.</li>
           <li><strong>Competitor Tracking</strong> — Public review data monitoring for competing clinics in your area.</li>
         </ul>
@@ -66,7 +66,7 @@ const SECTIONS = [
           <li><strong>Spam</strong> — Sending unsolicited review requests to individuals who have not consented to receive communications from your clinic or who are not your actual patients.</li>
           <li><strong>Harassment</strong> — Using the platform to harass, threaten, or intimidate reviewers, employees, or any third party.</li>
           <li><strong>Data Scraping</strong> — Automated scraping, crawling, or extraction of data from the GetRankRise platform beyond what is permitted by the API.</li>
-          <li><strong>Security Attacks</strong> — Attempting to probe, scan, or test the vulnerability of our systems, or circumsenting authentication or security measures.</li>
+          <li><strong>Security Attacks</strong> — Attempting to probe, scan, or test the vulnerability of our systems, or circumventing authentication or security measures.</li>
           <li><strong>Illegal Activity</strong> — Using the platform to facilitate any activity that violates applicable local, national, or international laws or regulations.</li>
           <li><strong>Reverse Engineering</strong> — Decompiling, disassembling, or otherwise attempting to derive the source code of the GetRankRise platform.</li>
           <li><strong>Reselling</strong> — Reselling, sublicensing, or otherwise commercialising access to GetRankRise without our prior written consent.</li>
@@ -83,14 +83,14 @@ const SECTIONS = [
       <>
         <p>GetRankRise operates on a subscription model. By subscribing you agree to the following billing terms:</p>
         <ul>
-          <li><strong>Subscription Plans</strong> — We offer Starter ($49/month), Growth ($99/month), and Agency ($299/month) plans. Plan details and features are described on our pricing page.</li>
+          <li><strong>Subscription Plans</strong> — We offer a Free plan and two paid plans: Starter ($49/month) and Premium ($99/month). Plan details and features are described on our pricing page.</li>
           <li><strong>Billing Cycle</strong> — Subscriptions are billed monthly in advance on the anniversary of your subscription start date.</li>
-          <li><strong>Payment Processing</strong> — All payments are processed by Stripe. By subscribing you agree to Stripe's terms of service. We do not store your card details on our servers.</li>
+          <li><strong>Payment Processing & Merchant of Record</strong> — Payments are processed by Paddle.com Market Limited ("Paddle"), which acts as the Merchant of Record (authorised reseller) for all GetRankRise subscriptions. Paddle — not GetRankRise — is the seller of record on your transaction, processes the payment, and appears on your card or bank statement. Supported methods include cards and, for customers in India, UPI and NetBanking. By subscribing you agree to Paddle's Buyer Terms. We never receive or store your full card details.</li>
           <li><strong>Failed Payments</strong> — If a payment fails, we will retry up to 3 times over 7 days. If payment cannot be collected, your account will be suspended until payment is resolved.</li>
           <li><strong>Plan Changes</strong> — Upgrades take effect immediately and are prorated. Downgrades take effect at the start of the next billing cycle.</li>
           <li><strong>Refunds</strong> — We offer a 14-day money-back guarantee for new subscribers. After 14 days, all payments are non-refundable except where required by applicable law.</li>
           <li><strong>Price Changes</strong> — We reserve the right to change subscription prices with at least 30 days' written notice. Continued use after a price change constitutes acceptance of the new pricing.</li>
-          <li><strong>Taxes</strong> — Subscription prices are exclusive of applicable taxes. You are responsible for any VAT, GST, or sales tax applicable in your jurisdiction.</li>
+          <li><strong>Taxes</strong> — As Merchant of Record, Paddle calculates, collects, and remits any applicable sales tax, VAT, or GST on your subscription. Any such taxes are shown at checkout and on your Paddle receipt.</li>
         </ul>
       </>
     ),
@@ -107,7 +107,7 @@ const SECTIONS = [
           <li><strong>Your Content</strong> — You retain ownership of review data, clinic information, and other content you provide to the platform. By using GetRankRise, you grant us a licence to process and display that content to deliver the service.</li>
           <li><strong>Feedback</strong> — If you provide suggestions, ideas, or feedback about GetRankRise, you grant us an irrevocable, royalty-free right to use that feedback without any obligation to you.</li>
           <li><strong>Restrictions</strong> — You may not copy, modify, distribute, sell, or create derivative works of GetRankRise or its content without our prior written consent.</li>
-          <li><strong>Third-Party Marks</strong> — Google, Yelp, Facebook, Twilio, Stripe, and OpenAI are trademarks of their respective owners. Our use of these names is for descriptive purposes only and does not imply endorsement.</li>
+          <li><strong>Third-Party Marks</strong> — Google, Yelp, Facebook, Twilio, MSG91, Paddle, and OpenAI are trademarks of their respective owners. Our use of these names is for descriptive purposes only and does not imply endorsement.</li>
         </ul>
       </>
     ),
@@ -142,12 +142,31 @@ const SECTIONS = [
         <p>GetRankRise integrates with third-party services to deliver its features. Your use of these integrations is subject to the respective third-party terms:</p>
         <ul>
           <li><strong>Google Business Profile API</strong> — You authorise us to access your Google Business Profile data on your behalf. You must comply with Google's Terms of Service and API policies.</li>
-          <li><strong>Twilio</strong> — SMS review requests are sent via Twilio. You are responsible for ensuring you have appropriate patient consent before sending SMS communications, as required by the Telephone Consumer Protection Act (TCPA) and similar laws.</li>
-          <li><strong>SendGrid</strong> — Email communications are sent via SendGrid. You must comply with CAN-SPAM, GDPR, and other applicable email marketing regulations.</li>
+          <li><strong>Twilio</strong> — SMS and WhatsApp review requests are sent via Twilio. You are responsible for obtaining appropriate consent before messaging, as required by the U.S. Telephone Consumer Protection Act (TCPA), India's TRAI regulations, and similar laws. See the Messaging Consent & Opt-Out section.</li>
+          <li><strong>MSG91</strong> — SMS review requests to Indian recipients are routed via MSG91. Use of MSG91 requires DLT-registered senders and templates; see the Messaging Consent & Opt-Out section for your obligations.</li>
           <li><strong>OpenAI</strong> — AI-generated reply drafts are produced by OpenAI. These are suggestions only — you are responsible for reviewing and approving all replies before posting them publicly.</li>
-          <li><strong>Stripe</strong> — Billing is handled by Stripe. You agree to Stripe's terms of service when subscribing.</li>
+          <li><strong>Paddle</strong> — Subscription billing is handled by Paddle, our Merchant of Record. Paddle processes your payment and manages applicable taxes. You agree to Paddle's Buyer Terms when subscribing.</li>
         </ul>
         <p>We are not responsible for the actions, content, or policies of third-party services. Any disputes with third-party providers must be resolved directly with those providers.</p>
+      </>
+    ),
+  },
+  {
+    id:    "messaging-consent",
+    title: "Messaging Consent & Opt-Out",
+    color: "bg-cyan-500",
+    highlight: true,
+    content: (
+      <>
+        <p>Pulse Campaigns and individual review requests send SMS and WhatsApp messages to the recipients you provide, under your business identity. For regulatory purposes you — not GetRankRise — are the sender, and you are solely responsible for having a lawful basis to contact each recipient.</p>
+        <ul>
+          <li><strong>Prior Consent</strong> — You represent that every recipient you upload is an actual patient or customer of your business who has given you the consent required by law to receive SMS or WhatsApp messages from you. You must not upload purchased, rented, scraped, or otherwise third-party contact lists.</li>
+          <li><strong>United States (TCPA / CTIA)</strong> — Where the Telephone Consumer Protection Act and CTIA messaging principles apply, you are responsible for obtaining the required prior express (or prior express written) consent and for including clear opt-out instructions — for example, "Reply STOP to unsubscribe" — in your message content.</li>
+          <li><strong>India (TRAI / DLT)</strong> — For messages to Indian recipients, you are responsible for compliance with TRAI's Telecom Commercial Communications Customer Preference Regulations, including registration of your sender header and message templates on the DLT platform and respect for recipients' Do-Not-Disturb (DND) preferences.</li>
+          <li><strong>Automatic Opt-Out Handling</strong> — Our platform automatically detects and honors standard opt-out replies (STOP, UNSUBSCRIBE, CANCEL, END, QUIT, and similar). When a recipient opts out, that phone number is added to a suppression list and blocked from all future messages <em>across every GetRankRise account — not only yours</em>. This platform-wide suppression is intentional and compliance-safe: a person who replied STOP did not consent to being contacted through us by a different business. A recipient may later re-subscribe by replying START.</li>
+          <li><strong>No Circumvention</strong> — You must not attempt to bypass, remove, or re-add a suppressed number, and you must promptly honor any opt-out a recipient communicates to you directly by other means. You may also add numbers to your own suppression list from within the app.</li>
+          <li><strong>Indemnity</strong> — You agree to indemnify and hold GetRankRise harmless from any claim, fine, or penalty arising from your failure to obtain consent or honor opt-outs, including under the TCPA, TRAI regulations, GDPR, or similar laws.</li>
+        </ul>
       </>
     ),
   },
@@ -292,7 +311,7 @@ export default function TermsAndConditions() {
 
         {/* Sticky TopBar */}
         <div className="sticky top-0 z-50">
-          <TopBar title="Terms & Conditions" />
+          <TopBar title="Terms & Conditions" onMenuClick={() => setSidebarOpen(true)} />
         </div>
 
         <main className="p-6 lg:p-10 flex-1">
@@ -324,77 +343,36 @@ export default function TermsAndConditions() {
               </div>
             </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
-
-              {/* Sticky Side Nav — desktop only */}
-              <div className="hidden lg:block">
-                <div className={`sticky top-24 border rounded-2xl p-5 ${navBg}`}>
-                  <p className={`text-[10px] font-black uppercase tracking-widest mb-4 ${textMut}`}>
-                    On This Page
-                  </p>
-                  <div className="space-y-2">
-                    {SECTIONS.map((s, i) => (
-                      <a
-                        key={s.id}
-                        href={`#${s.id}`}
-                        className={`flex items-center gap-2 text-xs font-semibold transition-colors hover:text-indigo-500 ${textMut}`}
-                      >
-                        <span className={`w-1 h-4 rounded-full flex-shrink-0 ${s.color}`} />
-                        <span className="truncate">{s.title}</span>
-                      </a>
-                    ))}
-                  </div>
-                </div>
-              </div>
-
-              {/* Mobile quick nav pills */}
-              <div className="lg:hidden flex flex-wrap gap-2 lg:col-span-4">
-                {SECTIONS.map(s => (
-                  <a
-                    key={s.id}
-                    href={`#${s.id}`}
-                    className={`text-[10px] font-bold px-3 py-1.5 rounded-full transition-colors ${pillBg} hover:text-indigo-500`}
-                  >
-                    {s.title}
-                  </a>
-                ))}
-              </div>
-
-              {/* Section content */}
-              <div className="lg:col-span-3 space-y-4 pb-12">
-                {SECTIONS.map((section, i) => (
-                  <TermsSection
-                    key={section.id}
-                    section={section}
-                    dark={dark}
-                    index={i}
-                  />
-                ))}
-
-                {/* Footer */}
-                <div className={`mt-8 p-6 rounded-2xl border text-center space-y-3 ${dark ? "bg-slate-900 border-slate-800" : "bg-white border-slate-200"}`}>
-                  <p className={`text-xs font-semibold ${textMut}`}>
-                    Questions about these Terms?
-                  </p>
-                  <div className="flex flex-col sm:flex-row items-center justify-center gap-3 text-xs">
-                    <a
-                      href="mailto:legal@getrankrise.com"
-                      className="flex items-center gap-1.5 text-indigo-500 font-semibold hover:text-indigo-400 transition-colors"
-                    >
-                      <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-                      </svg>
-                      legal@getrankrise.com
-                    </a>
-                    <span className={dark ? "text-slate-700" : "text-slate-300"}>·</span>
-                    <span className={textMut}>We respond within 5 business days</span>
-                  </div>
-                  <p className={`text-[10px] ${textMut}`}>
-                    © {new Date().getFullYear()} GetRankRise. All rights reserved.
-                  </p>
-                </div>
-              </div>
+            {/* Sections */}
+            <div className="space-y-4">
+              {SECTIONS.map((section, i) => (
+                <TermsSection key={section.id} section={section} dark={dark} index={i} />
+              ))}
             </div>
+
+            {/* Contact footer */}
+            <div className={`mt-10 p-6 rounded-2xl border text-center space-y-3 ${navBg}`}>
+              <p className={`text-xs font-semibold ${textMut}`}>
+                Questions about these Terms?
+              </p>
+              <div className="flex flex-col sm:flex-row items-center justify-center gap-3 text-xs">
+                <a
+                  href="mailto:legal@getrankrise.com"
+                  className="flex items-center gap-1.5 text-indigo-500 font-semibold hover:text-indigo-400 transition-colors"
+                >
+                  <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                  </svg>
+                  legal@getrankrise.com
+                </a>
+                <span className={dark ? "text-slate-700" : "text-slate-300"}>·</span>
+                <span className={textMut}>We respond within 5 business days</span>
+              </div>
+              <p className={`text-[10px] ${textMut}`}>
+                © {new Date().getFullYear()} GetRankRise. All rights reserved.
+              </p>
+            </div>
+
           </div>
         </main>
       </div>
