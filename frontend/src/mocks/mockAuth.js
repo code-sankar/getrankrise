@@ -4,8 +4,15 @@
 // (to recognise the demo credentials) and AppBootstrap (to keep the demo
 // session alive across refreshes without calling the backend).
 //
-// To disable demo login entirely, remove the short-circuit block in
-// components/Auth/Login.jsx and the isMockToken() branch in AppBootstrap.jsx.
+// PRODUCTION SAFETY: every consumer guards its demo branch with DEMO_AUTH_ENABLED
+// (false in `vite build`). Those branches are statically dead in production, so
+// Vite strips them and these constants tree-shake out — the demo credentials
+// never reach the production bundle. Do not reference the constants below
+// outside an `if (DEMO_AUTH_ENABLED)` / `import.meta.env.DEV` guard, or you'll
+// pull them back into the prod build.
+
+// true in `vite dev`, false in `vite build`. Single source of truth for the gate.
+export const DEMO_AUTH_ENABLED = import.meta.env.DEV;
 
 // Type these on the sign-in page to log in without a backend:
 export const DEMO_EMAIL    = "demo@getrankrise.com";

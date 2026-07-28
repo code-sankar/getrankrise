@@ -7,7 +7,12 @@ import {
   logout,
   loginSuccess,
 } from "../store/authSlice.js";
-import { isMockToken, MOCK_TOKEN, MOCK_USER } from "../mocks/mockAuth.js";
+import {
+  isMockToken,
+  MOCK_TOKEN,
+  MOCK_USER,
+  DEMO_AUTH_ENABLED,
+} from "../mocks/mockAuth.js";
 
 /**
  * AppBootstrap
@@ -23,8 +28,8 @@ import { isMockToken, MOCK_TOKEN, MOCK_USER } from "../mocks/mockAuth.js";
  * and skip the /auth/me probe so it survives page refreshes with no backend.
  */
 export default function AppBootstrap({ children }) {
-  const dispatch     = useDispatch();
-  const token        = useSelector((state) => state.auth.token);
+  const dispatch = useDispatch();
+  const token = useSelector((state) => state.auth.token);
   const bootstrapped = useSelector((state) => state.auth.bootstrapped);
 
   useEffect(() => {
@@ -61,7 +66,9 @@ export default function AppBootstrap({ children }) {
     };
 
     probe();
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 

@@ -1,11 +1,7 @@
 import React, { useState } from "react";
 import { useDispatch } from "react-redux";
 import { useForm } from "react-hook-form";
-import {
-  loginStart,
-  loginSuccess,
-  loginFailure,
-} from "../../store/authSlice";
+import { loginStart, loginSuccess, loginFailure } from "../../store/authSlice";
 import { Link, useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
 import axiosInstance from "../../utils/axios.helper.js";
@@ -14,7 +10,13 @@ import Logo from "../Logo";
 import Input from "../Input";
 import Button from "../Button";
 import { icons } from "../../assets/Icons.jsx";
-import { MOCK_TOKEN, DEMO_EMAIL, DEMO_PASSWORD, MOCK_USER } from "../../mocks/mockAuth.js";
+import {
+  MOCK_TOKEN,
+  DEMO_EMAIL,
+  DEMO_PASSWORD,
+  MOCK_USER,
+  DEMO_AUTH_ENABLED,
+} from "../../mocks/mockAuth.js";
 
 function Login() {
   const dispatch = useDispatch();
@@ -34,7 +36,10 @@ function Login() {
     dispatch(loginStart());
 
     // ── Demo login: bypass the backend when the demo credentials are used ──
+    // Dev-only. `DEMO_AUTH_ENABLED` is false in `vite build`, so Vite strips
+    // this entire block (and the mock constants) from the production bundle.
     if (
+      DEMO_AUTH_ENABLED &&
       data.email.trim().toLowerCase() === DEMO_EMAIL &&
       data.password === DEMO_PASSWORD
     ) {
@@ -47,7 +52,7 @@ function Login() {
 
     try {
       const response = await axiosInstance.post("/auth/login", {
-        email:    data.email,
+        email: data.email,
         password: data.password,
       });
 
@@ -62,7 +67,7 @@ function Login() {
       navigate("/dashboard");
     } catch (err) {
       const msg = getFriendlyError(
-        err?.response?.data?.message || err?.message
+        err?.response?.data?.message || err?.message,
       );
       setError(msg || "Could not sign you in. Please try again.");
       dispatch(loginFailure(msg));
@@ -73,20 +78,21 @@ function Login() {
 
   return (
     <div className="relative min-h-screen w-full overflow-hidden bg-[#030712] text-white flex items-center justify-center p-4 sm:p-6 selection:bg-blue-500/30">
-      
       {/* Premium Ambient Light Background Effects */}
       <div className="absolute top-[-10%] left-[-10%] w-[50%] h-[50%] rounded-full bg-blue-600/10 blur-[120px] pointer-events-none" />
       <div className="absolute bottom-[-10%] right-[-10%] w-[50%] h-[50%] rounded-full bg-cyan-600/10 blur-[120px] pointer-events-none" />
-      
+
       {/* Subtly Textured Background Grid */}
       <div className="absolute inset-0 bg-[linear-gradient(to_right,#ffffff03_1px,transparent_1px),linear-gradient(to_bottom,#ffffff03_1px,transparent_1px)] bg-[size:32px_32px] pointer-events-none" />
 
       {/* Main Glassmorphic Login Card */}
       <div className="relative w-full max-w-md bg-gradient-to-b from-[#0d121f]/80 to-[#06080d]/90 backdrop-blur-xl border border-white/[0.06] rounded-2xl p-6 sm:p-10 shadow-[0_25px_50px_-12px_rgba(0,0,0,0.5)] transition-all duration-300">
-        
         {/* Logo Section */}
         <div className="flex justify-center mb-8">
-          <Link to="/" className="group flex items-center transition-transform duration-300 ease-out hover:scale-105">
+          <Link
+            to="/"
+            className="group flex items-center transition-transform duration-300 ease-out hover:scale-105"
+          >
             <div className="relative p-2 rounded-xl bg-white/[0.02] border border-white/[0.05] shadow-inner group-hover:border-blue-500/30 transition-colors duration-300">
               <Logo />
             </div>
