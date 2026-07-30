@@ -77,8 +77,10 @@ const BATCH_PER_TICK = Number(process.env.SYNC_SCHEDULER_BATCH) || 5;
 
 // Interval hours from the single source of truth. Fallbacks only guard
 // against the keys being renamed out from under us — plans.js wins when set.
-const PREMIUM_HOURS = Number(PLAN_LIMITS[PLANS.PREMIUM]?.syncIntervalHours) || 1;
-const STARTER_HOURS = Number(PLAN_LIMITS[PLANS.STARTER]?.syncIntervalHours) || 24;
+const PREMIUM_HOURS =
+  Number(PLAN_LIMITS[PLANS.PREMIUM]?.syncIntervalHours) || 1;
+const STARTER_HOURS =
+  Number(PLAN_LIMITS[PLANS.STARTER]?.syncIntervalHours) || 24;
 
 let timer = null;
 let ticking = false; // re-entrancy guard within one process
@@ -111,7 +113,7 @@ UPDATE platform_connections p
               END AS interval_hours
      ) plan_interval
     WHERE pc.status = 'connected'
-      AND pc.platform = 'google'
+      AND pc.platform IN ('google', 'yelp', 'facebook')
       AND plan_interval.interval_hours IS NOT NULL
       AND (pc.last_synced_at IS NULL
            OR pc.last_synced_at < NOW() - (plan_interval.interval_hours * INTERVAL '1 hour'))
@@ -150,14 +152,14 @@ async function syncOne({ id, clinic_id: clinicId }) {
       `UPDATE platform_connections
           SET last_synced_at = NOW(), last_sync_error = NULL
         WHERE id = $1::uuid`,
-      { bind: [id], type: QueryTypes.UPDATE }
+      { bind: [id], type: QueryTypes.UPDATE },
     );
 
     if (stats.created > 0 || stats.trimmed > 0) {
       console.log(
         `[syncScheduler] ${id.slice(0, 8)}… clinic ${clinicId.slice(0, 8)}…: ` +
           `+${stats.created} new, ${stats.updated} updated, ${stats.trimmed} trimmed ` +
-          `(${stats.pages} page${stats.pages === 1 ? "" : "s"})`
+          `(${stats.pages} page${stats.pages === 1 ? "" : "s"})`,
       );
     }
   } catch (err) {
@@ -167,10 +169,21 @@ async function syncOne({ id, clinic_id: clinicId }) {
     const messages = {
       GBP_NOT_APPROVED:
         "Google Business Profile API access not yet approved (quota 0). Will retry next interval.",
-      REVOKED: "Google access revoked — user must reconnect.",
+      REVOKED: "Access revoked — the user must reconnect this platform.",
       NO_CONNECTION: "Connection disappeared mid-sync.",
       NOT_CONNECTED: "Connection is no longer in 'connected' status.",
       UNSUPPORTED_PLATFORM: "No review provider for this platform yet.",
+      YELP_NOT_CONFIGURED:
+        "YELP_API_KEY is not set — cannot sync Yelp reviews.",
+      YELP_AUTH: "Yelp rejected the API key. Check YELP_API_KEY.",
+      YELP_NOT_FOUND: "Yelp business not found — check the saved business id.",
+      YELP_RATE_LIMIT: "Yelp rate limit hit. Will retry next interval.",
+      FB_PERMISSION:
+        "Facebook page-read permissions not approved yet (or token can't read this Page).",
+      FB_AUTH: "Facebook page token invalid — reconnect required.",
+      FB_API_ERROR: "Facebook API error during sync. Will retry next interval.",
+      FB_RATE_LIMIT: "Facebook rate limit hit. Will retry next interval.",
+      FB_FETCH: "Facebook fetch failed. Will retry next interval.",
     };
     const msg = messages[err.code] || String(err.message || err).slice(0, 500);
 
@@ -179,14 +192,22 @@ async function syncOne({ id, clinic_id: clinicId }) {
         `UPDATE platform_connections
             SET last_sync_error = $2::text
           WHERE id = $1::uuid`,
-        { bind: [id, msg], type: QueryTypes.UPDATE }
+        { bind: [id, msg], type: QueryTypes.UPDATE },
       )
       .catch(() => {}); // the error write must never mask the original failure
 
-    // Approval-gate failures are ambient during the GBP waiting period —
-    // warn once per occurrence, don't error-spam.
-    const logFn = err.code === "GBP_NOT_APPROVED" ? console.warn : console.error;
-    logFn(`[syncScheduler] sync failed for connection ${id.slice(0, 8)}…: ${msg}`);
+    // Approval-gate and rate-limit failures are ambient — warn rather than
+    // error-spam. Every other failure is a genuine error worth alerting on.
+    const AMBIENT = new Set([
+      "GBP_NOT_APPROVED",
+      "YELP_RATE_LIMIT",
+      "FB_PERMISSION",
+      "FB_RATE_LIMIT",
+    ]);
+    const logFn = AMBIENT.has(err.code) ? console.warn : console.error;
+    logFn(
+      `[syncScheduler] sync failed for connection ${id.slice(0, 8)}…: ${msg}`,
+    );
   }
 }
 
@@ -199,7 +220,9 @@ export function startSyncScheduler() {
   // rather than claim connections it cannot sync — a claim consumes a full
   // interval of the clinic's cadence.
   if (!reviewSyncImplemented) {
-    console.warn("⏸  Sync scheduler idle: review sync service reports isImplemented=false");
+    console.warn(
+      "⏸  Sync scheduler idle: review sync service reports isImplemented=false",
+    );
     return;
   }
 
@@ -208,8 +231,10 @@ export function startSyncScheduler() {
   console.log(
     `🔄 Sync scheduler started (tick ${TICK_MS / 1000}s, batch ${BATCH_PER_TICK}, ` +
       `intervals: starter ${STARTER_HOURS}h / premium ${PREMIUM_HOURS}h${
-        String(process.env.REVIEWS_MOCK).toLowerCase() === "true" ? ", MOCK REVIEWS" : ""
-      })`
+        String(process.env.REVIEWS_MOCK).toLowerCase() === "true"
+          ? ", MOCK REVIEWS"
+          : ""
+      })`,
   );
 
   // Belt-and-braces prod tripwire, same posture as the mock provider's own
@@ -222,7 +247,7 @@ export function startSyncScheduler() {
   ) {
     console.error(
       "⚠️  REVIEWS_MOCK=true in production — every scheduled sync will fail loudly " +
-        "(mock provider prod guard). Set REVIEWS_MOCK=false before real launch."
+        "(mock provider prod guard). Set REVIEWS_MOCK=false before real launch.",
     );
   }
 }

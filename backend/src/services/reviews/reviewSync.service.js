@@ -44,7 +44,10 @@ import { computeSentiment } from "../../utils/sentiment.js";
 import { getSubscriptionState } from "../subscription/subscriptionState.service.js";
 import { env } from "../../config/env.js";
 import * as googleProvider from "./providers/googleReviews.provider.js";
+import * as yelpProvider   from "./providers/yelpReviews.provider.js";
 import * as mockProvider from "./providers/mockReviews.provider.js";
+import * as facebookProvider from "./providers/facebookReviews.provider.js";
+import { getValidFacebookToken } from "../facebook/facebookAuth.service.js";
 
 export const isImplemented = true; // ← the Phase 7 flag, flipped
 
@@ -52,18 +55,34 @@ const MAX_PAGES = 40; // 40 × 50 = 2000 reviews per sync — plenty, bounded
 const EARLY_STOP_BUFFER_MS = 24 * 3600e3;
 
 // ── Provider factory (mirrors the competitor-intelligence factory) ──────────
-function getProvider() {
+// Platform-aware. REVIEWS_MOCK (or GOOGLE_MOCK_DISCOVERY) still forces the
+// shared mock provider for EVERY platform in dev — a fully offline pipeline.
+// Otherwise google → GBP provider, yelp → Fusion provider. Widen this switch
+// as new providers land; the caller passes connection.platform.
+function getProvider(platform) {
   const mock =
     String(process.env.REVIEWS_MOCK ?? env.GOOGLE_MOCK_DISCOVERY ?? "").toLowerCase() === "true";
-  return mock ? mockProvider : googleProvider;
+  if (mock) return mockProvider;
+  if (platform === "yelp") return yelpProvider;
+  if (platform === "facebook") return facebookProvider; 
+  return googleProvider; // platform === "google"
 }
 
 // ── The tested upsert ────────────────────────────────────────────────────────
-const UPSERT_SQL = `
+// The platform literal is the ONLY thing that varies per provider, so the SQL
+// is built once per supported platform from a fixed label map (NOT user input —
+// no injection surface). Merge rules are byte-for-byte the tested Google ones
+// and hold for Yelp unchanged: Yelp yields replied=false / reply_text=NULL every
+// sync, so `replied = reviews.replied OR EXCLUDED.replied` keeps a locally-saved
+// reply sticky (Yelp publishing is UNSUPPORTED, so it stays local forever) and
+// the reply_text COALESCE never clobbers it.
+const PLATFORM_LABEL = Object.freeze({ google: "Google", yelp: "Yelp" });
+
+const buildUpsertSql = (platformLabel) => `
 INSERT INTO reviews (clinic_id, platform, external_id, reviewer_name, rating,
                      review_text, review_date, replied, reply_text, sentiment,
                      created_at, updated_at)
-VALUES ($1::uuid, 'Google', $2::text, $3::text, $4::int, $5::text,
+VALUES ($1::uuid, '${platformLabel}', $2::text, $3::text, $4::int, $5::text,
         $6::timestamptz, $7::bool, $8::text, $9::int, NOW(), NOW())
 ON CONFLICT (clinic_id, platform, external_id) WHERE external_id IS NOT NULL
 DO UPDATE SET
@@ -78,6 +97,12 @@ DO UPDATE SET
   reply_text    = COALESCE(EXCLUDED.reply_text, reviews.reply_text),
   updated_at    = NOW()
 RETURNING (xmax = 0) AS inserted`;
+
+const UPSERT_SQL_BY_PLATFORM = Object.freeze({
+  google: buildUpsertSql(PLATFORM_LABEL.google),
+  yelp:   buildUpsertSql(PLATFORM_LABEL.yelp),
+  facebook: buildUpsertSql(PLATFORM_LABEL.facebook),
+});
 
 /**
  * Syncs one platform connection's reviews.
@@ -97,15 +122,17 @@ export async function syncByConnectionId(connectionId) {
     err.code = "NOT_CONNECTED";
     throw err;
   }
-  if (connection.platform !== "google") {
+  const upsertSql = UPSERT_SQL_BY_PLATFORM[connection.platform];
+  if (!upsertSql) {
     const err = new Error(`No review provider for platform '${connection.platform}' yet`);
     err.code = "UNSUPPORTED_PLATFORM";
     throw err;
   }
 
-  const provider = getProvider();
+  const provider = getProvider(connection.platform);
 
-  // Mock mode needs no token; real mode goes through Phase 1's refresh logic.
+  // Only Google needs a per-clinic OAuth token. Yelp authenticates with an
+  // account-level API key inside its own provider; mock needs nothing.
   let accessToken = null;
   if (provider === googleProvider) {
     ({ accessToken } = await getValidAccessToken(connection.clinicId));

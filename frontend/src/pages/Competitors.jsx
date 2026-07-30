@@ -31,7 +31,7 @@ import {
 } from "../store/competitorsSlice.js";
 
 // ── Palette for competitor accents (dark tech theme) ──────────────────────────
-const YOU_COLOR = "#6366f1";
+const YOU_COLOR = "#06b6d4";
 const PALETTE = ["#06b6d4", "#f59e0b", "#10b981", "#8b5cf6", "#ec4899", "#3b82f6", "#ef4444", "#14b8a6", "#eab308", "#f97316"];
 const colorFor = (i) => PALETTE[i % PALETTE.length];
 

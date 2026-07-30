@@ -1,21 +1,18 @@
 // backend/src/controllers/request.controller.js
 //
-// PHASE 5 REWRITE. Two changes to sendRequest; the credits flow is untouched.
+// PHASE 5 + EMAIL WIRE. Two things to know about sendRequest; the credits flow
+// is untouched.
 //
-// 1. EMAIL IS NOW METERED. emailPerMonth (0/500/5000) had existed in plans.js
-//    since day one and was enforced nowhere — the Free tier could "send"
-//    unlimited email. Email draws from usage_counters via reserveUsage, same
-//    reserve→send→refund shape as SMS credits.
+// 1. EMAIL IS METERED. emailPerMonth (0/500/5000) draws from usage_counters via
+//    reserveUsage, the same reserve→send→refund shape as SMS credits.
 //
-// 2. EMAIL IS NOW HONEST. The old code had no email provider wired at all —
-//    the comment said "handle via your email service here" and then persisted
-//    status:"Sent". Users believed messages went out; nothing ever did.
-//    Metering that fiction would be worse than not metering: it would burn
-//    real quota on fake sends. So until an email provider exists (SendGrid is
-//    slated for the campaigns phase), Email/Both requests return an explicit
-//    503 EMAIL_NOT_CONFIGURED instead of fake success. When the provider
-//    lands, delete the emailConfigured() guard and fill in sendEmail() —
-//    the metering around it is already correct.
+// 2. EMAIL IS WIRED (SendGrid). Email/Both sends go through
+//    services/email/email.service.js. When SendGrid isn't configured,
+//    isEmailConfigured() is false and Email/Both requests return an explicit
+//    503 EMAIL_NOT_CONFIGURED instead of a fake "Sent" — so this is safe to
+//    ship before SendGrid is set up. Set SENDGRID_API_KEY + SENDGRID_FROM_EMAIL
+//    (or EMAIL_SIMULATE=true in dev) to turn it on; the metering around it does
+//    not change.
 
 import { Request as ReviewRequest } from "../models/index.js";
 import { sendMessage } from "../services/sms/index.js";
@@ -28,13 +25,15 @@ import {
   refundUsage,
   usageErrorResponse,
 } from "../services/usage/usage.service.js";
-import { env } from "../config/env.js";
-import {
-  successResponse,
-  serverErrorResponse,
-} from "../utils/apiResponse.js";
+import { successResponse, serverErrorResponse } from "../utils/apiResponse.js";
 
-const emailConfigured = () => Boolean(env.SENDGRID_API_KEY);
+import {
+  isEmailConfigured,
+  sendReviewRequestEmail,
+} from "../services/email/email.service.js";
+// Email availability delegates to the SendGrid service (honors a real key +
+// verified sender, or EMAIL_SIMULATE in dev). The 503 gate below is unchanged.
+const emailConfigured = isEmailConfigured;
 
 // POST /api/v1/requests
 export const sendRequest = async (req, res) => {
@@ -49,7 +48,8 @@ export const sendRequest = async (req, res) => {
   const needsEmail = sendVia === "Email" || sendVia === "Both";
 
   // Fail fast BEFORE reserving anything: if email is requested but no provider
-  // exists, don't burn an SMS credit on a "Both" send that can only half-work.
+  // is configured, don't burn an SMS credit on a "Both" send that can only
+  // half-work.
   if (needsEmail && !emailConfigured()) {
     return res.status(503).json({
       success: false,
@@ -130,9 +130,16 @@ export const sendRequest = async (req, res) => {
     }
 
     if (needsEmail) {
-      // Unreachable today (emailConfigured() gate above), present so the
-      // control flow is already correct when the provider lands:
-      await sendEmail({ to: email, patientName, body });
+      const emailResult = await sendReviewRequestEmail({
+        to: email,
+        patientName,
+        clinicName: req.clinic.clinicName,
+        reviewLink: req.clinic.googleReviewLink,
+        body,
+      });
+      // For an email-only send, surface its provider/simulated in the response
+      // (a "Both" send already reported the SMS provider above).
+      if (!providerResult) providerResult = emailResult;
     }
 
     // ── 3. Persist the request row ───────────────────────────────────────
@@ -161,14 +168,6 @@ export const sendRequest = async (req, res) => {
     return serverErrorResponse(res, "Could not send review request");
   }
 };
-
-// ── Email provider stub ──────────────────────────────────────────────────
-// Deliberately throws: with the emailConfigured() gate above this is dead
-// code, and if the gate is ever removed without implementing this, the throw
-// triggers the refund path instead of a silent fake "Sent".
-async function sendEmail() {
-  throw new Error("sendEmail() not implemented — wire SendGrid before removing the gate");
-}
 
 // ── Helpers ──────────────────────────────────────────────────────────────
 const renderMessage = ({ patientName, clinicName, reviewLink }) =>

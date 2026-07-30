@@ -39,6 +39,19 @@ import {
   listConnections,
   disconnectGoogle,
 } from "../controllers/oauth.controller.js";
+import {
+  searchYelpBusinesses,
+  connectYelpBusinessHandler,
+  resolveYelpBusiness,
+  disconnectYelp,
+} from "../controllers/yelp.controller.js";
+import {
+  startFacebookConnect,
+  facebookCallback,
+  getFacebookPages,
+  selectFacebookPage,
+  disconnectFacebook,
+} from "../controllers/facebook.controller.js";
 
 const router = Router();
 
@@ -49,7 +62,10 @@ const router = Router();
 const callbackLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   max: 30,
-  message: { success: false, message: "Too many attempts. Please try again later." },
+  message: {
+    success: false,
+    message: "Too many attempts. Please try again later.",
+  },
   standardHeaders: true,
   legacyHeaders: false,
 });
@@ -58,12 +74,29 @@ const callbackLimiter = rateLimit({
 // Defined inline (same convention as campaign.routes.js) rather than in
 // validate.middleware.js — these shapes are used nowhere else.
 const selectLocationSchema = Joi.object({
-  accountId: Joi.string().max(255).required(),      // "accounts/1234567890"
+  accountId: Joi.string().max(255).required(), // "accounts/1234567890"
   accountName: Joi.string().max(255).allow("", null),
-  locationId: Joi.string().max(255).required(),     // "locations/987654"
+  locationId: Joi.string().max(255).required(), // "locations/987654"
   locationName: Joi.string().max(255).allow("", null),
 });
+const yelpSearchSchema = Joi.object({
+  term: Joi.string().max(150).allow("", null),
+  location: Joi.string().max(200).required(),
+});
 
+const yelpConnectSchema = Joi.object({
+  businessId: Joi.string().max(255).required(),
+  businessName: Joi.string().max(255).allow("", null),
+});
+
+const yelpResolveSchema = Joi.object({
+  ref: Joi.string().max(2048).required(),
+});
+
+const selectPageSchema = Joi.object({
+  pageId: Joi.string().max(255).required(),
+  pageName: Joi.string().max(255).allow("", null),
+});
 // ── Public route (see header comment before touching) ───────────────────────
 router.get("/google/callback", callbackLimiter, asyncHandler(googleCallback));
 
@@ -72,14 +105,14 @@ router.get(
   "/google/connect",
   protect,
   loadClinic,
-  asyncHandler(startGoogleConnect)
+  asyncHandler(startGoogleConnect),
 );
 
 router.get(
   "/google/locations",
   protect,
   loadClinic,
-  asyncHandler(getGoogleLocations)
+  asyncHandler(getGoogleLocations),
 );
 
 router.post(
@@ -87,21 +120,44 @@ router.post(
   protect,
   loadClinic,
   validate(selectLocationSchema),
-  asyncHandler(selectGoogleLocation)
+  asyncHandler(selectGoogleLocation),
 );
 
+router.get("/connections", protect, loadClinic, asyncHandler(listConnections));
+
+router.delete("/google", protect, loadClinic, asyncHandler(disconnectGoogle));
+// ── Yelp connect (no OAuth — search + bind) ─────────────────────────────────
 router.get(
-  "/connections",
+  "/yelp/search",
   protect,
   loadClinic,
-  asyncHandler(listConnections)
+  validate(yelpSearchSchema, "query"), // note the "query" source
+  asyncHandler(searchYelpBusinesses),
+);
+router.get(
+  "/yelp/business",
+  protect,
+  loadClinic,
+  validate(yelpResolveSchema, "query"),
+  asyncHandler(resolveYelpBusiness)
 );
 
-router.delete(
-  "/google",
+router.post(
+  "/yelp/connect",
   protect,
   loadClinic,
-  asyncHandler(disconnectGoogle)
+  validate(yelpConnectSchema),
+  asyncHandler(connectYelpBusinessHandler),
 );
+
+router.delete("/yelp", protect, loadClinic, asyncHandler(disconnectYelp));
+
+// ── Facebook OAuth (Page recommendations) ───────────────────────────────────
+router.get("/facebook/callback", callbackLimiter, asyncHandler(facebookCallback)); // PUBLIC
+
+router.get("/facebook/connect",     protect, loadClinic, asyncHandler(startFacebookConnect));
+router.get("/facebook/pages",       protect, loadClinic, asyncHandler(getFacebookPages));
+router.post("/facebook/select-page", protect, loadClinic, validate(selectPageSchema), asyncHandler(selectFacebookPage));
+router.delete("/facebook",          protect, loadClinic, asyncHandler(disconnectFacebook));
 
 export default router;

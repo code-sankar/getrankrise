@@ -26,9 +26,9 @@ const PLANS = [
     tagline:  "For high-volume operators",
     features: [
       "Everything in Starter",
-      "Real-time review sync",
+      "Hourly review sync",
       "Track up to 10 competitors",
-      "500 SMS & WhatsApp credits / month",
+      "500 SMS + 500 WhatsApp credits / month",
       "Pulse Campaigns automation",
       "Priority support",
     ],

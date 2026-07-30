@@ -36,7 +36,7 @@ const defaultNotifications = {
 const PLANS = [
   { id: "free",     name: "Free",     price: "$0",  features: ["20 stored reviews", "View-only mode", "Basic analytics"] },
   { id: "starter",  name: "Starter",  price: "$49", features: ["Full AI engine", "24h sync", "3 competitors", "50 SMS / mo"] },
-  { id: "premium",  name: "Premium",  price: "$99", features: ["Real-time sync", "10 competitors", "500 SMS & WhatsApp / mo"] },
+  { id: "premium",  name: "Premium",  price: "$99", features: ["Hourly sync", "10 competitors", "500 SMS + 500 WhatsApp / mo"] },
 ];
 
 // ── Reusable UI ──────────────────────────────────────────────────────────────

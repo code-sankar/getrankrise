@@ -36,12 +36,12 @@ export default function Pricing() {
     {
       name: 'Premium',
       price: '$99',
-      desc: 'For high-volume operators who need real-time signals.',
+      desc: 'For high-volume operators who need the freshest signals.',
       cta: 'Start free trial',
       ctaLink: '/signup',
       features: [
         'Everything in Starter',
-        'Real-time review sync',
+        'Hourly review sync',
         'Track up to 10 competitors',
         '500 SMS & WhatsApp credits / mo',
         'Pulse Campaigns automation',
