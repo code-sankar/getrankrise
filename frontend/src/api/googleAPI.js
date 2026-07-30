@@ -7,6 +7,12 @@
 
 import axiosInstance from "../utils/axios.helper.js";
 
+// Where the OAuth round-trip should land the browser afterwards. The flow can
+// start from onboarding OR Settings → Integrations, so default to whatever
+// page we're on. The backend allowlists this to same-origin app paths.
+const currentPath = () =>
+  typeof window !== "undefined" ? window.location.pathname : "/onboarding";
+
 export const googleAPI = {
   /** All platform connections for this clinic → [{ platform, status, ... }] */
   getConnections: async () => {
@@ -18,9 +24,14 @@ export const googleAPI = {
    * Step 1: get the Google consent URL. Caller must then do a FULL page
    * navigation — window.location.href = consentUrl — because the consent
    * screen cannot render inside an XHR and Google will bounce an iframe.
+   *
+   * @param {string} [returnTo] path to return to after consent (defaults to
+   *                            the current page). Allowlisted server-side.
    */
-  startConnect: async () => {
-    const { data } = await axiosInstance.get("/oauth/google/connect");
+  startConnect: async (returnTo = currentPath()) => {
+    const { data } = await axiosInstance.get("/oauth/google/connect", {
+      params: { returnTo },
+    });
     return data.data.consentUrl;
   },
 

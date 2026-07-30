@@ -38,7 +38,13 @@ import {
 import { auditFromReq, AUDIT_EVENTS } from "../utils/auditLog.js";
 
 const FE = () => env.CLIENT_URL.split(",")[0].trim();
-
+const ALLOWED_RETURN_PATHS = new Set(["/onboarding", "/settings"]);
+const safeReturnTo = (raw) => {
+  if (typeof raw !== "string") return "/onboarding";
+  if (!raw.startsWith("/") || raw.startsWith("//")) return "/onboarding";
+  const path = raw.split("?")[0].split("#")[0];
+  return ALLOWED_RETURN_PATHS.has(path) ? path : "/onboarding";
+};
 // ── GET /api/v1/oauth/google/connect ─────────────────────────────────────────
 // Returns the consent URL for the frontend to redirect to. We return it rather
 // than 302ing directly because the request arrives via axios (XHR) — a 302
@@ -47,7 +53,11 @@ const FE = () => env.CLIENT_URL.split(",")[0].trim();
 // `window.location.href = consentUrl`.
 export const startGoogleConnect = async (req, res) => {
   try {
-    const state = signState({ clinicId: req.clinic.id, userId: req.user.id });
+    const state = signState({
+      clinicId: req.clinic.id,
+      userId: req.user.id,
+      returnTo: safeReturnTo(req.query.returnTo),
+    });
     return successResponse(res, {
       message: "Consent URL generated",
       data: { consentUrl: buildConsentUrl(state) },
@@ -64,30 +74,30 @@ export const startGoogleConnect = async (req, res) => {
 export const googleCallback = async (req, res) => {
   const { code, state, error } = req.query;
 
-  // User clicked "Cancel" on the consent screen.
-  if (error) {
-    return res.redirect(`${FE()}/onboarding?google=denied`);
-  }
-
+  // Recover the signed state up front so we know where to send the browser
+  // back to. verifyState returns null for a tampered/expired/absent state,
+  // in which case returnTo falls back to /onboarding.
   const payload = verifyState(state);
+  const returnTo = safeReturnTo(payload?.returnTo);
+
+  if (error) {
+    return res.redirect(`${FE()}${returnTo}?google=denied`);
+  }
   if (!payload?.clinicId) {
-    // Tampered, expired (>10 min on the consent screen), or not ours.
+    // Don't trust returnTo from an unverified state — default to /onboarding.
     return res.redirect(`${FE()}/onboarding?google=invalid_state`);
   }
-
   if (!code) {
-    return res.redirect(`${FE()}/onboarding?google=missing_code`);
+    return res.redirect(`${FE()}${returnTo}?google=missing_code`);
   }
 
   try {
     const grant = await exchangeCode(code);
     await storeGrant({ clinicId: payload.clinicId, grant });
-
-    // Success → frontend shows the location picker (status=pending_location).
-    return res.redirect(`${FE()}/onboarding?google=connected`);
+    return res.redirect(`${FE()}${returnTo}?google=connected`);
   } catch (err) {
     console.error("googleCallback error:", err.message);
-    return res.redirect(`${FE()}/onboarding?google=exchange_failed`);
+    return res.redirect(`${FE()}${returnTo}?google=exchange_failed`);
   }
 };
 
@@ -110,7 +120,10 @@ export const getGoogleLocations = async (req, res) => {
     });
   } catch (err) {
     if (err.code === "NO_CONNECTION" || err.code === "REVOKED") {
-      return badRequestResponse(res, "Google is not connected. Start the connect flow first.");
+      return badRequestResponse(
+        res,
+        "Google is not connected. Start the connect flow first.",
+      );
     }
     if (err.code === "GBP_NOT_APPROVED") {
       return res.status(503).json({
@@ -149,7 +162,10 @@ export const selectGoogleLocation = async (req, res) => {
     });
   } catch (err) {
     if (err.code === "NO_CONNECTION") {
-      return badRequestResponse(res, "Google is not connected. Start the connect flow first.");
+      return badRequestResponse(
+        res,
+        "Google is not connected. Start the connect flow first.",
+      );
     }
     console.error("selectGoogleLocation error:", err);
     return serverErrorResponse(res, "Could not save location selection");
@@ -192,11 +208,16 @@ export const disconnectGoogle = async (req, res) => {
         await fetch("https://oauth2.googleapis.com/revoke", {
           method: "POST",
           headers: { "Content-Type": "application/x-www-form-urlencoded" },
-          body: new URLSearchParams({ token: decryptToken(conn.refreshTokenEnc) }),
+          body: new URLSearchParams({
+            token: decryptToken(conn.refreshTokenEnc),
+          }),
           signal: AbortSignal.timeout(10_000),
         });
       } catch (revokeErr) {
-        console.warn("Google revoke endpoint failed (continuing):", revokeErr.message);
+        console.warn(
+          "Google revoke endpoint failed (continuing):",
+          revokeErr.message,
+        );
       }
     }
 
@@ -209,7 +230,11 @@ export const disconnectGoogle = async (req, res) => {
     });
 
     auditFromReq(req, AUDIT_EVENTS.SETTINGS_UPDATED, {
-      metadata: { section: "integrations", platform: "google", action: "disconnected" },
+      metadata: {
+        section: "integrations",
+        platform: "google",
+        action: "disconnected",
+      },
     });
 
     return successResponse(res, {

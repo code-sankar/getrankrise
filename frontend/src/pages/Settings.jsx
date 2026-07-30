@@ -14,6 +14,14 @@ import {
 } from "../hooks/user.hook.js";
 import { toast } from "react-toastify";
 
+// ── Platform connect cards (own their card styling + connect/disconnect flow) ─
+import GoogleConnect   from "../components/onboarding/GoogleConnect.jsx";
+import YelpConnect     from "../components/onboarding/YelpConnect.jsx";
+import FacebookConnect from "../components/onboarding/FacebookConnect.jsx";
+
+// ── Billing (Paddle hosted checkout) ─────────────────────────────────────────
+import { billingAPI } from "../api/billingAPI.js";
+
 // ── Defaults — used until /clinic/me hydrates the form ─────────────────────────
 const defaultClinic = {
   clinicName:        "",
@@ -89,6 +97,16 @@ function Toggle({ label, description, enabled, onToggle, dark }) {
   );
 }
 
+// When the OAuth callback bounces the user back to /settings?google=connected
+// (or ?facebook=…), open the Integrations tab so the connect card — which reads
+// that query param — is actually mounted to finish the flow.
+function initialTabFromUrl() {
+  if (typeof window === "undefined") return "clinic";
+  const p = new URLSearchParams(window.location.search);
+  if (p.has("google") || p.has("facebook")) return "integrations";
+  return "clinic";
+}
+
 export default function Settings() {
   const { dark } = useTheme();
   const dispatch = useDispatch();
@@ -107,7 +125,8 @@ export default function Settings() {
   const [saving,        setSaving]        = useState(false);
   const [savingPwd,     setSavingPwd]     = useState(false);
   const [savedMsg,      setSavedMsg]      = useState("");
-  const [activeTab,     setActiveTab]     = useState("clinic");
+  const [checkoutPlan,  setCheckoutPlan]  = useState(null); // which plan's checkout is opening
+  const [activeTab,     setActiveTab]     = useState(initialTabFromUrl);
 
   // ── Load clinic + notification settings on mount ─────────────────────────
   useEffect(() => {
@@ -189,8 +208,35 @@ export default function Settings() {
     window.location.href = "/login";
   };
 
+  // Each connect card manages its own connected/disconnected state internally,
+  // so there is nothing to persist here. Kept as a named hook point so we can
+  // later refresh reviews/analytics the moment a new platform is linked.
+  const handlePlatformConnected = () => {};
+
+  // ── Paddle checkout ──────────────────────────────────────────────────────
+  // Calls the real /billing/create-checkout endpoint and navigates to the
+  // hosted Paddle checkout it returns. On success the tab leaves the app, so
+  // there's no need to reset the loading state.
+  const startCheckout = async (plan) => {
+    if (plan !== "starter" && plan !== "premium") return;
+    setCheckoutPlan(plan);
+    try {
+      const { checkoutUrl } = await billingAPI.createCheckout(plan);
+      if (checkoutUrl) {
+        window.location.href = checkoutUrl;
+        return;
+      }
+      toast.error("Couldn't open checkout. Please try again.");
+      setCheckoutPlan(null);
+    } catch (err) {
+      toast.error(err?.response?.data?.message || "Couldn't start checkout. Please try again.");
+      setCheckoutPlan(null);
+    }
+  };
+
   const TABS = [
     { id: "clinic",        label: "Business Profile" },
+    { id: "integrations",  label: "Integrations" },
     { id: "notifications", label: "Notifications" },
     { id: "account",       label: "Account" },
     { id: "billing",       label: "Plan & Billing" },
@@ -203,6 +249,12 @@ export default function Settings() {
   // Current plan (defaults to "free" if no subscription loaded)
   const currentPlanId = userSub?.plan || "free";
   const currentPlan   = PLANS.find((p) => p.id === currentPlanId) || PLANS[0];
+
+  // The single most likely upgrade target for the primary CTA. Premium users
+  // have nowhere higher to go, so they get the "manage" affordance instead.
+  const nextUpgrade =
+    currentPlanId === "free" ? "starter" : currentPlanId === "starter" ? "premium" : null;
+  const nextUpgradeName = nextUpgrade ? PLANS.find((p) => p.id === nextUpgrade)?.name : null;
 
   return (
     <div className={`h-screen overflow-hidden flex transition-colors duration-300 ${dark ? "bg-slate-950" : "bg-slate-50"}`}>
@@ -255,6 +307,44 @@ export default function Settings() {
             ))}
           </div>
 
+          {/* ── INTEGRATIONS TAB ─────────────────────────────────────────
+              Rendered OUTSIDE the <form> below on purpose: the connect cards
+              contain buttons that don't all declare type="button", and inside
+              a form a type-less button defaults to submit — which would fire
+              handleSave. As a sibling block it stays fully self-contained. */}
+          {activeTab === "integrations" && (
+            <div className="space-y-6">
+              <div>
+                <h2 className={`text-base font-semibold ${dark ? "text-white" : "text-slate-900"}`}>Connected Platforms</h2>
+                <p className="text-slate-500 text-sm mt-0.5">
+                  Link your review sources so GetRankRise can sync reviews and publish replies.
+                  Connections stay active on your plan's sync schedule.
+                </p>
+              </div>
+
+              <GoogleConnect
+                dark={dark}
+                onConnected={handlePlatformConnected}
+              />
+
+              <YelpConnect
+                dark={dark}
+                defaultLocation={settings.location}
+                onConnected={handlePlatformConnected}
+              />
+
+              <FacebookConnect
+                dark={dark}
+                onConnected={handlePlatformConnected}
+              />
+
+              <p className="text-slate-500 text-xs">
+                Reviews sync automatically after a platform is connected. Real-time sync is a Premium feature;
+                Starter syncs every 24 hours.
+              </p>
+            </div>
+          )}
+
           <form onSubmit={handleSave} className="space-y-6">
             {/* ── CLINIC / BUSINESS PROFILE TAB ───────────────────────── */}
             {activeTab === "clinic" && (
@@ -306,7 +396,7 @@ export default function Settings() {
                       dark={dark}
                       label="Current Password"
                       type="password"
-                      placeholder="••••••••"
+                      placeholder="•••••••••"
                       value={pwd.current}
                       onChange={(e) => setPwd({ ...pwd, current: e.target.value })}
                     />
@@ -314,7 +404,7 @@ export default function Settings() {
                       dark={dark}
                       label="New Password"
                       type="password"
-                      placeholder="At least 8 characters"
+                      placeholder="•••••••••"
                       value={pwd.next}
                       onChange={(e) => setPwd({ ...pwd, next: e.target.value })}
                     />
@@ -322,7 +412,7 @@ export default function Settings() {
                       dark={dark}
                       label="Confirm New Password"
                       type="password"
-                      placeholder="Re-enter your new password"
+                      placeholder="•••••••••"
                       value={pwd.confirm}
                       onChange={(e) => setPwd({ ...pwd, confirm: e.target.value })}
                     />
@@ -330,7 +420,7 @@ export default function Settings() {
                       type="button"
                       onClick={handlePasswordChange}
                       disabled={savingPwd}
-                      className="px-5 py-2.5 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-sm font-bold transition-all disabled:opacity-50"
+                      className="px-6 py-3 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-sm font-bold transition-all active:scale-95 disabled:opacity-60"
                     >
                       {savingPwd ? "Updating..." : "Update Password"}
                     </button>
@@ -374,13 +464,28 @@ export default function Settings() {
                           ))}
                         </ul>
                       </div>
-                      <button
-                        type="button"
-                        onClick={() => toast.info("Plan management opens soon — contact sales for now")}
-                        className={`px-4 py-2 rounded-lg text-sm font-bold border ${dark ? "border-slate-700 text-white hover:bg-slate-800" : "border-slate-300 text-slate-700 hover:bg-slate-100"}`}
-                      >
-                        Manage Subscription
-                      </button>
+                      {nextUpgrade ? (
+                        <button
+                          type="button"
+                          onClick={() => startCheckout(nextUpgrade)}
+                          disabled={checkoutPlan === nextUpgrade}
+                          className="px-4 py-2 rounded-lg text-sm font-bold bg-cyan-500 hover:bg-cyan-400 text-white shadow-lg shadow-cyan-500/20 transition-all active:scale-95 disabled:opacity-60 whitespace-nowrap"
+                        >
+                          {checkoutPlan === nextUpgrade ? "Opening checkout…" : `Upgrade to ${nextUpgradeName}`}
+                        </button>
+                      ) : (
+                        <button
+                          type="button"
+                          onClick={() =>
+                            toast.info(
+                              "To change or cancel your plan, use the billing link in your Paddle receipt email, or contact support@getrankrise.com."
+                            )
+                          }
+                          className={`px-4 py-2 rounded-lg text-sm font-bold border whitespace-nowrap ${dark ? "border-slate-700 text-white hover:bg-slate-800" : "border-slate-300 text-slate-700 hover:bg-slate-100"}`}
+                        >
+                          Manage Subscription
+                        </button>
+                      )}
                     </div>
                   </div>
                 </div>
@@ -407,7 +512,28 @@ export default function Settings() {
                               <li key={f} className={`text-[11px] ${dark ? "text-slate-400" : "text-slate-600"}`}>• {f}</li>
                             ))}
                           </ul>
-                          {isCurrent && <p className="mt-3 text-[10px] font-bold text-blue-500 uppercase tracking-widest">Current Plan</p>}
+                          <div className="mt-4">
+                            {isCurrent ? (
+                              <p className="text-[10px] font-bold text-cyan-500 uppercase tracking-widest">Current Plan</p>
+                            ) : p.id === "free" ? (
+                              <button
+                                type="button"
+                                onClick={() => toast.info("To move down to the Free plan, contact support@getrankrise.com.")}
+                                className={`w-full py-2 rounded-lg text-xs font-bold border transition-colors ${dark ? "border-slate-700 text-slate-300 hover:bg-slate-800" : "border-slate-300 text-slate-600 hover:bg-slate-100"}`}
+                              >
+                                Downgrade
+                              </button>
+                            ) : (
+                              <button
+                                type="button"
+                                onClick={() => startCheckout(p.id)}
+                                disabled={checkoutPlan === p.id}
+                                className="w-full py-2 rounded-lg text-xs font-bold bg-cyan-500 hover:bg-cyan-400 text-white transition-all active:scale-95 disabled:opacity-60"
+                              >
+                                {checkoutPlan === p.id ? "Opening…" : `Choose ${p.name}`}
+                              </button>
+                            )}
+                          </div>
                         </div>
                       );
                     })}

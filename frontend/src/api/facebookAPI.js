@@ -7,6 +7,11 @@
 
 import axiosInstance from "../utils/axios.helper.js";
 
+// Return the browser to whatever page started the flow (onboarding or
+// Settings → Integrations). The backend allowlists this to same-origin paths.
+const currentPath = () =>
+  typeof window !== "undefined" ? window.location.pathname : "/onboarding";
+
 export const facebookAPI = {
   /** All platform connections for this clinic (shared endpoint). */
   getConnections: async () => {
@@ -18,10 +23,15 @@ export const facebookAPI = {
    * Step 1: get the Facebook consent URL. Caller must do a FULL page
    * navigation — window.location.href = consentUrl.
    * Throws err.notConfigured=true when the server has no FACEBOOK_APP_ID.
+   *
+   * @param {string} [returnTo] path to return to after consent (defaults to
+   *                            the current page). Allowlisted server-side.
    */
-  startConnect: async () => {
+  startConnect: async (returnTo = currentPath()) => {
     try {
-      const { data } = await axiosInstance.get("/oauth/facebook/connect");
+      const { data } = await axiosInstance.get("/oauth/facebook/connect", {
+        params: { returnTo },
+      });
       return data.data.consentUrl;
     } catch (err) {
       if (err.response?.data?.code === "FACEBOOK_NOT_CONFIGURED") {

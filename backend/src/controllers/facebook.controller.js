@@ -67,27 +67,26 @@ export const startFacebookConnect = async (req, res) => {
 export const facebookCallback = async (req, res) => {
   const { code, state, error } = req.query;
 
-  // User clicked "Cancel" / denied on the consent screen.
-  if (error) {
-    return res.redirect(`${FE()}/onboarding?facebook=denied`);
-  }
-
   const payload = verifyState(state);
+  const returnTo = safeReturnTo(payload?.returnTo);
+
+  if (error) {
+    return res.redirect(`${FE()}${returnTo}?facebook=denied`);
+  }
   if (!payload?.clinicId) {
     return res.redirect(`${FE()}/onboarding?facebook=invalid_state`);
   }
   if (!code) {
-    return res.redirect(`${FE()}/onboarding?facebook=missing_code`);
+    return res.redirect(`${FE()}${returnTo}?facebook=missing_code`);
   }
 
   try {
-    const grant = await exchangeCode(code); // { userToken, expiresAt, scopes, name, email, userId }
+    const grant = await exchangeCode(code);
     await storeGrant({ clinicId: payload.clinicId, grant });
-    // Success → frontend shows the Page picker (status=pending_location).
-    return res.redirect(`${FE()}/onboarding?facebook=connected`);
+    return res.redirect(`${FE()}${returnTo}?facebook=connected`);
   } catch (err) {
     console.error("facebookCallback error:", err.message);
-    return res.redirect(`${FE()}/onboarding?facebook=exchange_failed`);
+    return res.redirect(`${FE()}${returnTo}?facebook=exchange_failed`);
   }
 };
 
