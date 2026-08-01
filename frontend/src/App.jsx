@@ -5,6 +5,7 @@ import AppBootstrap from "./components/AppBootstrap.jsx";
 import LoginPage from "./pages/LoginPage.jsx";
 import Dashboard from "./pages/Dashboard.jsx";
 import SendRequests from "./pages/SendRequests.jsx";
+import Campaigns from "./pages/Campaigns.jsx";
 import Settings from "./pages/Settings.jsx";
 import Analytics from "./pages/Analytics.jsx";
 import Competitors from "./pages/Competitors.jsx";
@@ -60,8 +61,16 @@ export default function App() {
             />
 
             {/* Protected */}
+            {/* NOTE on /campaigns: this route was missing entirely, so the whole
+                Pulse Campaigns UI (Campaigns.jsx + components/campaigns/*) was
+                built and unreachable. It is deliberately NOT plan-gated here —
+                Campaigns.jsx catches the backend's 403 UPGRADE_REQUIRED and
+                renders an inline upsell, which is a better conversion surface
+                than a hidden link. Gating in the router would double-enforce
+                what requireFeature("pulseCampaignsEnabled") already handles. */}
             <Route path="/dashboard"     element={<PrivateRoute><Dashboard /></PrivateRoute>}     />
             <Route path="/send-requests" element={<PrivateRoute><SendRequests /></PrivateRoute>}  />
+            <Route path="/campaigns"     element={<PrivateRoute><Campaigns /></PrivateRoute>}     />
             <Route path="/settings"      element={<PrivateRoute><Settings /></PrivateRoute>}      />
             <Route path="/analytics"     element={<PrivateRoute><Analytics /></PrivateRoute>}     />
             <Route path="/competitors"   element={<PrivateRoute><Competitors /></PrivateRoute>}   />

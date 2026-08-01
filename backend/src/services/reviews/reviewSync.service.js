@@ -10,8 +10,10 @@
 // to production — the mock provider fails loudly in prod, by design.
 //
 // PIPELINE per connection:
-//   getValidAccessToken (Phase 1: auto-refresh, revocation detection)
-//     → provider.fetchReviewsPage (GBP v4, orderBy=updateTime desc, paginated)
+//   getValidAccessToken / getValidFacebookToken (auto-refresh, revocation
+//   detection — Google and Facebook each have their own token lifecycle;
+//   Yelp uses a single account-level API key and needs no per-clinic token)
+//     → provider.fetchReviewsPage (paginated)
 //       → per review: UPSERT onto uniq_reviews_clinic_platform_external
 //         (migration 0003 partial unique index) with merge rules below
 //     → free-tier trim to storedReviewsLimit newest
@@ -20,9 +22,11 @@
 //   * idempotent — resyncing identical pages creates zero rows
 //   * rating edits recompute sentiment; unchanged ratings NEVER clobber a
 //     stored sentiment (protects future AI-scored values — the 0005 rule)
-//   * replied is STICKY-TRUE — a reply made in our UI isn't on Google until
-//     Phase 8 publishes it, so Google's "no reply" must not un-reply a row
-//   * Google-side replies import (reply_text COALESCEs in)
+//   * replied is STICKY-TRUE — a reply made in our UI isn't on the source
+//     platform until it's published there, so "no reply" on refetch must
+//     never un-reply a row
+//   * platform-side replies import where the provider returns them
+//     (reply_text COALESCEs in)
 //
 // INCREMENTAL EARLY-STOP: pages arrive newest-updated first; once a page's
 // oldest updateTime predates last_synced_at minus a 24h safety buffer,
@@ -30,24 +34,43 @@
 // last_synced_at) walks everything up to MAX_PAGES.
 //
 // WHO CALLS THIS:
-//   * syncScheduler (Phase 7) — does NOT consume the review_sync meter; the
-//     plan's interval IS its cap. Stamps last_synced_at / last_sync_error.
+//   * syncScheduler — does NOT consume the review_sync meter; the plan's
+//     interval IS its cap. Stamps last_synced_at / last_sync_error.
 //   * the manual endpoint (reviewSync.controller.js) — DOES reserve
 //     reserveUsage({ metric:"review_sync" }) (Phase 5 daily budget) and
 //     stamps last_synced_at itself so the scheduler's clock resets too.
+//
+// ── FIX LOG (read before touching PLATFORM_LABEL / UPSERT_SQL again) ────────
+//   1. PLATFORM_LABEL was missing a `facebook` key. buildUpsertSql(undefined)
+//      produced `VALUES ($1::uuid, 'undefined', ...)`, which Postgres rejects
+//      against the `platform` ENUM('Google','Yelp','Facebook') on every
+//      single Facebook row (22P02 invalid input value for enum). Fixed below,
+//      plus a boot-time assertion so a missing label fails loudly instead of
+//      silently poisoning every Facebook sync.
+//   2. The access-token block only ever populated `accessToken` for the
+//      Google provider. Facebook reviews are gated behind a PAGE access
+//      token (getValidFacebookToken) exactly the way Google is gated behind
+//      an OAuth access token — without it, facebookReviews.provider.js's own
+//      guard throws FB_AUTH before a single request goes out. Fixed below.
+//   3. The upsert call inside the loop referenced a bare `UPSERT_SQL`
+//      identifier that no longer exists now that the statement is chosen
+//      per-platform via `upsertSql`. Left in place, this throws a
+//      ReferenceError on the very first review of *any* platform. Fixed
+//      below — the loop now uses the per-connection `upsertSql` resolved at
+//      the top of syncByConnectionId.
 
 import { QueryTypes } from "sequelize";
 import { sequelize } from "../../config/db.js";
 import { PlatformConnection } from "../../models/index.js";
 import { getValidAccessToken } from "../google/googleAuth.service.js";
+import { getValidFacebookToken } from "../facebook/facebookAuth.service.js";
 import { computeSentiment } from "../../utils/sentiment.js";
 import { getSubscriptionState } from "../subscription/subscriptionState.service.js";
 import { env } from "../../config/env.js";
 import * as googleProvider from "./providers/googleReviews.provider.js";
-import * as yelpProvider   from "./providers/yelpReviews.provider.js";
+import * as yelpProvider from "./providers/yelpReviews.provider.js";
 import * as mockProvider from "./providers/mockReviews.provider.js";
 import * as facebookProvider from "./providers/facebookReviews.provider.js";
-import { getValidFacebookToken } from "../facebook/facebookAuth.service.js";
 
 export const isImplemented = true; // ← the Phase 7 flag, flipped
 
@@ -57,14 +80,15 @@ const EARLY_STOP_BUFFER_MS = 24 * 3600e3;
 // ── Provider factory (mirrors the competitor-intelligence factory) ──────────
 // Platform-aware. REVIEWS_MOCK (or GOOGLE_MOCK_DISCOVERY) still forces the
 // shared mock provider for EVERY platform in dev — a fully offline pipeline.
-// Otherwise google → GBP provider, yelp → Fusion provider. Widen this switch
-// as new providers land; the caller passes connection.platform.
+// Otherwise google → GBP provider, yelp → Fusion provider, facebook → Graph
+// provider. Widen this switch as new providers land; the caller passes
+// connection.platform.
 function getProvider(platform) {
   const mock =
     String(process.env.REVIEWS_MOCK ?? env.GOOGLE_MOCK_DISCOVERY ?? "").toLowerCase() === "true";
   if (mock) return mockProvider;
   if (platform === "yelp") return yelpProvider;
-  if (platform === "facebook") return facebookProvider; 
+  if (platform === "facebook") return facebookProvider;
   return googleProvider; // platform === "google"
 }
 
@@ -72,11 +96,26 @@ function getProvider(platform) {
 // The platform literal is the ONLY thing that varies per provider, so the SQL
 // is built once per supported platform from a fixed label map (NOT user input —
 // no injection surface). Merge rules are byte-for-byte the tested Google ones
-// and hold for Yelp unchanged: Yelp yields replied=false / reply_text=NULL every
-// sync, so `replied = reviews.replied OR EXCLUDED.replied` keeps a locally-saved
-// reply sticky (Yelp publishing is UNSUPPORTED, so it stays local forever) and
-// the reply_text COALESCE never clobbers it.
-const PLATFORM_LABEL = Object.freeze({ google: "Google", yelp: "Yelp" });
+// and hold for Yelp and Facebook unchanged: both yield replied=false /
+// reply_text=NULL on plain fetch (Yelp has no reply API at all; Facebook's
+// /ratings edge doesn't return the Page's own replies), so
+// `replied = reviews.replied OR EXCLUDED.replied` keeps a locally-saved reply
+// sticky and the reply_text COALESCE never clobbers it.
+const PLATFORM_LABEL = Object.freeze({
+  google: "Google",
+  yelp: "Yelp",
+  facebook: "Facebook",
+});
+
+// Fail at import time, not mid-sync, if a platform is ever added to the
+// provider factory / claim SQL without a matching label here. This is
+// exactly the class of bug the missing `facebook` key produced — cheap
+// insurance against it happening again.
+for (const [key, label] of Object.entries(PLATFORM_LABEL)) {
+  if (!label) {
+    throw new Error(`reviewSync.service.js: PLATFORM_LABEL is missing a label for '${key}'`);
+  }
+}
 
 const buildUpsertSql = (platformLabel) => `
 INSERT INTO reviews (clinic_id, platform, external_id, reviewer_name, rating,
@@ -100,7 +139,7 @@ RETURNING (xmax = 0) AS inserted`;
 
 const UPSERT_SQL_BY_PLATFORM = Object.freeze({
   google: buildUpsertSql(PLATFORM_LABEL.google),
-  yelp:   buildUpsertSql(PLATFORM_LABEL.yelp),
+  yelp: buildUpsertSql(PLATFORM_LABEL.yelp),
   facebook: buildUpsertSql(PLATFORM_LABEL.facebook),
 });
 
@@ -131,11 +170,18 @@ export async function syncByConnectionId(connectionId) {
 
   const provider = getProvider(connection.platform);
 
-  // Only Google needs a per-clinic OAuth token. Yelp authenticates with an
-  // account-level API key inside its own provider; mock needs nothing.
+  // Token resolution is per-provider:
+  //   Google   → per-clinic OAuth access token (auto-refreshed)
+  //   Facebook → per-clinic PAGE access token (re-derived from the long-lived
+  //              user token if the cached one is missing)
+  //   Yelp     → account-level API key, read inside yelpReviews.provider.js
+  //   mock     → nothing
+  // Only Google and Facebook need anything fetched here.
   let accessToken = null;
   if (provider === googleProvider) {
     ({ accessToken } = await getValidAccessToken(connection.clinicId));
+  } else if (provider === facebookProvider) {
+    ({ accessToken } = await getValidFacebookToken(connection.clinicId));
   }
 
   const lastSynced = connection.lastSyncedAt ? new Date(connection.lastSyncedAt).getTime() : null;
@@ -166,7 +212,7 @@ export async function syncByConnectionId(connectionId) {
         continue;
       }
 
-      const [row] = await sequelize.query(UPSERT_SQL, {
+      const [row] = await sequelize.query(upsertSql, {
         bind: [
           connection.clinicId,
           r.externalId,
@@ -209,8 +255,14 @@ export async function syncByConnectionId(connectionId) {
 }
 
 /**
- * Convenience for the manual endpoint: sync the clinic's (single) Google
- * connection without the caller needing the connection id.
+ * Convenience for the manual endpoint: sync the clinic's Google connection
+ * without the caller needing the connection id.
+ *
+ * NOTE: this stays Google-only by design (matching reviewSync.controller.js,
+ * which currently looks up only the clinic's Google connection). If you fix
+ * the controller to support Yelp/Facebook manual syncs too (tracked as M2 in
+ * the audit), extend this to accept a platform or to loop every connected
+ * platform for the clinic — syncByConnectionId already works for all three.
  */
 export async function syncClinicReviews(clinicId) {
   const connection = await PlatformConnection.findOne({

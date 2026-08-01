@@ -1,93 +1,86 @@
-// backend/src/routes/review.routes.js
+// backend/src/routes/request.routes.js
 //
-// STEP 1 CHANGE: adds POST /sync → reviewSync.controller.js syncNow. The
-// controller (with its reserve-before-sync metering and refund-on-failure)
-// existed but no route pointed at it, so the frontend's "Sync now" button
-// had nothing to call.
+// The review-REQUEST router (outbound SMS/Email asks sent to individual
+// patients). Mounted at /api/v1/requests in app.js.
 //
-// Route order note: /sync is registered before the /:id/* routes. With the
-// current paths there is no actual capture conflict (/:id/reply is two
-// segments, /sync is one), but keeping static paths above parameterized ones
-// is the convention that prevents the day someone adds a one-segment /:id
-// route and "sync" silently becomes a review ID.
+// ── WHY THIS FILE WAS REWRITTEN ─────────────────────────────────────────────
+// The Step-1 revision of review.routes.js was written to this path by mistake,
+// overwriting whatever request router lived here. app.js mounts THIS file at
+// /api/v1/requests, so for as long as that stood:
+//   * every /api/v1/requests/* endpoint 404'd (the SendRequests page's
+//     getUserRequests() swallowed the error and the UI fell back to the four
+//     hardcoded mock rows in store/requestsSlice.js — which is why this looked
+//     like it worked)
+//   * POST /api/v1/reviews/sync 404'd, because the router that declares it was
+//     sitting here under the wrong mount point
+//   * /api/v1/requests/:id/ai-reply existed, which is meaningless
+//
+// The Step-1 review router has been restored to review.routes.js. This file is
+// the request router, rebuilt against what request.controller.js actually
+// exports.
+//
+// ── PLAN ENFORCEMENT: deliberately no requireFeature here ───────────────────
+// Same reasoning as reviews/sync. Sending is gated by the CREDIT reservation
+// inside sendRequest(): Free has smsPerMonth 0 / whatsAppPerMonth 0 /
+// emailPerMonth 0, so reserveCredits and reserveUsage return
+// PLAN_DOES_NOT_INCLUDE_CHANNEL with the same 403 UPGRADE_REQUIRED shape the
+// frontend's axios interceptor already pattern-matches into the upgrade modal.
+// One enforcement path, not two. Adding a requireFeature gate here would give
+// Free users a different error for the same wall.
+//
+// Reading history (GET /) is NOT gated — a clinic that downgrades must still
+// see what it sent.
 
 import { Router } from "express";
 import rateLimit from "express-rate-limit";
 import { protect } from "../middleware/auth.middleware.js";
 import { loadClinic } from "../middleware/loadClinic.middleware.js";
-import { requireFeature } from "../middleware/tierCap.middleware.js";
-import {
-  validate,
-  replyToReviewSchema,
-  generateAiReplySchema,
-  idParamSchema,
-} from "../middleware/validate.middleware.js";
+import { validate, sendRequestSchema, idParamSchema } from "../middleware/validate.middleware.js";
 import { asyncHandler } from "../middleware/asyncHandler.js";
+import Joi from "joi";
 import {
-  listReviews,
-  replyToReview,
-  generateAiReply,
-} from "../controllers/review.controller.js";
-import { syncNow } from "../controllers/reviewSync.controller.js";
+  sendRequest,
+  listRequests,
+  updateRequestStatus,
+} from "../controllers/request.controller.js";
 
 const router = Router();
 
-// ── AI rate limit ─────────────────────────────────────────────────────────────
-// AI calls cost money. 20 generations / 5 min per IP is enough for normal
-// usage but slows down anyone trying to drain credits. (The hard monthly cap
-// is the ai_reply usage meter inside the controller — this is just a brake.)
-const aiLimiter = rateLimit({
+// ── Send rate limit ──────────────────────────────────────────────────────────
+// Real money per send. The hard cap is the monthly credit/usage meter inside
+// the controller; this is the brake that stops a script from draining a
+// Premium clinic's 500 credits in ten seconds before the meter arithmetic even
+// runs. 30 sends / 5 min per IP is far above human pace.
+const sendLimiter = rateLimit({
   windowMs: 5 * 60 * 1000,
-  max:      20,
-  message:  { success: false, message: "Too many AI requests. Please slow down." },
+  max: 30,
+  message: { success: false, message: "Too many requests sent. Please wait a few minutes." },
   standardHeaders: true,
-  legacyHeaders:   false,
+  legacyHeaders: false,
 });
 
-// ── Manual-sync rate limit ────────────────────────────────────────────────────
-// The real budget is the review_sync DAILY meter reserved inside syncNow
-// (Free 0 / Starter 6 / Premium 48). This per-IP limiter only stops rapid
-// hammering of the button before the meter query even runs.
-const syncLimiter = rateLimit({
-  windowMs: 5 * 60 * 1000,
-  max:      10,
-  message:  { success: false, message: "Too many sync requests. Please wait a few minutes." },
-  standardHeaders: true,
-  legacyHeaders:   false,
+// Status transitions the client is allowed to report. "Failed" is absent on
+// purpose — only the server marks a send failed, from provider feedback.
+const statusSchema = Joi.object({
+  status: Joi.string().valid("Sent", "Opened", "Reviewed").required(),
 });
 
 router.use(protect, loadClinic);
 
-router.get(
-  "/",
-  asyncHandler(listReviews)
-);
+// GET /api/v1/requests — send history, newest first.
+// Returns a bare array in `data` because the frontend hook does
+// dispatch(addUserRequests(response.data.data)) and the reducer spreads it.
+router.get("/", asyncHandler(listRequests));
 
-// ── POST /api/v1/reviews/sync — the manual "Sync now" button ─────────────────
-// No requireFeature gate here on purpose: the Free tier's review_sync limit
-// is 0 in config/plans.js, so reserveUsage() inside the controller returns
-// PLAN_DOES_NOT_INCLUDE_FEATURE with the standard 403 shape the frontend's
-// upgrade-modal interceptor already understands. One enforcement path, not two.
-router.post(
-  "/sync",
-  syncLimiter,
-  asyncHandler(syncNow)
-);
+// POST /api/v1/requests — send one review request (SMS / Email / Both).
+router.post("/", sendLimiter, validate(sendRequestSchema), asyncHandler(sendRequest));
 
-router.post(
-  "/:id/reply",
+// PATCH /api/v1/requests/:id/status — advance Sent → Opened → Reviewed.
+router.patch(
+  "/:id/status",
   validate(idParamSchema, "params"),
-  validate(replyToReviewSchema),
-  asyncHandler(replyToReview)
-);
-
-router.post(
-  "/:id/ai-reply",
-  aiLimiter,
-  requireFeature("aiRepliesEnabled"),                // Free tier blocked here
-  validate(idParamSchema, "params"),
-  validate(generateAiReplySchema),
-  asyncHandler(generateAiReply)
+  validate(statusSchema),
+  asyncHandler(updateRequestStatus)
 );
 
 export default router;
