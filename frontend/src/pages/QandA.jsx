@@ -24,11 +24,11 @@ export default function FAQ() {
       questions: [
         {
           q: "What exactly is GetRankRise?",
-          a: "GetRankRise is an AI-powered reputation management platform specifically designed for clinics. We help you automate the process of requesting, managing, and responding to Google Business reviews to boost your local SEO and patient trust."
+          a: "GetRankRise is an AI-powered reputation management platform for clinics and local businesses. We help you automate requesting, managing, and responding to reviews across Google, Yelp, and Facebook to boost your local SEO and patient trust."
         },
         {
           q: "How do I connect my clinic's Google Business Profile?",
-          a: "Navigate to Settings > Integrations. Click on the 'Connect Google' button and sign in with the account managing your Business Profile. Once authorized, your reviews will automatically sync to your dashboard."
+          a: "Go to Settings → Integrations, click 'Connect Google,' and sign in with the account that manages your Business Profile. You can connect Yelp and Facebook from the same screen. Once authorized, your reviews sync to your dashboard automatically."
         }
       ]
     },
@@ -38,11 +38,11 @@ export default function FAQ() {
       questions: [
         {
           q: "How does the AI response generator work?",
-          a: "Our AI analyzes the sentiment and specific points mentioned in a patient's review. When you click 'Generate Reply,' it drafts a professional, HIPAA-compliant, and SEO-optimized response tailored to that specific feedback."
+          a: "Our AI analyzes the sentiment and specific points in a review. When you click 'Generate Reply,' it drafts a professional, brand-safe, SEO-friendly response tailored to that feedback — and you can always edit it before posting."
         },
         {
           q: "Can I change the 'tone' of the AI?",
-          a: "Yes. In Settings > AI Customization, you can choose between various tones such as Professional, Empathetic, Casual, or Concise to ensure the replies match your clinic’s brand voice."
+          a: "Every draft is written in a professional, on-brand voice by default, and you can edit any reply before it's posted. Finer tone controls — warm, concise, or empathetic — are on our roadmap."
         }
       ]
     },
@@ -51,8 +51,8 @@ export default function FAQ() {
       icon: <ShieldCheck size={18} className="text-emerald-500" />,
       questions: [
         {
-          q: "Is my patient data secure?",
-          a: "We implement industry-standard AES-256 encryption. We handle clinic-related information with strict adherence to modern privacy standards to ensure your patient contact lists remain confidential."
+          q: "Is my customer data secure?",
+          a: "We encrypt data in transit (TLS) and sensitive credentials at rest (AES-256). Patient contact details are used only to send the review requests you initiate, then deleted right after — we don't keep patient contact lists."
         },
         {
           q: "Where can I find my invoices?",

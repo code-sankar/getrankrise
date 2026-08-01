@@ -51,7 +51,8 @@ export const startFacebookConnect = async (req, res) => {
         message: "Facebook isn't configured on the server yet (FACEBOOK_APP_ID / FACEBOOK_APP_SECRET).",
       });
     }
-    const state = signState({ clinicId: req.clinic.id, userId: req.user.id });
+    const returnTo = safeReturnTo(req.query.returnTo);
+    const state = signState({ clinicId: req.clinic.id, userId: req.user.id, returnTo });
     return successResponse(res, {
       message: "Consent URL generated",
       data: { consentUrl: buildConsentUrl(state) },
@@ -67,14 +68,15 @@ export const startFacebookConnect = async (req, res) => {
 export const facebookCallback = async (req, res) => {
   const { code, state, error } = req.query;
 
-  const payload = verifyState(state);
+  const payload  = state ? verifyState(state) : null;
   const returnTo = safeReturnTo(payload?.returnTo);
 
+  // User clicked "Cancel" / denied on the consent screen.
   if (error) {
     return res.redirect(`${FE()}${returnTo}?facebook=denied`);
   }
   if (!payload?.clinicId) {
-    return res.redirect(`${FE()}/onboarding?facebook=invalid_state`);
+    return res.redirect(`${FE()}${returnTo}?facebook=invalid_state`);
   }
   if (!code) {
     return res.redirect(`${FE()}${returnTo}?facebook=missing_code`);
@@ -89,7 +91,6 @@ export const facebookCallback = async (req, res) => {
     return res.redirect(`${FE()}${returnTo}?facebook=exchange_failed`);
   }
 };
-
 // ── GET /api/v1/oauth/facebook/pages ─────────────────────────────────────────
 // The Pages the connected user manages, for the picker.
 export const getFacebookPages = async (req, res) => {

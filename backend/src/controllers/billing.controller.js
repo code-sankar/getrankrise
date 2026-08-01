@@ -11,6 +11,7 @@ import { sequelize } from "../config/db.js";
 import { Subscription, WebhookEvent, Clinic } from "../models/index.js";
 import {
   createTransaction,
+  createPortalSession,
   verifyWebhookSignature,
   priceIdToPlan,
 } from "../services/billing/paddle.client.js";
@@ -57,6 +58,45 @@ export const createCheckout = async (req, res) => {
   } catch (err) {
     console.error("createCheckout error:", err);
     return serverErrorResponse(res, "Could not create checkout");
+  }
+};
+
+// ── POST /api/v1/billing/portal-session ────────────────────────────────────
+// Authenticated. Returns a short-lived Paddle customer-portal link so the user
+// can update their payment method or cancel. Only paid clinics have a Paddle
+// customer id — free clinics have never been to checkout, so there's nothing
+// to manage.
+export const createBillingPortal = async (req, res) => {
+  try {
+    const sub = await Subscription.findOne({
+      where: { clinicId: req.clinic.id },
+      attributes: ["gatewayCustomerId", "gatewaySubscriptionId"],
+    });
+
+    if (!sub?.gatewayCustomerId) {
+      return res.status(409).json({
+        success: false,
+        code: "NO_BILLING_ACCOUNT",
+        message: "You don't have a paid subscription to manage yet. Upgrade to a paid plan first.",
+      });
+    }
+
+    const { overviewUrl, cancelUrl, updatePaymentUrl } = await createPortalSession({
+      customerId: sub.gatewayCustomerId,
+      subscriptionIds: sub.gatewaySubscriptionId ? [sub.gatewaySubscriptionId] : undefined,
+    });
+
+    if (!overviewUrl) {
+      return serverErrorResponse(res, "Could not generate a billing portal link. Please try again.");
+    }
+
+    return successResponse(res, {
+      message: "Billing portal session created",
+      data: { overviewUrl, cancelUrl, updatePaymentUrl },
+    });
+  } catch (err) {
+    console.error("createBillingPortal error:", err);
+    return serverErrorResponse(res, "Could not open the billing portal");
   }
 };
 

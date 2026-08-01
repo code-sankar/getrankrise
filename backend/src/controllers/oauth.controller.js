@@ -39,12 +39,14 @@ import { auditFromReq, AUDIT_EVENTS } from "../utils/auditLog.js";
 
 const FE = () => env.CLIENT_URL.split(",")[0].trim();
 const ALLOWED_RETURN_PATHS = new Set(["/onboarding", "/settings"]);
-const safeReturnTo = (raw) => {
-  if (typeof raw !== "string") return "/onboarding";
-  if (!raw.startsWith("/") || raw.startsWith("//")) return "/onboarding";
-  const path = raw.split("?")[0].split("#")[0];
-  return ALLOWED_RETURN_PATHS.has(path) ? path : "/onboarding";
-};
+function safeReturnTo(raw, fallback = "/onboarding") {
+  if (typeof raw !== "string") return fallback;
+  const path = raw.split(/[?#]/)[0]; // drop any query/hash
+  if (!path.startsWith("/") || path.startsWith("//")) return fallback;
+  if (path.includes("\\") || path.includes("://") || path.length > 512)
+    return fallback;
+  return path;
+}
 // ── GET /api/v1/oauth/google/connect ─────────────────────────────────────────
 // Returns the consent URL for the frontend to redirect to. We return it rather
 // than 302ing directly because the request arrives via axios (XHR) — a 302
@@ -53,10 +55,11 @@ const safeReturnTo = (raw) => {
 // `window.location.href = consentUrl`.
 export const startGoogleConnect = async (req, res) => {
   try {
+    const returnTo = safeReturnTo(req.query.returnTo);
     const state = signState({
       clinicId: req.clinic.id,
       userId: req.user.id,
-      returnTo: safeReturnTo(req.query.returnTo),
+      returnTo,
     });
     return successResponse(res, {
       message: "Consent URL generated",
@@ -77,7 +80,7 @@ export const googleCallback = async (req, res) => {
   // Recover the signed state up front so we know where to send the browser
   // back to. verifyState returns null for a tampered/expired/absent state,
   // in which case returnTo falls back to /onboarding.
-  const payload = verifyState(state);
+  const payload = state ? verifyState(state) : null;
   const returnTo = safeReturnTo(payload?.returnTo);
 
   if (error) {

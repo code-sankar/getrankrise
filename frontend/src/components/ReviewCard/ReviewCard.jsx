@@ -2,10 +2,7 @@ import { useState } from "react";
 import { useDispatch } from "react-redux";
 import { markReplied } from "../../store/reviewsSlice.js";
 import { addNotification } from "../../store/notificationsSlice.js";
-import {
-  replyToReview,
-  generateAIReply,
-} from "../../hooks/reviews.hook.js";
+import { replyToReview, generateAIReply } from "../../hooks/reviews.hook.js";
 import StarRating from "../StarRating.jsx";
 import { useTheme } from "../../context/ThemeContext.jsx";
 
@@ -17,6 +14,7 @@ export default function ReviewCard({ review }) {
   const [replyText, setReplyText] = useState("");
   const [generating, setGenerating] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const [tone, setTone] = useState("professional");
 
   const isUrgent = review.rating <= 2;
 
@@ -37,9 +35,9 @@ export default function ReviewCard({ review }) {
 
   const getPlatform = (p) =>
     ({
-      Google:   { color: "text-blue-500",  bg: "bg-blue-500/10",  label: "G" },
-      Yelp:     { color: "text-red-500",   bg: "bg-red-500/10",   label: "Y" },
-      Facebook: { color: "text-blue-600",  bg: "bg-blue-600/10",  label: "f" },
+      Google: { color: "text-blue-500", bg: "bg-blue-500/10", label: "G" },
+      Yelp: { color: "text-red-500", bg: "bg-red-500/10", label: "Y" },
+      Facebook: { color: "text-blue-600", bg: "bg-blue-600/10", label: "f" },
     })[p] || { color: "text-slate-400", bg: "bg-slate-400/10", label: "R" };
 
   const platform = getPlatform(review.platform);
@@ -50,7 +48,7 @@ export default function ReviewCard({ review }) {
     setShowPanel(true);
 
     try {
-      const reply = await generateAIReply(review.id, review.text);
+      const reply = await generateAIReply(review.id, review.text, tone);
       if (reply) {
         setReplyText(reply);
       } else {
@@ -58,8 +56,8 @@ export default function ReviewCard({ review }) {
         // the UI keeps working. Toast for the failure already came from the hook.
         setReplyText(
           `Hi ${review.name.split(" ")[0]}, thank you for sharing your feedback. ` +
-          `We genuinely appreciate it and would love to make sure your experience is the best it can be. ` +
-          `Please reach out to us directly so we can help.`
+            `We genuinely appreciate it and would love to make sure your experience is the best it can be. ` +
+            `Please reach out to us directly so we can help.`,
         );
       }
     } catch (err) {
@@ -84,7 +82,7 @@ export default function ReviewCard({ review }) {
         addNotification({
           type: "success",
           message: `Reply posted for ${review.name}'s review`,
-        })
+        }),
       );
       setShowPanel(false);
       setReplyText("");
@@ -106,8 +104,8 @@ export default function ReviewCard({ review }) {
           isUrgent
             ? "bg-red-500"
             : review.rating >= 4
-            ? "bg-emerald-500"
-            : "bg-amber-500"
+              ? "bg-emerald-500"
+              : "bg-amber-500"
         }`}
       />
 
@@ -206,7 +204,9 @@ export default function ReviewCard({ review }) {
               {!review.replied && (
                 <div
                   className={`hidden sm:flex items-center gap-2 px-3 py-2 rounded-xl border text-[11px] font-bold ${
-                    dark ? "border-slate-800 text-slate-500" : "border-slate-100 text-slate-400"
+                    dark
+                      ? "border-slate-800 text-slate-500"
+                      : "border-slate-100 text-slate-400"
                   }`}
                 >
                   <span className="text-indigo-500">✦</span> AI READY
@@ -223,7 +223,9 @@ export default function ReviewCard({ review }) {
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-2">
               <span className="w-2 h-2 rounded-full bg-indigo-500 animate-pulse" />
-              <span className={`text-xs font-bold uppercase tracking-widest ${theme.text}`}>
+              <span
+                className={`text-xs font-bold uppercase tracking-widest ${theme.text}`}
+              >
                 AI Assistant Draft
               </span>
             </div>
@@ -231,9 +233,32 @@ export default function ReviewCard({ review }) {
               Context-aware reply
             </span>
           </div>
+          {/* Tone selector — applies on the next Generate / Regenerate */}
+          <div className="flex flex-wrap items-center gap-1.5 mb-3">
+            <span className={`text-[10px] font-bold uppercase tracking-widest mr-1 ${theme.muted}`}>Tone</span>
+            {["professional", "warm", "empathetic", "concise"].map((t) => (
+              <button
+                key={t}
+                type="button"
+                onClick={() => setTone(t)}
+                disabled={generating || submitting}
+                className={`px-2.5 py-1 rounded-lg text-[11px] font-bold capitalize transition-all disabled:opacity-50 ${
+                  tone === t
+                    ? "bg-indigo-600 text-white"
+                    : dark
+                      ? "bg-slate-800 text-slate-400 hover:text-slate-200"
+                      : "bg-slate-100 text-slate-500 hover:text-slate-700"
+                }`}
+              >
+                {t}
+              </button>
+            ))}
+          </div>
 
           {generating ? (
-            <div className={`w-full h-32 rounded-xl border-2 border-dashed flex flex-col items-center justify-center gap-3 ${dark ? "border-slate-800" : "border-slate-200"}`}>
+            <div
+              className={`w-full h-32 rounded-xl border-2 border-dashed flex flex-col items-center justify-center gap-3 ${dark ? "border-slate-800" : "border-slate-200"}`}
+            >
               <div className="flex gap-1">
                 <div className="w-2 h-2 bg-indigo-500 rounded-full animate-bounce [animation-delay:-0.3s]" />
                 <div className="w-2 h-2 bg-indigo-500 rounded-full animate-bounce [animation-delay:-0.15s]" />
@@ -265,7 +290,9 @@ export default function ReviewCard({ review }) {
               onClick={handleGenerateReply}
               disabled={generating || submitting}
               className={`px-4 py-2.5 border text-xs font-bold rounded-xl transition-all disabled:opacity-50 ${
-                dark ? "border-slate-700 hover:bg-slate-800 text-slate-300" : "border-slate-200 hover:bg-white text-slate-600"
+                dark
+                  ? "border-slate-700 hover:bg-slate-800 text-slate-300"
+                  : "border-slate-200 hover:bg-white text-slate-600"
               }`}
             >
               Regenerate

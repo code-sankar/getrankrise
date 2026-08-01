@@ -7,9 +7,9 @@
 
 import axiosInstance from "../utils/axios.helper.js";
 
-// Return the browser to whatever page started the flow (onboarding or
-// Settings → Integrations). The backend allowlists this to same-origin paths.
-const currentPath = () =>
+// See googleAPI.js — returns the browser to the page the connect began on.
+// Server-side validated (same-origin relative path only) before any redirect.
+const defaultReturnTo = () =>
   typeof window !== "undefined" ? window.location.pathname : "/onboarding";
 
 export const facebookAPI = {
@@ -23,11 +23,8 @@ export const facebookAPI = {
    * Step 1: get the Facebook consent URL. Caller must do a FULL page
    * navigation — window.location.href = consentUrl.
    * Throws err.notConfigured=true when the server has no FACEBOOK_APP_ID.
-   *
-   * @param {string} [returnTo] path to return to after consent (defaults to
-   *                            the current page). Allowlisted server-side.
    */
-  startConnect: async (returnTo = currentPath()) => {
+  startConnect: async (returnTo = defaultReturnTo()) => {
     try {
       const { data } = await axiosInstance.get("/oauth/facebook/connect", {
         params: { returnTo },

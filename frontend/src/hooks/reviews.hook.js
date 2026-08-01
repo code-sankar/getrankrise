@@ -101,13 +101,12 @@ export const replyToReview = async (dispatch, reviewId, replyText) => {
 
 // ── Generate AI reply for a review ───────────────────────────────────────────
 // PHASE 3 CONTRACT CHANGE: this now THROWS on failure instead of resolving
-// undefined. The old shape let ReviewCard treat "backend failed" and "backend
-// returned a draft" as the same happy path, which is how the canned-template
-// fallback snuck in. Callers must catch; the hook has already toasted.
-export const generateAIReply = async (reviewId, reviewText) => {
+// undefined. Callers must catch; the hook has already toasted.
+export const generateAIReply = async (reviewId, reviewText, tone = "professional") => {
   try {
     const response = await axiosInstance.post(`/reviews/${reviewId}/ai-reply`, {
       reviewText,
+      tone,
     });
     const reply = response?.data?.data?.reply;
     if (!reply) {

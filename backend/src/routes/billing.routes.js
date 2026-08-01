@@ -5,7 +5,7 @@ import { loadClinic } from "../middleware/loadClinic.middleware.js";
 import { validate } from "../middleware/validate.middleware.js";
 import { asyncHandler } from "../middleware/asyncHandler.js";
 import Joi from "joi";
-import { createCheckout } from "../controllers/billing.controller.js";
+import { createCheckout, createBillingPortal } from "../controllers/billing.controller.js";
 
 const router = Router();
 
@@ -42,6 +42,13 @@ router.post(
   "/create-checkout",
   validate(checkoutSchema),
   asyncHandler(createCheckout)
+);
+
+// Self-serve manage/cancel: returns a short-lived Paddle customer-portal link.
+// No body — the customer + subscription are resolved from the clinic's row.
+router.post(
+  "/portal-session",
+  asyncHandler(createBillingPortal)
 );
 
 export default router;

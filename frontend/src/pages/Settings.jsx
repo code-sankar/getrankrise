@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import Sidebar from "../components/Sidebar.jsx";
 import TopBar from "../components/TopBar.jsx";
 import { useTheme } from "../context/ThemeContext.jsx";
@@ -19,8 +20,10 @@ import GoogleConnect   from "../components/onboarding/GoogleConnect.jsx";
 import YelpConnect     from "../components/onboarding/YelpConnect.jsx";
 import FacebookConnect from "../components/onboarding/FacebookConnect.jsx";
 
-// ── Billing (Paddle hosted checkout) ─────────────────────────────────────────
-import { billingAPI } from "../api/billingAPI.js";
+// ── Real Paddle overlay checkout (already used by the upgrade modal) ──────────
+import UpgradeButton from "../components/billing/UpgradeButton.jsx";
+// ── Paddle-hosted customer portal (update payment / cancel) ───────────────────
+import ManageBillingButton from "../components/billing/ManageBillingButton.jsx";
 
 // ── Defaults — used until /clinic/me hydrates the form ─────────────────────────
 const defaultClinic = {
@@ -46,6 +49,16 @@ const PLANS = [
   { id: "starter",  name: "Starter",  price: "$49", features: ["Full AI engine", "24h sync", "3 competitors", "50 SMS / mo"] },
   { id: "premium",  name: "Premium",  price: "$99", features: ["Hourly sync", "10 competitors", "500 SMS + 500 WhatsApp / mo"] },
 ];
+
+// Upgrades only ever go up the ladder. Downgrades/cancellation route through
+// the Paddle customer portal (not wired yet), so we never render a checkout
+// button for a lower tier.
+const PLAN_RANK = { free: 0, starter: 1, premium: 2 };
+
+// A returning OAuth callback lands on /settings?google=connected (etc.). If any
+// of these params are present, open the Integrations tab so the child connect
+// card can pick the param up and show its picker.
+const OAUTH_RETURN_PARAMS = ["google", "facebook", "yelp"];
 
 // ── Reusable UI ──────────────────────────────────────────────────────────────
 function SectionHeader({ title, description, dark }) {
@@ -97,19 +110,10 @@ function Toggle({ label, description, enabled, onToggle, dark }) {
   );
 }
 
-// When the OAuth callback bounces the user back to /settings?google=connected
-// (or ?facebook=…), open the Integrations tab so the connect card — which reads
-// that query param — is actually mounted to finish the flow.
-function initialTabFromUrl() {
-  if (typeof window === "undefined") return "clinic";
-  const p = new URLSearchParams(window.location.search);
-  if (p.has("google") || p.has("facebook")) return "integrations";
-  return "clinic";
-}
-
 export default function Settings() {
   const { dark } = useTheme();
   const dispatch = useDispatch();
+  const [searchParams] = useSearchParams();
 
   // ── Redux selectors ──────────────────────────────────────────────────────
   const authUser     = useSelector((s) => s.auth.user);
@@ -125,8 +129,9 @@ export default function Settings() {
   const [saving,        setSaving]        = useState(false);
   const [savingPwd,     setSavingPwd]     = useState(false);
   const [savedMsg,      setSavedMsg]      = useState("");
-  const [checkoutPlan,  setCheckoutPlan]  = useState(null); // which plan's checkout is opening
-  const [activeTab,     setActiveTab]     = useState(initialTabFromUrl);
+  const [activeTab,     setActiveTab]     = useState(() =>
+    OAUTH_RETURN_PARAMS.some((k) => searchParams.has(k)) ? "integrations" : "clinic"
+  );
 
   // ── Load clinic + notification settings on mount ─────────────────────────
   useEffect(() => {
@@ -213,27 +218,6 @@ export default function Settings() {
   // later refresh reviews/analytics the moment a new platform is linked.
   const handlePlatformConnected = () => {};
 
-  // ── Paddle checkout ──────────────────────────────────────────────────────
-  // Calls the real /billing/create-checkout endpoint and navigates to the
-  // hosted Paddle checkout it returns. On success the tab leaves the app, so
-  // there's no need to reset the loading state.
-  const startCheckout = async (plan) => {
-    if (plan !== "starter" && plan !== "premium") return;
-    setCheckoutPlan(plan);
-    try {
-      const { checkoutUrl } = await billingAPI.createCheckout(plan);
-      if (checkoutUrl) {
-        window.location.href = checkoutUrl;
-        return;
-      }
-      toast.error("Couldn't open checkout. Please try again.");
-      setCheckoutPlan(null);
-    } catch (err) {
-      toast.error(err?.response?.data?.message || "Couldn't start checkout. Please try again.");
-      setCheckoutPlan(null);
-    }
-  };
-
   const TABS = [
     { id: "clinic",        label: "Business Profile" },
     { id: "integrations",  label: "Integrations" },
@@ -249,12 +233,11 @@ export default function Settings() {
   // Current plan (defaults to "free" if no subscription loaded)
   const currentPlanId = userSub?.plan || "free";
   const currentPlan   = PLANS.find((p) => p.id === currentPlanId) || PLANS[0];
-
-  // The single most likely upgrade target for the primary CTA. Premium users
-  // have nowhere higher to go, so they get the "manage" affordance instead.
-  const nextUpgrade =
-    currentPlanId === "free" ? "starter" : currentPlanId === "starter" ? "premium" : null;
-  const nextUpgradeName = nextUpgrade ? PLANS.find((p) => p.id === nextUpgrade)?.name : null;
+  const currentRank   = PLAN_RANK[currentPlanId] ?? 0;
+  // The single next tier up, used for the "Current Plan" card's primary CTA.
+  const nextUpgrade   = currentRank < PLAN_RANK.premium
+    ? (currentPlanId === "free" ? "starter" : "premium")
+    : null;
 
   return (
     <div className={`h-screen overflow-hidden flex transition-colors duration-300 ${dark ? "bg-slate-950" : "bg-slate-50"}`}>
@@ -464,42 +447,42 @@ export default function Settings() {
                           ))}
                         </ul>
                       </div>
-                      {nextUpgrade ? (
-                        <button
-                          type="button"
-                          onClick={() => startCheckout(nextUpgrade)}
-                          disabled={checkoutPlan === nextUpgrade}
-                          className="px-4 py-2 rounded-lg text-sm font-bold bg-cyan-500 hover:bg-cyan-400 text-white shadow-lg shadow-cyan-500/20 transition-all active:scale-95 disabled:opacity-60 whitespace-nowrap"
-                        >
-                          {checkoutPlan === nextUpgrade ? "Opening checkout…" : `Upgrade to ${nextUpgradeName}`}
-                        </button>
-                      ) : (
-                        <button
-                          type="button"
-                          onClick={() =>
-                            toast.info(
-                              "To change or cancel your plan, use the billing link in your Paddle receipt email, or contact support@getrankrise.com."
-                            )
-                          }
-                          className={`px-4 py-2 rounded-lg text-sm font-bold border whitespace-nowrap ${dark ? "border-slate-700 text-white hover:bg-slate-800" : "border-slate-300 text-slate-700 hover:bg-slate-100"}`}
-                        >
-                          Manage Subscription
-                        </button>
-                      )}
+                      <div className="flex flex-col sm:items-end gap-2 shrink-0">
+                        {nextUpgrade ? (
+                          <UpgradeButton
+                            plan={nextUpgrade}
+                            className="px-5 py-2.5 rounded-lg text-sm font-bold bg-blue-600 hover:bg-blue-500 text-white shadow-lg shadow-blue-600/20"
+                          >
+                            {currentPlanId === "free" ? "Upgrade plan" : `Upgrade to ${PLANS.find((p) => p.id === nextUpgrade)?.name}`}
+                          </UpgradeButton>
+                        ) : (
+                          <span className="text-sm font-semibold text-emerald-500 whitespace-nowrap">You're on our top plan 🎉</span>
+                        )}
+                        {currentPlanId !== "free" && (
+                          <ManageBillingButton
+                            className={`px-5 py-2.5 rounded-lg text-sm font-bold border ${
+                              dark
+                                ? "border-slate-700 text-white hover:bg-slate-800"
+                                : "border-slate-300 text-slate-700 hover:bg-slate-100"
+                            }`}
+                          />
+                        )}
+                      </div>
                     </div>
                   </div>
                 </div>
 
                 {/* Plan comparison */}
                 <div className={`border rounded-2xl p-6 sm:p-8 ${cardBg}`}>
-                  <SectionHeader dark={dark} title="All Plans" description="Upgrade or downgrade anytime" />
+                  <SectionHeader dark={dark} title="All Plans" description="Upgrade anytime — billing is handled securely by Paddle" />
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     {PLANS.map((p) => {
-                      const isCurrent = p.id === currentPlanId;
+                      const isCurrent   = p.id === currentPlanId;
+                      const isUpgrade   = (PLAN_RANK[p.id] ?? 0) > currentRank;
                       return (
                         <div
                           key={p.id}
-                          className={`p-5 rounded-xl border transition-all ${
+                          className={`p-5 rounded-xl border transition-all flex flex-col ${
                             isCurrent
                               ? "border-blue-500 ring-2 ring-blue-500/20"
                               : dark ? "border-slate-800" : "border-slate-200"
@@ -507,33 +490,23 @@ export default function Settings() {
                         >
                           <p className={`text-sm font-bold ${dark ? "text-white" : "text-slate-900"}`}>{p.name}</p>
                           <p className="text-xl font-bold text-blue-600 mt-1">{p.price}<span className="text-xs text-slate-500"> /mo</span></p>
-                          <ul className="mt-3 space-y-1.5">
+                          <ul className="mt-3 space-y-1.5 flex-1">
                             {p.features.map((f) => (
                               <li key={f} className={`text-[11px] ${dark ? "text-slate-400" : "text-slate-600"}`}>• {f}</li>
                             ))}
                           </ul>
-                          <div className="mt-4">
-                            {isCurrent ? (
-                              <p className="text-[10px] font-bold text-cyan-500 uppercase tracking-widest">Current Plan</p>
-                            ) : p.id === "free" ? (
-                              <button
-                                type="button"
-                                onClick={() => toast.info("To move down to the Free plan, contact support@getrankrise.com.")}
-                                className={`w-full py-2 rounded-lg text-xs font-bold border transition-colors ${dark ? "border-slate-700 text-slate-300 hover:bg-slate-800" : "border-slate-300 text-slate-600 hover:bg-slate-100"}`}
-                              >
-                                Downgrade
-                              </button>
-                            ) : (
-                              <button
-                                type="button"
-                                onClick={() => startCheckout(p.id)}
-                                disabled={checkoutPlan === p.id}
-                                className="w-full py-2 rounded-lg text-xs font-bold bg-cyan-500 hover:bg-cyan-400 text-white transition-all active:scale-95 disabled:opacity-60"
-                              >
-                                {checkoutPlan === p.id ? "Opening…" : `Choose ${p.name}`}
-                              </button>
-                            )}
-                          </div>
+                          {isCurrent ? (
+                            <p className="mt-4 text-[10px] font-bold text-blue-500 uppercase tracking-widest">Current Plan</p>
+                          ) : isUpgrade ? (
+                            <UpgradeButton
+                              plan={p.id}
+                              className="mt-4 w-full py-2 rounded-lg text-xs font-bold bg-blue-600 hover:bg-blue-500 text-white"
+                            >
+                              Upgrade to {p.name}
+                            </UpgradeButton>
+                          ) : (
+                            <p className="mt-4 text-[10px] font-medium text-slate-500 uppercase tracking-widest">Contact support to change</p>
+                          )}
                         </div>
                       );
                     })}
