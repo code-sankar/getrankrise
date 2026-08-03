@@ -1,10 +1,11 @@
-import { useState, useMemo } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useSelector, useDispatch } from "react-redux";
 import Sidebar from "../components/Sidebar.jsx";
 import StatCard from "../components/StatCard.jsx";
 import ReviewCard from "../components/ReviewCard/ReviewCard.jsx";
 import TopBar from "../components/TopBar.jsx";
 import { useTheme } from "../context/ThemeContext.jsx";
+import { getUserReviews } from "../hooks/reviews.hook.js";
 import {
   selectFilteredReviews,
   selectReviewStats,
@@ -23,6 +24,12 @@ const ratingChart = [
   { pct: 0.1, color: "#f97316" },
   { pct: 0.05, color: "#ef4444" },
 ];
+const dispatch = useDispatch();
+const { loading, error } = useSelector((s) => s.reviews);
+
+useEffect(() => {
+  getUserReviews(dispatch);
+}, [dispatch]);
 
 const FilterGroup = ({ label, options, active, onChange, dark }) => (
   <div className="flex items-center gap-3 overflow-x-auto pb-1 no-scrollbar">
@@ -118,7 +125,7 @@ export default function Dashboard() {
 
       <div className="lg:ml-64 flex flex-col min-h-screen">
         {/* Mobile Header */}
-       <header
+        <header
           className={`lg:hidden flex items-center justify-between p-4 border-b flex-shrink-0 ${
             dark ? "bg-slate-900 border-slate-800" : "bg-white border-slate-100"
           }`}

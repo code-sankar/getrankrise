@@ -35,7 +35,11 @@ import { Router } from "express";
 import rateLimit from "express-rate-limit";
 import { protect } from "../middleware/auth.middleware.js";
 import { loadClinic } from "../middleware/loadClinic.middleware.js";
-import { validate, sendRequestSchema, idParamSchema } from "../middleware/validate.middleware.js";
+import {
+  validate,
+  sendRequestSchema,
+  idParamSchema,
+} from "../middleware/validate.middleware.js";
 import { asyncHandler } from "../middleware/asyncHandler.js";
 import Joi from "joi";
 import {
@@ -54,7 +58,10 @@ const router = Router();
 const sendLimiter = rateLimit({
   windowMs: 5 * 60 * 1000,
   max: 30,
-  message: { success: false, message: "Too many requests sent. Please wait a few minutes." },
+  message: {
+    success: false,
+    message: "Too many requests sent. Please wait a few minutes.",
+  },
   standardHeaders: true,
   legacyHeaders: false,
 });
@@ -73,14 +80,41 @@ router.use(protect, loadClinic);
 router.get("/", asyncHandler(listRequests));
 
 // POST /api/v1/requests — send one review request (SMS / Email / Both).
-router.post("/", sendLimiter, validate(sendRequestSchema), asyncHandler(sendRequest));
+router.post(
+  "/",
+  sendLimiter,
+  validate(sendRequestSchema),
+  asyncHandler(sendRequest),
+);
 
 // PATCH /api/v1/requests/:id/status — advance Sent → Opened → Reviewed.
 router.patch(
   "/:id/status",
   validate(idParamSchema, "params"),
   validate(statusSchema),
-  asyncHandler(updateRequestStatus)
+  asyncHandler(updateRequestStatus),
 );
+
+export const listRequests = async (req, res) => {
+  const rows = await ReviewRequest.findAll({
+    where: { clinicId: req.clinic.id },
+    order: [["createdAt", "DESC"]],
+    limit: Math.min(parseInt(req.query.limit, 10) || 100, 200),
+  });
+  return successResponse(res, { message: "Requests fetched", data: rows });
+};
+
+export const updateRequestStatus = async (req, res) => {
+  const { status } = req.body; // Joi already validated
+  const [updated] = await ReviewRequest.update(
+    { status },
+    { where: { id: req.params.id, clinicId: req.clinic.id } }, // tenant scope
+  );
+  if (!updated) return notFoundResponse(res, "Request not found");
+  return successResponse(res, {
+    message: "Status updated",
+    data: { id: req.params.id, status },
+  });
+};
 
 export default router;

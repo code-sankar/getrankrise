@@ -71,6 +71,7 @@ import * as googleProvider from "./providers/googleReviews.provider.js";
 import * as yelpProvider from "./providers/yelpReviews.provider.js";
 import * as mockProvider from "./providers/mockReviews.provider.js";
 import * as facebookProvider from "./providers/facebookReviews.provider.js";
+import notFoundResponse from "../../utils/apiResponse.js";
 
 import {
   notifyLowRatingReviews,
@@ -152,25 +153,6 @@ const UPSERT_SQL_BY_PLATFORM = Object.freeze({
   facebook: buildUpsertSql(PLATFORM_LABEL.facebook),
 });
 
-// Was this platform empty for this clinic before this sync? Drives the
-// backfill guard in reviewAlerts — see that file for why last_synced_at
-// cannot be used for this (the scheduler stamps it before calling us).
-const [{ n: priorCount }] = await sequelize.query(
-  `SELECT COUNT(*)::int AS n FROM reviews
-      WHERE clinic_id = $1::uuid AND platform = $2::text`,
-  {
-    bind: [connection.clinicId, PLATFORM_LABEL[connection.platform]],
-    type: QueryTypes.SELECT,
-  },
-);
-const isBackfill = priorCount === 0;
-
-// Newly-INSERTED low-rating reviews, collected for one batched alert write
-// at the end. Not written inline: an alert per row inside the pagination
-// loop would be N round trips and would fire before the free-tier trim
-// decides which rows survive.
-const lowRatingAlerts = [];
-
 /**
  * Syncs one platform connection's reviews.
  * @param {string} connectionId platform_connections.id
@@ -197,6 +179,24 @@ export async function syncByConnectionId(connectionId) {
     err.code = "UNSUPPORTED_PLATFORM";
     throw err;
   }
+  // Was this platform empty for this clinic before this sync? Drives the
+  // backfill guard in reviewAlerts — see that file for why last_synced_at
+  // cannot be used for this (the scheduler stamps it before calling us).
+  const [{ n: priorCount }] = await sequelize.query(
+    `SELECT COUNT(*)::int AS n FROM reviews
+      WHERE clinic_id = $1::uuid AND platform = $2::text`,
+    {
+      bind: [connection.clinicId, PLATFORM_LABEL[connection.platform]],
+      type: QueryTypes.SELECT,
+    },
+  );
+  const isBackfill = priorCount === 0;
+
+  // Newly-INSERTED low-rating reviews, collected for one batched alert write
+  // at the end. Not written inline: an alert per row inside the pagination
+  // loop would be N round trips and would fire before the free-tier trim
+  // decides which rows survive.
+  const lowRatingAlerts = [];
 
   const provider = getProvider(connection.platform);
 
