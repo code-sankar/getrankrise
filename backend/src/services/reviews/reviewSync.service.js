@@ -72,6 +72,11 @@ import * as yelpProvider from "./providers/yelpReviews.provider.js";
 import * as mockProvider from "./providers/mockReviews.provider.js";
 import * as facebookProvider from "./providers/facebookReviews.provider.js";
 
+import {
+  notifyLowRatingReviews,
+  LOW_RATING_THRESHOLD,
+} from "../notifications/reviewAlerts.service.js";
+
 export const isImplemented = true; // ← the Phase 7 flag, flipped
 
 const MAX_PAGES = 40; // 40 × 50 = 2000 reviews per sync — plenty, bounded
@@ -85,7 +90,9 @@ const EARLY_STOP_BUFFER_MS = 24 * 3600e3;
 // connection.platform.
 function getProvider(platform) {
   const mock =
-    String(process.env.REVIEWS_MOCK ?? env.GOOGLE_MOCK_DISCOVERY ?? "").toLowerCase() === "true";
+    String(
+      process.env.REVIEWS_MOCK ?? env.GOOGLE_MOCK_DISCOVERY ?? "",
+    ).toLowerCase() === "true";
   if (mock) return mockProvider;
   if (platform === "yelp") return yelpProvider;
   if (platform === "facebook") return facebookProvider;
@@ -113,7 +120,9 @@ const PLATFORM_LABEL = Object.freeze({
 // insurance against it happening again.
 for (const [key, label] of Object.entries(PLATFORM_LABEL)) {
   if (!label) {
-    throw new Error(`reviewSync.service.js: PLATFORM_LABEL is missing a label for '${key}'`);
+    throw new Error(
+      `reviewSync.service.js: PLATFORM_LABEL is missing a label for '${key}'`,
+    );
   }
 }
 
@@ -135,13 +144,32 @@ DO UPDATE SET
   replied       = reviews.replied OR EXCLUDED.replied,
   reply_text    = COALESCE(EXCLUDED.reply_text, reviews.reply_text),
   updated_at    = NOW()
-RETURNING (xmax = 0) AS inserted`;
+RETURNING id, (xmax = 0) AS inserted`;
 
 const UPSERT_SQL_BY_PLATFORM = Object.freeze({
   google: buildUpsertSql(PLATFORM_LABEL.google),
   yelp: buildUpsertSql(PLATFORM_LABEL.yelp),
   facebook: buildUpsertSql(PLATFORM_LABEL.facebook),
 });
+
+// Was this platform empty for this clinic before this sync? Drives the
+// backfill guard in reviewAlerts — see that file for why last_synced_at
+// cannot be used for this (the scheduler stamps it before calling us).
+const [{ n: priorCount }] = await sequelize.query(
+  `SELECT COUNT(*)::int AS n FROM reviews
+      WHERE clinic_id = $1::uuid AND platform = $2::text`,
+  {
+    bind: [connection.clinicId, PLATFORM_LABEL[connection.platform]],
+    type: QueryTypes.SELECT,
+  },
+);
+const isBackfill = priorCount === 0;
+
+// Newly-INSERTED low-rating reviews, collected for one batched alert write
+// at the end. Not written inline: an alert per row inside the pagination
+// loop would be N round trips and would fire before the free-tier trim
+// decides which rows survive.
+const lowRatingAlerts = [];
 
 /**
  * Syncs one platform connection's reviews.
@@ -163,7 +191,9 @@ export async function syncByConnectionId(connectionId) {
   }
   const upsertSql = UPSERT_SQL_BY_PLATFORM[connection.platform];
   if (!upsertSql) {
-    const err = new Error(`No review provider for platform '${connection.platform}' yet`);
+    const err = new Error(
+      `No review provider for platform '${connection.platform}' yet`,
+    );
     err.code = "UNSUPPORTED_PLATFORM";
     throw err;
   }
@@ -184,8 +214,18 @@ export async function syncByConnectionId(connectionId) {
     ({ accessToken } = await getValidFacebookToken(connection.clinicId));
   }
 
-  const lastSynced = connection.lastSyncedAt ? new Date(connection.lastSyncedAt).getTime() : null;
-  const stats = { fetched: 0, created: 0, updated: 0, skippedNoRating: 0, trimmed: 0, pages: 0, totalOnPlatform: null };
+  const lastSynced = connection.lastSyncedAt
+    ? new Date(connection.lastSyncedAt).getTime()
+    : null;
+  const stats = {
+    fetched: 0,
+    created: 0,
+    updated: 0,
+    skippedNoRating: 0,
+    trimmed: 0,
+    pages: 0,
+    totalOnPlatform: null,
+  };
 
   let pageToken = null;
   for (let page = 0; page < MAX_PAGES; page++) {
@@ -202,7 +242,9 @@ export async function syncByConnectionId(connectionId) {
     let oldestUpdate = Infinity;
     for (const r of result.reviews) {
       stats.fetched++;
-      const updated = r.updateTime ? new Date(r.updateTime).getTime() : Date.now();
+      const updated = r.updateTime
+        ? new Date(r.updateTime).getTime()
+        : Date.now();
       if (updated < oldestUpdate) oldestUpdate = updated;
 
       // GBP can return comment-less star ratings; rating-less rows can't —
@@ -230,7 +272,12 @@ export async function syncByConnectionId(connectionId) {
     }
 
     // Incremental early-stop (newest-updated-first ordering).
-    if (lastSynced && oldestUpdate !== Infinity && oldestUpdate < lastSynced - EARLY_STOP_BUFFER_MS) break;
+    if (
+      lastSynced &&
+      oldestUpdate !== Infinity &&
+      oldestUpdate < lastSynced - EARLY_STOP_BUFFER_MS
+    )
+      break;
     pageToken = result.nextPageToken;
     if (!pageToken) break;
   }
@@ -245,7 +292,7 @@ export async function syncByConnectionId(connectionId) {
           SELECT id FROM reviews WHERE clinic_id = $1::uuid
            ORDER BY COALESCE(review_date, created_at) DESC
            LIMIT $2::int)`,
-      { bind: [connection.clinicId, cap], type: QueryTypes.DELETE }
+      { bind: [connection.clinicId, cap], type: QueryTypes.DELETE },
     );
     // sequelize DELETE returns [results, metadata] variably; count via change
     stats.trimmed = Array.isArray(trimmed) ? (trimmed[1] ?? 0) : 0;
@@ -269,7 +316,9 @@ export async function syncClinicReviews(clinicId) {
     where: { clinicId, platform: "google", status: "connected" },
   });
   if (!connection) {
-    const err = new Error("No connected Google Business Profile for this clinic.");
+    const err = new Error(
+      "No connected Google Business Profile for this clinic.",
+    );
     err.code = "NO_CONNECTION";
     throw err;
   }
@@ -281,7 +330,7 @@ export async function syncClinicReviews(clinicId) {
     `UPDATE platform_connections
         SET last_synced_at = NOW(), last_sync_error = NULL
       WHERE id = $1::uuid`,
-    { bind: [connection.id], type: QueryTypes.UPDATE }
+    { bind: [connection.id], type: QueryTypes.UPDATE },
   );
 
   return { connectionId: connection.id, ...stats };

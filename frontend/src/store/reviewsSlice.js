@@ -141,19 +141,58 @@ export const selectFilteredReviews = (state) => {
  *   sentiment  0–100 (% of 4–5★)
  *   total      list length, for "n reviews" captions
  */
+/**
+ * Dashboard stat pills. Guarded: total === 0 is the normal pre-ingestion state
+ * and must render as em-dashes, not NaN.
+ *
+ *   avg           "4.2" | "—"
+ *   coverage      0–100 (% replied)
+ *   sentiment     0–100 (% of 4–5★)
+ *   total         list length, for "n reviews" captions
+ *   distribution  [5★,4★,3★,2★,1★] counts — drives the Avg Rating mini-chart,
+ *                 which was five hardcoded percentages until Step 2
+ *   newThisMonth  reviews dated in the last 30 days, replacing the literal
+ *                 string "14" the New Reviews card used to render
+ */
 export const selectReviewStats = (state) => {
   const { list } = state.reviews;
   const total = list.length;
 
   if (total === 0) {
-    return { avg: "—", coverage: 0, sentiment: 0, total: 0, empty: true };
+    return {
+      avg: "—",
+      coverage: 0,
+      sentiment: 0,
+      total: 0,
+      distribution: [0, 0, 0, 0, 0],
+      newThisMonth: 0,
+      empty: true,
+    };
   }
+
+  // Index 0 = 5★ … index 4 = 1★, matching the chart's colour order.
+  const distribution = [0, 0, 0, 0, 0];
+  for (const r of list) {
+    const i = 5 - r.rating;
+    if (i >= 0 && i < 5) distribution[i]++;
+  }
+
+  // rawDate is the ISO timestamp normalizeReview keeps alongside the human
+  // "3 days ago" string, precisely so derivations like this don't have to
+  // parse prose. Rows with a null/unparseable rawDate simply don't count.
+  const cutoff = Date.now() - 30 * 24 * 60 * 60 * 1000;
+  const newThisMonth = list.filter((r) => {
+    const t = r.rawDate ? Date.parse(r.rawDate) : NaN;
+    return !Number.isNaN(t) && t >= cutoff;
+  }).length;
 
   return {
     avg: (list.reduce((s, r) => s + r.rating, 0) / total).toFixed(1),
     coverage: Math.round((list.filter((r) => r.replied).length / total) * 100),
     sentiment: Math.round((list.filter((r) => r.rating >= 4).length / total) * 100),
     total,
+    distribution,
+    newThisMonth,
     empty: false,
   };
 };

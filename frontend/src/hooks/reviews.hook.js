@@ -124,3 +124,38 @@ export const generateAIReply = async (reviewId, reviewText, tone = "professional
     throw error;
   }
 };
+
+// ── Manual review sync ───────────────────────────────────────────────────────
+// POST /reviews/sync. The controller reserves from the review_sync DAILY meter
+// (Free 0 / Starter 6 / Premium 48) and refunds on provider failure, so a
+// failed sync never costs budget.
+//
+// Toast policy matches generateAIReply: everything is toasted here EXCEPT 403,
+// which the axios interceptor already turns into the upgrade modal. Stacking a
+// toast on top of a modal is noise.
+export const syncReviewsNow = async (dispatch) => {
+  try {
+    const { data } = await axiosInstance.post("/reviews/sync");
+    toast.success(data?.message || "Reviews synced.");
+    return data?.data ?? null;
+  } catch (error) {
+    const code = error.response?.data?.code;
+    const serverMsg = error.response?.data?.message;
+
+    if (error.response?.status === 403) {
+      // UPGRADE_REQUIRED / QUOTA_EXCEEDED — interceptor owns the UI.
+    } else if (code === "NO_CONNECTION") {
+      toast.info(serverMsg || "Connect a review platform in Settings first.");
+    } else if (code === "GBP_NOT_APPROVED") {
+      // Ambient, not a user error: the approval gate is Google's, not theirs.
+      toast.info(serverMsg || "Google hasn't approved API access yet.");
+    } else if (code === "GBP_AUTH" || code === "NOT_CONNECTED") {
+      toast.error(serverMsg || "Reconnect your Google account in Settings.");
+    } else {
+      toast.error(getFriendlyError(serverMsg) || "Could not sync reviews.");
+    }
+
+    console.error("syncReviewsNow error:", error);
+    throw error;
+  }
+};

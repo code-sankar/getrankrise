@@ -52,6 +52,15 @@ const PlatformConnection = sequelize.define(
         isIn: { args: [CONNECTION_STATUSES], msg: `status must be one of: ${CONNECTION_STATUSES.join(", ")}` },
       },
     },
+     initialSyncAt: {
+      type: DataTypes.DATE,
+      allowNull: true,
+    },
+    initialSyncAttempts: {
+      type: DataTypes.SMALLINT,
+      allowNull: false,
+      defaultValue: 0,
+    },
 
     // ── Encrypted OAuth material (see utils/crypto.js) ──────────────────────
     refreshTokenEnc: { type: DataTypes.TEXT, allowNull: true },

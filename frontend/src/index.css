@@ -1,28 +1,176 @@
+/* frontend/src/index.css
+ *
+ * Global baseline + the raw token values. The class-string interface that
+ * components actually consume lives in src/theme.js — this file is for the
+ * things Tailwind utilities cannot express: the font stacks, the scrollbar,
+ * the focus ring, and the reduced-motion contract.
+ *
+ * Tailwind v4: there is no tailwind.config.js in this project (the Vite plugin
+ * reads config from CSS), which is why @theme is here rather than in a JS
+ * config file.
+ *
+ * ── DIVISION OF LABOUR — read before adding a token ─────────────────────────
+ *   src/theme.js    class strings: accent.solid, theme(dark).card, status.warn
+ *                   → what components import. Nine times out of ten, here.
+ *   this file       CSS variables for the same values, so raw CSS, inline SVG
+ *                   and third-party widgets can reach the palette.
+ *
+ * Two names for one colour is a real cost, so the variables below are
+ * deliberately few. Do NOT add a `bg-accent` utility alongside the literal
+ * `bg-cyan-500` classes the sweep produces — a codebase where both spellings
+ * work is the exact ambiguity Step 6 exists to remove.
+ *
+ * ── WHAT STEP 6 FIXED HERE ──────────────────────────────────────────────────
+ *   1. `.custom-scrollbar` DID NOT EXIST. It is applied in AdminProfile,
+ *      Settings, Campaigns, SendRequests, Competitors, ContactUs, Sidebar and
+ *      NotificationBell — eight components styling their scrollbars with a
+ *      class that resolved to nothing at all. Only `.no-scrollbar` was ever
+ *      defined. It is defined below now.
+ *   2. TYPOGRAPHY BY UNIVERSAL SELECTOR. `* { font-family: 'Segoe UI', … }`
+ *      applied a system stack to every element including inputs and code, and
+ *      could not be overridden without a specificity fight. Now tokens on
+ *      :root, inherited normally.
+ *   3. No visible focus style. On an obsidian background the browser default
+ *      is close to invisible, which makes the product keyboard-hostile.
+ *   4. Nothing respected prefers-reduced-motion, while the app leans on
+ *      animate-spin (sync buttons) and animate-pulse (skeleton rows).
+ */
+
 @import "tailwindcss";
 
-@layer utilities {
-    /* Hide scrollbar for Chrome, Safari and Opera */
-    .no-scrollbar::-webkit-scrollbar {
-        display: none;
-    }
-   /* Hide scrollbar for IE, Edge and Firefox */
-    .no-scrollbar {
-        -ms-overflow-style: none;  /* IE and Edge */
-        scrollbar-width: none;  /* Firefox */
-  }
+@theme {
+  /* ── Palette ──────────────────────────────────────────────────────────────
+   * Mirrors src/theme.js. Cyan is the accent; slate is everything else.
+   * These generate utilities too, but prefer theme.js in components — see the
+   * division-of-labour note above.
+   */
+  --color-void: #0b0f1a; /* page background, dark — the Dashboard's obsidian */
+
+  /* ── Typography ───────────────────────────────────────────────────────────
+   * SANS carries the interface. The stack below is the one the app already
+   * used, kept as the default so this step introduces zero visual type change
+   * — a typeface decision deserves its own review, not a side effect of a
+   * colour sweep. See the note at the foot of this file for the recommended
+   * upgrade.
+   *
+   * MONO carries DATA, and this product is mostly data: ratings, credit
+   * balances, sync timestamps, usage meters. Pair it with `.tabular` below on
+   * any figure that re-renders, so numbers stop jittering as they update.
+   */
+  --font-sans: "Segoe UI", Tahoma, Geneva, Verdana, system-ui, sans-serif;
+  --font-mono: ui-monospace, "SF Mono", "Cascadia Mono", "Roboto Mono", Menlo,
+    Consolas, monospace;
 }
 
-* {
-  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-  box-sizing: border-box;
+/* ── Base ───────────────────────────────────────────────────────────────── */
+:root {
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
 html {
   scroll-behavior: smooth;
-  background-color: #030712;
+  background-color: var(--color-void);
 }
+
 body {
   margin: 0;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
 }
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+/* Numerals that hold their width as they change. Apply to any live figure:
+   stat cards, credit pills, campaign progress, usage meters. */
+.tabular {
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum";
+}
+
+/* ── Focus ──────────────────────────────────────────────────────────────────
+ * :focus-visible only — pointer users never see a ring, keyboard users always
+ * do. Matches accent.ring in theme.js for components that need it scoped. */
+:focus-visible {
+  outline: 2px solid #06b6d4;
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+/* ── Scrollbars ─────────────────────────────────────────────────────────── */
+@layer utilities {
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+  .no-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+
+  /* Applied in eight components; never defined until now. Thin and quiet, so
+     it doesn't punch a light-grey stripe through an obsidian panel. */
+  .custom-scrollbar {
+    scrollbar-width: thin;
+    scrollbar-color: #1e293b transparent;
+  }
+  .custom-scrollbar::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+  .custom-scrollbar::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  .custom-scrollbar::-webkit-scrollbar-thumb {
+    background-color: #1e293b;
+    border-radius: 999px;
+    border: 2px solid transparent;
+    background-clip: content-box;
+  }
+  .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+    background-color: #0891b2;
+    background-clip: content-box;
+  }
+}
+
+/* ── Reduced motion ─────────────────────────────────────────────────────────
+ * The spinners and skeletons are decorative; none of them should move for
+ * someone who asked the OS to stop animating things. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* ─────────────────────────────────────────────────────────────────────────────
+ * OPTIONAL — the type upgrade, deliberately not applied
+ *
+ * The current stack is the OS default everywhere, so the app looks like
+ * whatever machine it opens on and has no typographic identity of its own.
+ * The recommendation is IBM Plex: Plex Sans for the interface, Plex Mono for
+ * data. Plex is engineered rather than fashionable, holds up at 11px in the
+ * dense tables this app is full of, and its mono sibling is a genuine match
+ * rather than an unrelated face — so a metric and its label belong to each
+ * other.
+ *
+ * Left off by default because a typeface change deserves its own review. To
+ * turn it on, add to index.html:
+ *
+ *   <link rel="preconnect" href="https://fonts.googleapis.com">
+ *   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+ *   <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+ *
+ * and swap the two tokens above for:
+ *
+ *   --font-sans: "IBM Plex Sans", system-ui, sans-serif;
+ *   --font-mono: "IBM Plex Mono", ui-monospace, monospace;
+ *
+ * Nothing else changes — everything inherits from :root.
+ * ───────────────────────────────────────────────────────────────────────── */

@@ -36,6 +36,7 @@
 
 import { sequelize } from "../config/db.js";
 import { runMigrations } from "./migrator.js";
+import { assertSchema } from "./assertSchema.js";
 
 import User from "../models/User.js";
 import Clinic from "../models/Clinic.js";
@@ -96,6 +97,7 @@ export async function initializeDatabase() {
 
   await syncCoreModels();
   await runMigrations();
+  await assertSchema();    
 
   return sequelize;
 }
