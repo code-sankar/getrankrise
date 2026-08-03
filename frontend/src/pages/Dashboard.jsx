@@ -6,9 +6,12 @@ import ReviewCard from "../components/ReviewCard/ReviewCard.jsx";
 import TopBar from "../components/TopBar.jsx";
 import { useTheme } from "../context/ThemeContext.jsx";
 import { getUserReviews } from "../hooks/reviews.hook.js";
+import ReviewsQueueState from "../components/Dashboard/ReviewsQueueState.jsx";
+import SyncNowButton from "../components/Dashboard/SyncNowButton.jsx";
 import {
   selectFilteredReviews,
   selectReviewStats,
+  selectReviewsViewState,
   setFilter,
   clearFilters,
 } from "../store/reviewsSlice.js";
@@ -17,20 +20,20 @@ const PLATFORMS = ["All", "Google", "Yelp", "Facebook"];
 const RATINGS = ["All", "5★", "4★", "3★", "2★", "1★"];
 const STATUSES = ["All", "Unanswered", "Answered"];
 
-const ratingChart = [
-  { pct: 0.7, color: "#22c55e" },
-  { pct: 0.45, color: "#84cc16" },
-  { pct: 0.2, color: "#eab308" },
-  { pct: 0.1, color: "#f97316" },
-  { pct: 0.05, color: "#ef4444" },
-];
-const dispatch = useDispatch();
-const { loading, error } = useSelector((s) => s.reviews);
+// Bar colours, index 0 = 5★ … index 4 = 1★ — the same order
+// selectReviewStats builds `distribution` in.
+const RATING_COLORS = ["#22c55e", "#84cc16", "#eab308", "#f97316", "#ef4444"];
 
-useEffect(() => {
-  getUserReviews(dispatch);
-}, [dispatch]);
-
+// distribution (counts) → the { pct, color } shape StatCard renders. Scaled to
+// the largest bucket so the tallest bar is always full height; an all-zero
+// distribution yields all-zero bars rather than NaN.
+const toRatingChart = (distribution = []) => {
+  const peak = Math.max(...distribution, 0);
+  return RATING_COLORS.map((color, i) => ({
+    color,
+    pct: peak > 0 ? (distribution[i] || 0) / peak : 0,
+  }));
+};
 const FilterGroup = ({ label, options, active, onChange, dark }) => (
   <div className="flex items-center gap-3 overflow-x-auto pb-1 no-scrollbar">
     <span
@@ -91,7 +94,16 @@ export default function Dashboard() {
   const filteredReviews = useSelector(selectFilteredReviews);
   const stats = useSelector(selectReviewStats);
   const filters = useSelector((state) => state.reviews.filters);
+  // loading / error / empty / ready — the four states the queue must tell
+  // apart. Before this was wired, all four rendered as "no reviews".
+  const viewState = useSelector(selectReviewsViewState);
   // ──────────────────────────────────────────────────────────────────────────
+
+  // Fetch once on mount. getUserReviews dispatches start/success/failure
+  // itself, so viewState above is driven entirely by the slice.
+  useEffect(() => {
+    getUserReviews(dispatch);
+  }, [dispatch]);
 
   const handleFilterChange = (key, value) => {
     dispatch(setFilter({ key, value }));
@@ -100,6 +112,11 @@ export default function Dashboard() {
   const handleClearFilters = () => {
     dispatch(clearFilters());
   };
+
+  const ratingChart = useMemo(
+    () => toRatingChart(stats.distribution),
+    [stats.distribution]
+  );
 
   return (
     <div
@@ -167,10 +184,11 @@ export default function Dashboard() {
               value={stats.avg}
               chart={ratingChart}
             />
+
             <StatCard
               label="New Reviews"
-              value="14"
-              sub="↑ 8% this month"
+              value={String(stats.newThisMonth)}
+              sub="Last 30 days"
               subColor="text-emerald-500"
             />
             <StatCard
@@ -203,10 +221,16 @@ export default function Dashboard() {
                     Monitor and respond to customer feedback
                   </p>
                 </div>
-                <div
-                  className={`px-3 py-1 rounded-full text-xs font-bold ${dark ? "bg-indigo-500/10 text-indigo-400" : "bg-indigo-50 text-indigo-600"}`}
-                >
-                  {filteredReviews.length} Reviews Found
+                <div className="flex items-center gap-3">
+                  <div
+                    className={`px-3 py-1 rounded-full text-xs font-bold ${dark ? "bg-indigo-500/10 text-indigo-400" : "bg-indigo-50 text-indigo-600"}`}
+                  >
+                    {filteredReviews.length} Reviews Found
+                  </div>
+                  <SyncNowButton
+                    dark={dark}
+                    onSynced={() => getUserReviews(dispatch)}
+                  />
                 </div>
               </div>
 
@@ -242,7 +266,15 @@ export default function Dashboard() {
 
             {/* Review List — ReviewCard now takes no onMarkReplied prop (uses Redux internally) */}
             <div className="divide-y divide-inherit">
-              {filteredReviews.length === 0 ? (
+              {viewState !== "ready" ? (
+                // loading / error / confirmed-empty — distinct from the
+                // "filters exclude everything" card below.
+                <ReviewsQueueState
+                  state={viewState}
+                  dark={dark}
+                  onRetry={() => getUserReviews(dispatch)}
+                />
+              ) : filteredReviews.length === 0 ? (
                 <EmptyState dark={dark} onClear={handleClearFilters} />
               ) : (
                 filteredReviews.map((review) => (

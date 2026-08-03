@@ -1,4 +1,3 @@
-import React from "react";
 
 /**
  * A reusable, themed input field for the Admin Profile.

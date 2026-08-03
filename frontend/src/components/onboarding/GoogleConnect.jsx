@@ -51,6 +51,40 @@ export default function GoogleConnect({ onConnected, dark = true }) {
     ? "bg-cyan-500/10 border-cyan-500/40"
     : "bg-cyan-50 border-cyan-300";
 
+  // Declared BEFORE loadState, which calls it. Previously it sat after,
+  // relying on effects running post-render to dodge the temporal dead zone.
+  const loadLocations = async () => {
+    try {
+      const data = await googleAPI.getLocations();
+      setAccounts(data);
+
+      // One account, one location → preselect it. Most clinics.
+      if (data.length === 1 && data[0].locations.length === 1) {
+        const a = data[0].account;
+        const l = data[0].locations[0];
+        setSelected({
+          accountId: a.id,
+          accountName: a.name,
+          locationId: l.id,
+          locationName: l.name,
+        });
+      }
+    } catch (err) {
+      if (err.gbpNotApproved) {
+        setBanner({
+          tone: "info",
+          text:
+            "Your Google account is connected, but Google is still reviewing our " +
+            "Business Profile API access. Location selection will unlock automatically " +
+            "once that's approved — no action needed from you.",
+        });
+        setAccounts([]);
+      } else {
+        setBanner({ tone: "error", text: "Couldn't load your Google locations. Try refreshing." });
+      }
+    }
+  };
+
   // ── Initial load: connection status + callback params ──────────────────────
   const loadState = useCallback(async () => {
     // Callback error params → show banner, then clean the URL.
@@ -85,38 +119,6 @@ export default function GoogleConnect({ onConnected, dark = true }) {
   useEffect(() => {
     loadState();
   }, [loadState]);
-
-  const loadLocations = async () => {
-    try {
-      const data = await googleAPI.getLocations();
-      setAccounts(data);
-
-      // One account, one location → preselect it. Most clinics.
-      if (data.length === 1 && data[0].locations.length === 1) {
-        const a = data[0].account;
-        const l = data[0].locations[0];
-        setSelected({
-          accountId: a.id,
-          accountName: a.name,
-          locationId: l.id,
-          locationName: l.name,
-        });
-      }
-    } catch (err) {
-      if (err.gbpNotApproved) {
-        setBanner({
-          tone: "info",
-          text:
-            "Your Google account is connected, but Google is still reviewing our " +
-            "Business Profile API access. Location selection will unlock automatically " +
-            "once that's approved — no action needed from you.",
-        });
-        setAccounts([]);
-      } else {
-        setBanner({ tone: "error", text: "Couldn't load your Google locations. Try refreshing." });
-      }
-    }
-  };
 
   // ── Actions ────────────────────────────────────────────────────────────────
   const handleConnect = async () => {

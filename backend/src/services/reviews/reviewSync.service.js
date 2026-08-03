@@ -71,7 +71,6 @@ import * as googleProvider from "./providers/googleReviews.provider.js";
 import * as yelpProvider from "./providers/yelpReviews.provider.js";
 import * as mockProvider from "./providers/mockReviews.provider.js";
 import * as facebookProvider from "./providers/facebookReviews.provider.js";
-import notFoundResponse from "../../utils/apiResponse.js";
 
 import {
   notifyLowRatingReviews,

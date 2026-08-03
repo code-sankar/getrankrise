@@ -37,7 +37,15 @@ export default function AppBootstrap({ children }) {
 
     const probe = async () => {
       // ── Demo session: skip the network probe, restore the fake session ───
-      if (isMockToken(token)) {
+      // DEMO_AUTH_ENABLED must gate this. Two reasons, both load-bearing:
+      //   1. Security — without it, anyone who sets
+      //      localStorage.token = "mock-token" in a PRODUCTION build gets a
+      //      rendered admin session for "Demo Owner". The API still 401s, but
+      //      the app shell, sidebar and admin routes all mount.
+      //   2. Bundle — mockAuth.js says its constants only tree-shake out when
+      //      every reference sits behind this flag. Unguarded reads here kept
+      //      the demo email and sentinel token in the production bundle.
+      if (DEMO_AUTH_ENABLED && isMockToken(token)) {
         dispatch(loginSuccess({ accessToken: MOCK_TOKEN, user: MOCK_USER }));
         return;
       }

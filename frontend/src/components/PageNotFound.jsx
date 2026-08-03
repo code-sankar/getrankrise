@@ -1,4 +1,3 @@
-import React from "react";
 import not_found from "../assets/Not_Found.png";
 import Button from "./Button";
 import { Link } from "react-router-dom";

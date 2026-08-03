@@ -1,12 +1,12 @@
-import React from "react";
 import { useState, useEffect, useRef } from "react";
 import { useTheme } from "../../context/ThemeContext";
 import { useSelector, useDispatch } from "react-redux";
+import { selectUnreadCount } from "../../store/notificationsSlice.js";
 import {
-  selectUnreadCount,
-  markAllAsRead,
-  dismiss,
-} from "../../store/notificationsSlice.js";
+  getUserNotifications,
+  markAllNotificationsRead,
+  dismissNotification,
+} from "../../hooks/notifications.hook.js";
 
 function NotificationBell() {
   const { dark } = useTheme();
@@ -15,6 +15,12 @@ function NotificationBell() {
   const [showNotifs, setShowNotifs] = useState(false);
   const notifications = useSelector((state) => state.notifications.items);
   const notifRef = useRef(null);
+
+  // Fetch once on mount. Previously nothing ever populated this slice, so the
+  // bell rendered "All caught up!" no matter what the server held.
+  useEffect(() => {
+    getUserNotifications(dispatch);
+  }, [dispatch]);
 
   const theme = {
     text: dark ? "text-slate-100" : "text-slate-900",
@@ -106,7 +112,7 @@ function NotificationBell() {
               <span className={`text-sm font-bold ${theme.text}`}>Notifications</span>
               <div className="flex items-center gap-4">
                 <button
-                  onClick={() => dispatch(markAllAsRead())}
+                  onClick={() => markAllNotificationsRead(dispatch)}
                   className="text-xs text-indigo-500 font-semibold hover:text-indigo-400"
                 >
                   Mark all read
@@ -142,7 +148,7 @@ function NotificationBell() {
                     <button
                       onClick={(e) => {
                         e.stopPropagation();
-                        dispatch(dismiss(n.id));
+                        dismissNotification(dispatch, n.id);
                       }}
                       className={`p-1 rounded-lg ${theme.muted} hover:text-red-400 hover:bg-red-400/10 transition-all flex-shrink-0`}
                     >

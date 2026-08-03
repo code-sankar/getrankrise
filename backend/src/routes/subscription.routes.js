@@ -4,6 +4,7 @@ import { loadClinic } from "../middleware/loadClinic.middleware.js";
 import { successResponse } from "../utils/apiResponse.js";
 import { getSubscriptionState } from "../services/subscription/subscriptionState.service.js";
 import { asyncHandler } from "../middleware/asyncHandler.js";
+import { getCredits } from "../controllers/subscription.controller.js";
 
 /**
  * subscription.routes.js
@@ -33,5 +34,10 @@ router.get(
     });
   })
 );
+
+// GET /api/v1/subscription/credits — the remaining SMS/WhatsApp balance the
+// CreditsPill renders. The controller existed from the start but was never
+// attached to a router, so the pill silently 404'd on every page load.
+router.get("/credits", asyncHandler(getCredits));
 
 export default router;

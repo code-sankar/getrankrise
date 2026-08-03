@@ -4,8 +4,8 @@
   "version": "1.0.0",
   "main": "server.js",
   "scripts": {
-    "dev": "nodemon -r dotenv/config --experimental-json-modules src/server.js",
-    "start": "node src/server.js",
+    "dev": "nodemon -r dotenv/config server.js",
+    "start": "node server.js",
     "migrate":          "node migrate.js up",
     "migrate:status":   "node migrate.js status",
     "migrate:baseline": "node migrate.js baseline",

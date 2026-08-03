@@ -1,4 +1,3 @@
-import React from "react";
 
 /**
  * A toggle switch component for settings and preferences.

@@ -17,6 +17,7 @@ import ContactUs from "./pages/ContactUs.jsx";
 import FAQ from "./pages/QandA.jsx";
 import PageNotFound from "./components/PageNotFound.jsx";
 import SignUp from "./pages/SignUp.jsx";
+import Onboarding from "./pages/Onboarding.jsx";
 import LandingPage from "./pages/landingPage/LandingPage.jsx";
 import UpgradeModal from "./components/billing/UpgradeModal.jsx";
 
@@ -68,6 +69,11 @@ export default function App() {
                 renders an inline upsell, which is a better conversion surface
                 than a hidden link. Gating in the router would double-enforce
                 what requireFeature("pulseCampaignsEnabled") already handles. */}
+            {/* Onboarding: the page existed and was fully built but had no
+                route, so a new signup landed on an empty Dashboard with no
+                connected platform and no path to connect one. SignUp redirects
+                here after registering. */}
+            <Route path="/onboarding"    element={<PrivateRoute><Onboarding /></PrivateRoute>}    />
             <Route path="/dashboard"     element={<PrivateRoute><Dashboard /></PrivateRoute>}     />
             <Route path="/send-requests" element={<PrivateRoute><SendRequests /></PrivateRoute>}  />
             <Route path="/campaigns"     element={<PrivateRoute><Campaigns /></PrivateRoute>}     />

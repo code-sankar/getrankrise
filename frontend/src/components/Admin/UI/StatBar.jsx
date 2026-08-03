@@ -1,4 +1,3 @@
-import React from "react";
 
 /**
  * A themed progress bar for displaying admin metrics and targets.

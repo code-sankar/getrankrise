@@ -1,4 +1,3 @@
-import React from 'react';
 import { Star, MessageSquare, TrendingUp, Activity } from 'lucide-react';
 
 /* ──────────────────────────────────────────────────────────────────────────

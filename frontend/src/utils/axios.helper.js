@@ -13,16 +13,55 @@ import axios from "axios";
 import { toast } from "react-toastify";
 import { parseErrorMessage, getFriendlyError } from "./parseErrorMsg.js";
 import { showUpgradeModal } from "../store/upgradeModalSlice.js";
+// The 403 branch below dispatches into the store from outside React. Safe to
+// import here: store.js pulls in the slices only, never this file, so there is
+// no cycle.
+import store from "../store/store.js";
+
+const API_BASE = import.meta.env.VITE_API_URL || "http://localhost:5000/api/v1";
 
 // ── Base instance ─────────────────────────────────────────────────────────────
+// 10s suits ordinary CRUD. Two endpoints legitimately exceed it and pass their
+// own timeout at the call site: POST /reviews/sync (walks paginated provider
+// APIs) and POST /campaigns (parses up to 300KB of CSV). Without that, both
+// aborted client-side while the server completed, and the retry double-sent.
 const axiosInstance = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || "http://localhost:5000/api/v1",
+  baseURL: API_BASE,
   withCredentials: true, // sends httpOnly cookies (refresh token)
   timeout: 10000,
   headers: {
     "Content-Type": "application/json",
   },
 });
+
+/** Timeout for endpoints that do real work. Use as: { timeout: LONG_TIMEOUT } */
+export const LONG_TIMEOUT = 60000;
+
+// ── Single-flight refresh ─────────────────────────────────────────────────────
+// The backend ROTATES the refresh token on every /auth/refresh-token call and
+// rejects any token that doesn't match the stored one. So N concurrent 401s
+// firing N refreshes means the first response invalidates the rest, and the
+// user is logged out mid-session for no reason. All callers share one in-flight
+// promise instead.
+let refreshPromise = null;
+
+const refreshAccessToken = () => {
+  refreshPromise ??= axios
+    .post(`${API_BASE}/auth/refresh-token`, {}, { withCredentials: true })
+    .then(({ data }) => {
+      const newToken = data?.data?.accessToken;
+      if (!newToken) throw new Error("No access token in refresh response");
+      localStorage.setItem("token", newToken);
+      axiosInstance.defaults.headers.common["Authorization"] = `Bearer ${newToken}`;
+      return newToken;
+    })
+    .finally(() => {
+      // Clear regardless of outcome so a later 401 can try again.
+      refreshPromise = null;
+    });
+
+  return refreshPromise;
+};
 
 // ── Request Interceptor ───────────────────────────────────────────────────────
 // Attaches the access token to every outgoing request
@@ -66,21 +105,9 @@ axiosInstance.interceptors.response.use(
       originalRequest._retry = true;
 
       try {
-        // Call the refresh endpoint — uses httpOnly cookie automatically
-        const { data } = await axios.post(
-          `${import.meta.env.VITE_API_URL || "http://localhost:5000/api/v1"}/auth/refresh-token`,
-          {},
-          { withCredentials: true },
-        );
-
-        const newToken = data.data.accessToken;
-
-        // Save new token
-        localStorage.setItem("token", newToken);
-
-        // Update default headers for future requests
-        axiosInstance.defaults.headers.common["Authorization"] =
-          `Bearer ${newToken}`;
+        // Shared in-flight promise — see refreshAccessToken above for why this
+        // must not be one request per caller.
+        const newToken = await refreshAccessToken();
 
         // Retry the original failed request with new token
         originalRequest.headers["Authorization"] = `Bearer ${newToken}`;

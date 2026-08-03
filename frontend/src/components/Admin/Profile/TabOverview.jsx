@@ -1,4 +1,3 @@
-import React from "react";
 import InputField, { TextAreaField } from "../UI/InputField.jsx";
 import StatBar from "../UI/StatBar.jsx";
 
