@@ -18,6 +18,11 @@
 //                                     → mark sent
 //                                     ↘ provider fail → refundCredits, mark failed
 //
+// RETRY BOUND: the claim increments campaign_recipients.attempts and skips
+// rows at MAX_ATTEMPTS; failExhausted() then marks those terminal. Without it
+// a recipient the workers keep abandoning before the send stamp cycles through
+// the recovery sweep forever and pins the campaign at 'running'.
+//
 // DELIVERY SEMANTICS: AT-MOST-ONCE. The send_started_at stamp is written
 // before the provider call so crash recovery can tell "never sent" from
 // "outcome unknown". Unknown outcomes are failed, never retried — see
@@ -39,6 +44,12 @@ import { optedOutSet } from "./campaign.service.js";
 
 const TICK_MS = 15_000;
 const STUCK_MINUTES = 10;
+
+// How many times a single recipient may be CLAIMED before the runner gives up
+// on it. See failExhausted() for why an unbounded retry is a real failure mode
+// and not a theoretical one. Five claims at a 10-minute recovery interval is
+// roughly 40 minutes of trying before a row is declared undeliverable.
+const MAX_ATTEMPTS = 5;
 
 let timer = null;
 let ticking = false; // re-entrancy guard within one process
@@ -66,6 +77,7 @@ export async function tick() {
   ticking = true;
   try {
     await requeueStuck();
+    await failExhausted();
     await promoteScheduled();
     const campaigns = await runningCampaigns();
     for (const c of campaigns) {
@@ -121,6 +133,33 @@ async function requeueStuck() {
   );
 }
 
+// ── The retry bound ─────────────────────────────────────────────────────────
+// requeueStuck's branch (a) is correct but was unbounded. A recipient that is
+// claimed and then abandoned BEFORE the send_started_at stamp goes back to
+// 'pending' — and if whatever killed the worker is deterministic (an OOM on a
+// large batch, a deploy SIGKILL landing in the same window every rollout, a
+// reserveCredits throw on a malformed row) it will be claimed and abandoned
+// again, every STUCK_MINUTES, forever.
+//
+// The loop is completely silent: nothing logs, and maybeComplete() requires
+// zero pending|processing rows, so the campaign never reaches 'completed'
+// either. It just sits at 'running' with a counter that never moves — which
+// looks identical to a large campaign still working through its queue.
+//
+// The claim increments attempts and refuses rows at the cap, so this statement
+// is what converts "permanently unclaimable" into a terminal state. Without it
+// those rows would pin the campaign at 'running' just as effectively.
+async function failExhausted() {
+  await sequelize.query(
+    `UPDATE campaign_recipients
+        SET status = 'failed',
+            error  = 'Could not be processed after ' || attempts || ' attempts. The worker stopped before this message was handed to the provider each time; no message was sent and no credit was charged.'
+      WHERE status = 'pending'
+        AND attempts >= $1::int`,
+    { bind: [MAX_ATTEMPTS], type: QueryTypes.UPDATE }
+  );
+}
+
 async function promoteScheduled() {
   await sequelize.query(
     `UPDATE campaigns
@@ -146,17 +185,23 @@ async function processCampaignBatch(c) {
 
   // THE CLAIM — race-tested SKIP LOCKED batch. Rows leave 'pending'
   // atomically; a second worker's identical query sees none of them.
+  //
+  // attempts is incremented HERE rather than in the recovery sweep so it
+  // counts total work done on a recipient no matter which path returned it to
+  // the queue. Rows at the cap are excluded, which is what makes them visible
+  // to failExhausted() instead of being retried forever.
   const claimed = await sequelize.query(
     `UPDATE campaign_recipients
-        SET status = 'processing', claimed_at = NOW()
+        SET status = 'processing', claimed_at = NOW(), attempts = attempts + 1
       WHERE id IN (
         SELECT id FROM campaign_recipients
          WHERE campaign_id = $1::uuid AND status = 'pending'
+           AND attempts < $3::int
          ORDER BY created_at
          LIMIT $2::int
          FOR UPDATE SKIP LOCKED)
       RETURNING id, name, phone`,
-    { bind: [c.id, batchSize], type: QueryTypes.SELECT }
+    { bind: [c.id, batchSize, MAX_ATTEMPTS], type: QueryTypes.SELECT }
   );
 
   if (claimed.length === 0) {
@@ -263,7 +308,14 @@ async function markRecipient(id, status, { error = null, providerId = null, uncl
             -- Leaving it set would make requeueStuck later mistake a recipient
             -- that was never sent to for one whose outcome is unknown, and
             -- fail it closed forever.
-            send_started_at = CASE WHEN $5::bool THEN NULL ELSE send_started_at END
+            send_started_at = CASE WHEN $5::bool THEN NULL ELSE send_started_at END,
+            -- Same reasoning for the attempt counter: an unclaim is a
+            -- deliberate "we chose not to work this row yet" (out of credits,
+            -- campaign paused), not a failed attempt. Charging it an attempt
+            -- would let a campaign that is paused and resumed MAX_ATTEMPTS
+            -- times fail recipients who were never actually tried. GREATEST
+            -- floors it so the counter can never go negative.
+            attempts = CASE WHEN $5::bool THEN GREATEST(attempts - 1, 0) ELSE attempts END
       WHERE id = $1::uuid`,
     { bind: [id, status, error, providerId, unclaim], type: QueryTypes.UPDATE }
   );

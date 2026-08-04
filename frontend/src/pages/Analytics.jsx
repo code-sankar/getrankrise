@@ -185,7 +185,12 @@ export default function Analytics() {
                 Analytics Overview
               </h2>
               <p className={`text-xs mt-0.5 ${dark ? "text-slate-500" : "text-slate-400"}`}>
-                All data calculated from {summary.totalReviews} real reviews
+                {/* Was "All data calculated from {totalReviews} real reviews",
+                    which named a range-scoped count as if it were the whole
+                    dataset — the line read "1 real reviews" for a clinic with
+                    34 of them the moment their reviews predated the window. */}
+                {summary.totalReviews} of {summary.lifetimeReviews} reviews in
+                the selected range
               </p>
             </div>
 

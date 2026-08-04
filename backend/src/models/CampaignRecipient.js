@@ -13,7 +13,13 @@ import { sequelize } from "../config/db.js";
  *           ↘ skipped_opt_out | skipped_invalid | skipped_no_credits
  *
  * Rows never move backwards except processing→pending via the crash-recovery
- * sweep (claimed_at older than 10 min).
+ * sweep (claimed_at older than 10 min), and only when send_started_at is NULL
+ * — a row whose provider call already went out is failed, never retried.
+ *
+ * sendStartedAt (0011) and attempts (0012) are declared here so ORM reads
+ * return them; the table itself is created and altered exclusively by the
+ * migrations, and this model is absent from bootstrap's CORE_MODELS so
+ * sequelize.sync() never touches it.
  */
 
 export const RECIPIENT_STATUSES = [
@@ -43,7 +49,9 @@ const CampaignRecipient = sequelize.define(
     error: { type: DataTypes.TEXT, allowNull: true },
     providerId: { type: DataTypes.STRING(255), allowNull: true },
     claimedAt: { type: DataTypes.DATE, allowNull: true },
+    sendStartedAt: { type: DataTypes.DATE, allowNull: true },
     sentAt: { type: DataTypes.DATE, allowNull: true },
+    attempts: { type: DataTypes.INTEGER, allowNull: false, defaultValue: 0 },
   },
   {
     tableName: "campaign_recipients",

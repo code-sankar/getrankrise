@@ -130,10 +130,17 @@ export const generateAIReply = async (reviewId, reviewText, tone = "professional
 // (Free 0 / Starter 6 / Premium 48) and refunds on provider failure, so a
 // failed sync never costs budget.
 //
-// Toast policy matches generateAIReply: everything is toasted here EXCEPT 403,
-// which the axios interceptor already turns into the upgrade modal. Stacking a
-// toast on top of a modal is noise.
-export const syncReviewsNow = async (dispatch) => {
+// Toast policy: everything is toasted here EXCEPT the 403 codes the axios
+// interceptor turns into the upgrade modal — stacking a toast on a modal is
+// noise. It used to skip ALL 403s, which meant a QUOTA_EXCEEDED reply produced
+// no modal (the interceptor didn't handle that code) and no toast (this did
+// nothing) — clicking "Sync now" out of quota was completely silent. The
+// interceptor now owns both branches of QUOTA_EXCEEDED, so this only needs to
+// stay out of its way.
+//
+// The `dispatch` parameter was accepted and never used. Callers pass one; it
+// is ignored rather than dropped from the signature so no call site breaks.
+export const syncReviewsNow = async () => {
   try {
     // Walks paginated provider APIs — routinely longer than the 10s default.
     const { data } = await axiosInstance.post("/reviews/sync", null, {
@@ -146,7 +153,8 @@ export const syncReviewsNow = async (dispatch) => {
     const serverMsg = error.response?.data?.message;
 
     if (error.response?.status === 403) {
-      // UPGRADE_REQUIRED / QUOTA_EXCEEDED — interceptor owns the UI.
+      // UPGRADE_REQUIRED / SUBSCRIPTION_INACTIVE / QUOTA_EXCEEDED — the
+      // interceptor owns the UI for all three (modal or toast).
     } else if (code === "NO_CONNECTION") {
       toast.info(serverMsg || "Connect a review platform in Settings first.");
     } else if (code === "GBP_NOT_APPROVED") {

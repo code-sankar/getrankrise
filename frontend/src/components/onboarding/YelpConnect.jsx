@@ -18,9 +18,46 @@
  *   defaultLocation          — prefill for the location field (e.g. clinic.location).
  */
 
-import { useCallback, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { toast } from "react-toastify";
 import { yelpAPI } from "../../api/yelpAPI.js";
+
+// ── Presentational bits — MODULE SCOPE, deliberately ─────────────────────────
+// These were declared inside YelpConnect's body, which makes them a brand-new
+// component type on every render: React sees a different function identity,
+// unmounts the old subtree and mounts a fresh one. Nothing stateful lives in
+// them today so the visible cost is wasted work rather than lost focus — but
+// the moment anyone puts an <input> inside Banner it becomes a keystroke-eating
+// bug, and it is the exact trap react-hooks/static-components exists to catch.
+// Theme tokens travel as props instead of closure.
+function Header({ textPrimary, textMuted }) {
+  return (
+    <div className="flex items-center gap-3 mb-1">
+      <div className="w-9 h-9 rounded-xl bg-[#d32323]/10 flex items-center justify-center flex-shrink-0">
+        <span className="text-[#d32323] font-black text-sm">Y</span>
+      </div>
+      <div>
+        <h3 className={`font-bold text-sm ${textPrimary}`}>Yelp</h3>
+        <p className={`text-xs ${textMuted}`}>Sync your Yelp reviews into the feed</p>
+      </div>
+    </div>
+  );
+}
+
+function Banner({ banner }) {
+  if (!banner) return null;
+  return (
+    <div
+      className={`mt-3 text-xs rounded-lg px-3 py-2 border ${
+        banner.tone === "error"
+          ? "bg-red-500/10 border-red-500/30 text-red-400"
+          : "bg-cyan-500/10 border-cyan-500/30 text-cyan-300"
+      }`}
+    >
+      {banner.text}
+    </div>
+  );
+}
 
 export default function YelpConnect({ onConnected, dark = true, defaultLocation = "" }) {
   const [phase, setPhase] = useState("loading"); // loading | form | results | connected
@@ -45,25 +82,32 @@ export default function YelpConnect({ onConnected, dark = true, defaultLocation 
   const rowBorder = dark ? "border-slate-800" : "border-slate-100";
 
   // ── Initial load: is Yelp already connected? ────────────────────────────────
-  const loadState = useCallback(async () => {
-    try {
-      const connections = await yelpAPI.getConnections();
-      const yelp = connections.find((c) => c.platform === "yelp");
-      if (yelp && yelp.status === "connected") {
-        setConnection(yelp);
-        setPhase("connected");
-      } else {
-        setPhase("form");
-      }
-    } catch {
-      // Non-fatal: fall back to the form so the user can still try to connect.
-      setPhase("form");
-    }
-  }, []);
-
+  // The fetch lives inside the effect rather than in a useCallback the effect
+  // calls: the `alive` flag is what stops a response that lands after the user
+  // has navigated away from setting state on an unmounted component, and it
+  // can only be scoped correctly here, alongside the cleanup that flips it.
   useEffect(() => {
-    loadState();
-  }, [loadState]);
+    let alive = true;
+    (async () => {
+      try {
+        const connections = await yelpAPI.getConnections();
+        if (!alive) return;
+        const yelp = connections.find((c) => c.platform === "yelp");
+        if (yelp && yelp.status === "connected") {
+          setConnection(yelp);
+          setPhase("connected");
+        } else {
+          setPhase("form");
+        }
+      } catch {
+        // Non-fatal: fall back to the form so the user can still try to connect.
+        if (alive) setPhase("form");
+      }
+    })();
+    return () => {
+      alive = false;
+    };
+  }, []);
 
   // ── Search ──────────────────────────────────────────────────────────────────
   const handleSearch = async () => {
@@ -159,32 +203,6 @@ export default function YelpConnect({ onConnected, dark = true, defaultLocation 
     }
   };
 
-  // ── Small presentational bits ───────────────────────────────────────────────
-  const Header = () => (
-    <div className="flex items-center gap-3 mb-1">
-      <div className="w-9 h-9 rounded-xl bg-[#d32323]/10 flex items-center justify-center flex-shrink-0">
-        <span className="text-[#d32323] font-black text-sm">Y</span>
-      </div>
-      <div>
-        <h3 className={`font-bold text-sm ${textPrimary}`}>Yelp</h3>
-        <p className={`text-xs ${textMuted}`}>Sync your Yelp reviews into the feed</p>
-      </div>
-    </div>
-  );
-
-  const Banner = () =>
-    banner ? (
-      <div
-        className={`mt-3 text-xs rounded-lg px-3 py-2 border ${
-          banner.tone === "error"
-            ? "bg-red-500/10 border-red-500/30 text-red-400"
-            : "bg-cyan-500/10 border-cyan-500/30 text-cyan-300"
-        }`}
-      >
-        {banner.text}
-      </div>
-    ) : null;
-
   if (phase === "loading") {
     return (
       <div className={`border rounded-2xl p-5 ${card}`}>
@@ -197,7 +215,7 @@ export default function YelpConnect({ onConnected, dark = true, defaultLocation 
   if (phase === "connected" && connection) {
     return (
       <div className={`border rounded-2xl p-5 ${card}`}>
-        <Header />
+        <Header textPrimary={textPrimary} textMuted={textMuted} />
         <div className={`mt-4 flex items-center justify-between gap-3 rounded-xl border px-4 py-3 ${rowBorder}`}>
           <div className="min-w-0">
             <p className={`text-sm font-semibold truncate ${textPrimary}`}>
@@ -223,7 +241,7 @@ export default function YelpConnect({ onConnected, dark = true, defaultLocation 
   // ── Form / Results ──────────────────────────────────────────────────────────
   return (
     <div className={`border rounded-2xl p-5 ${card}`}>
-      <Header />
+      <Header textPrimary={textPrimary} textMuted={textMuted} />
 
       {/* Mode toggle: search by name/location, or paste the Yelp URL directly */}
       <div className={`mt-4 inline-flex rounded-lg border p-0.5 ${dark ? "border-slate-700 bg-slate-800/50" : "border-slate-200 bg-slate-100"}`}>
@@ -302,7 +320,7 @@ export default function YelpConnect({ onConnected, dark = true, defaultLocation 
         </div>
       )}
 
-      <Banner />
+      <Banner banner={banner} />
 
       {phase === "results" && results.length > 0 && (
         <ul className={`mt-4 border rounded-xl divide-y ${rowBorder} ${dark ? "divide-slate-800" : "divide-slate-100"}`}>

@@ -37,6 +37,24 @@ import * as msg91  from "./msg91.provider.js";
 
 const INDIAN_COUNTRY_CODES = new Set(["IN"]);
 
+// MSG91 is a COST OPTIMISATION for Indian SMS, not a capability Twilio lacks —
+// Twilio delivers to Indian numbers perfectly well, just at a higher price.
+// Routing to MSG91 unconditionally therefore meant that a deployment which had
+// configured Twilio but not MSG91 silently SIMULATED every domestic Indian
+// message: the send returned status "simulated", the campaign counted it as
+// sent, and no patient received anything. For an India-first product that is
+// the entire customer base failing invisibly.
+//
+// All three MSG91 variables are checked because DLT registration makes the
+// sender ID and template ID as mandatory as the auth key (env.js enforces the
+// same grouping at boot).
+const msg91Configured = () =>
+  Boolean(
+    process.env.MSG91_AUTH_KEY &&
+    process.env.MSG91_SENDER_ID &&
+    process.env.MSG91_TEMPLATE_ID
+  );
+
 const isIndianNumber = (phone, countryCode) => {
   if (countryCode && INDIAN_COUNTRY_CODES.has(countryCode.toUpperCase())) return true;
   if (typeof phone === "string") {
@@ -61,8 +79,10 @@ export const getProvider = ({ phone, countryCode, channel = "SMS" } = {}) => {
   // the steps to re-enable domestic routing once MSG91/Gupshup WhatsApp lands.
   if (channel === "WhatsApp") return twilio;
 
-  // SMS: domestic Indian traffic → MSG91, everything else → Twilio.
-  if (isIndianNumber(phone, countryCode)) return msg91;
+  // SMS: domestic Indian traffic → MSG91 when it is actually configured,
+  // everything else → Twilio. The configured check is what stops an
+  // MSG91-less deploy from routing every Indian number into a simulated send.
+  if (isIndianNumber(phone, countryCode) && msg91Configured()) return msg91;
   return twilio;
 };
 

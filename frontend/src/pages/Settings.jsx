@@ -122,8 +122,22 @@ export default function Settings() {
   const userSub      = useSelector((s) => s.user.userSubscription);
 
   // ── Local form state ─────────────────────────────────────────────────────
-  const [settings,      setSettings]      = useState(defaultClinic);
-  const [notifications, setNotifications] = useState(defaultNotifications);
+  // Only the user's UNSAVED EDITS live in state; the displayed values are
+  // derived at render time from Redux underneath them.
+  //
+  // The previous shape kept a full copy of the server data in local state and
+  // pushed Redux into it from two effects. That is the cascading render
+  // react-hooks/set-state-in-effect flags — Redux updates, effect fires,
+  // setState, render again — and it had a real symptom beyond the extra pass:
+  // every Redux refresh of userClinic silently overwrote whatever the user was
+  // part-way through typing, because the effect merged server values ON TOP of
+  // the edits. Deriving instead means server data can refresh underneath an
+  // in-progress edit without ever clobbering it.
+  const [settingsEdits,      setSettingsEdits]      = useState({});
+  const [notificationsEdits, setNotificationsEdits] = useState({});
+  const settings      = { ...defaultClinic,       ...userClinic,   ...settingsEdits };
+  const notifications = { ...defaultNotifications, ...userSettings, ...notificationsEdits };
+
   const [pwd,           setPwd]           = useState({ current: "", next: "", confirm: "" });
   const [sidebarOpen,   setSidebarOpen]   = useState(false);
   const [saving,        setSaving]        = useState(false);
@@ -139,27 +153,20 @@ export default function Settings() {
     getUserSettings(dispatch).catch(() => {});
   }, [dispatch]);
 
-  // ── Hydrate local form when Redux updates ────────────────────────────────
-  useEffect(() => {
-    if (userClinic) {
-      setSettings((prev) => ({ ...prev, ...userClinic }));
-    }
-  }, [userClinic]);
-
-  useEffect(() => {
-    if (userSettings) {
-      setNotifications((prev) => ({ ...prev, ...userSettings }));
-    }
-  }, [userSettings]);
+  // (The two "hydrate local form when Redux updates" effects that used to sit
+  // here are gone — that hydration is the derivation above.)
 
   // ── Handlers ─────────────────────────────────────────────────────────────
   const handleSettingsChange = (e) => {
-    setSettings({ ...settings, [e.target.name]: e.target.value });
+    const { name, value } = e.target;
+    setSettingsEdits((prev) => ({ ...prev, [name]: value }));
     setSavedMsg("");
   };
 
   const handleToggle = (key) => {
-    setNotifications((prev) => ({ ...prev, [key]: !prev[key] }));
+    // Reads through the derived value, so a toggle the server already knows
+    // about flips from its stored state rather than from a stale local copy.
+    setNotificationsEdits((prev) => ({ ...prev, [key]: !notifications[key] }));
     setSavedMsg("");
   };
 
@@ -173,9 +180,14 @@ export default function Settings() {
         if (settings.clinicName) {
           dispatch(updateClinicName(settings.clinicName));
         }
+        // The edits are now in Redux, so drop the local overlay and let the
+        // form read straight through to the saved values. Without this the
+        // stale overlay would keep winning over any later server refresh.
+        setSettingsEdits({});
       }
       if (activeTab === "notifications") {
         await updateUserSettings(dispatch, notifications);
+        setNotificationsEdits({});
       }
       setSavedMsg("Settings saved successfully!");
     } catch (err) {

@@ -58,8 +58,12 @@ export default function CampaignDetail({ campaignId, dark, onClose, onChanged })
     [campaignId]
   );
 
+  // Awaited in an async IIFE — see the note in Campaigns.jsx; a bare `load()`
+  // reads as a synchronous setState in the effect body.
   useEffect(() => {
-    load();
+    (async () => {
+      await load();
+    })();
   }, [load]);
 
   // ── Poll while live ────────────────────────────────────────────────────────
