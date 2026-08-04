@@ -126,14 +126,10 @@ for (const [key, label] of Object.entries(PLATFORM_LABEL)) {
   }
 }
 
-// `id` is supplied explicitly with gen_random_uuid(). It has to be: `reviews`
-// is a CORE table — created by sequelize.sync() from models/Review.js, where
-// the primary key is `defaultValue: DataTypes.UUIDV4`. That default lives in
-// JAVASCRIPT, not in Postgres, so the column has NO database-level DEFAULT and
-// every INSERT that omits it dies with 23502 "null value in column id". Only
-// the MIGRATED tables (subscriptions, campaigns, platform_connections, …) get
-// gen_random_uuid() from their CREATE TABLE, which is why every other raw
-// INSERT in this codebase can leave the id out and this one cannot.
+// `id` is supplied explicitly. reviews is a CORE table built by sequelize.sync(),
+// so its UUID default lives in the model layer, not in Postgres — there is no
+// DEFAULT on the column. A raw INSERT that omits id therefore dies on 23502
+// (null value in column "id"), which meant no synced review was ever stored.
 const buildUpsertSql = (platformLabel) => `
 INSERT INTO reviews (id, clinic_id, platform, external_id, reviewer_name, rating,
                      review_text, review_date, replied, reply_text, sentiment,
@@ -190,12 +186,9 @@ export async function syncByConnectionId(connectionId) {
   // backfill guard in reviewAlerts — see that file for why last_synced_at
   // cannot be used for this (the scheduler stamps it before calling us).
   const [{ n: priorCount }] = await sequelize.query(
-    // reviews.platform is the Postgres ENUM `enum_reviews_platform`. Binding
-    // the label as $2::text asks for an `enum = text` comparison, which has no
-    // operator — 42883, thrown before a single review is fetched. Leaving the
-    // parameter untyped lets PG coerce the unknown literal into the enum, which
-    // is what we want (and which also rejects a bogus label at the DB layer).
-    // Do not add ::text here.
+    // No ::text on $2 — reviews.platform is an ENUM and there is no
+    // "enum = text" operator (42883). Leaving the bind untyped lets Postgres
+    // resolve it as the enum via the column on the left-hand side.
     `SELECT COUNT(*)::int AS n FROM reviews
       WHERE clinic_id = $1::uuid AND platform = $2`,
     {
