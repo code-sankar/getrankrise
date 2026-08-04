@@ -93,10 +93,15 @@ export async function reserveCredits({ clinicId, channel, amount = 1 }) {
   //   - if reset is due, treat current usage as 0
   //   - otherwise, must have headroom: used + amount <= limit
   //
-  // Note: when current_period_start IS NULL (a clinic that has never been
-  // through checkout) every comparison against it is NULL, so the reset branch
-  // never fires. That is correct — such a clinic is on Free, whose limit is 0,
-  // and the early return above means we never reach this statement.
+  // Note: when current_period_start IS NULL every comparison against it is
+  // NULL, so the reset branch never fires. That much is correct and intended.
+  //
+  // What was NOT correct was assuming a NULL period start implies a Free
+  // clinic that the `limit === 0` early-return already handled. A PAID clinic
+  // reaches here with a NULL period start whenever Paddle omitted
+  // current_billing_period (trials, many subscription.updated payloads) or the
+  // plan was granted by hand. The normal-case branch below therefore has to
+  // treat NULL as "no reset due" rather than letting it poison the predicate.
   // Each column is assigned EXACTLY ONCE. An earlier version wrote
   // `SET ${usedCol} = …, sms_credits_used = …, whatsapp_credits_used = …`,
   // which names the active channel's column twice — Postgres rejects that with
@@ -130,8 +135,22 @@ export async function reserveCredits({ clinicId, channel, amount = 1 }) {
             -- post-reset case: amount alone must fit
             (credits_reset_at < current_period_start AND $3::int <= $2::int)
             OR
-            -- normal case: current usage + amount must fit
-            (credits_reset_at >= current_period_start AND ${usedCol} + $3::int <= $2::int)
+            -- normal case: current usage + amount must fit.
+            --
+            -- The COALESCE is load-bearing. current_period_start is NULL for
+            -- any paid clinic Paddle has not sent a current_billing_period for
+            -- — trialing subscriptions, several subscription.updated payload
+            -- shapes, and every manually-granted/comped plan. NULL makes both
+            -- comparisons NULL, the whole predicate NULL, and the UPDATE
+            -- matches zero rows, so reserveCredits returned QUOTA_EXCEEDED on
+            -- a premium clinic with used=0 and limit=500 ("You've used all 500
+            -- SMS credits"). Every send and every campaign was blocked.
+            --
+            -- A NULL period start means "no period boundary is known", which
+            -- is precisely NOT "a reset is due" — so it must fall through to
+            -- the ordinary headroom check, not disqualify the row.
+            (COALESCE(credits_reset_at >= current_period_start, TRUE)
+             AND ${usedCol} + $3::int <= $2::int)
        )
     RETURNING ${usedCol} AS used
   `;

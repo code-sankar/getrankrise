@@ -160,7 +160,8 @@ const UPSERT_SQL_BY_PLATFORM = Object.freeze({
  * Syncs one platform connection's reviews.
  * @param {string} connectionId platform_connections.id
  * @returns {{ fetched:number, created:number, updated:number, skippedNoRating:number,
- *             trimmed:number, pages:number, totalOnPlatform:number|null }}
+ *             trimmed:number, pages:number, totalOnPlatform:number|null,
+ *             alerted:number }}
  */
 export async function syncByConnectionId(connectionId) {
   const connection = await PlatformConnection.findByPk(connectionId);
@@ -231,6 +232,7 @@ export async function syncByConnectionId(connectionId) {
     trimmed: 0,
     pages: 0,
     totalOnPlatform: null,
+    alerted: 0,
   };
 
   let pageToken = null;
@@ -274,7 +276,23 @@ export async function syncByConnectionId(connectionId) {
         ],
         type: QueryTypes.SELECT,
       });
-      row?.inserted ? stats.created++ : stats.updated++;
+
+      // Only rows the upsert reported as genuinely INSERTED (xmax = 0) are
+      // alert candidates. A re-sync that merely UPDATES an existing 1-star
+      // review is not news, and re-alerting on it is how a notification bell
+      // becomes noise the user learns to ignore.
+      if (row?.inserted) {
+        stats.created++;
+        if (r.rating <= LOW_RATING_THRESHOLD) {
+          lowRatingAlerts.push({
+            id: row.id,
+            rating: r.rating,
+            reviewerName: r.reviewerName || "Anonymous",
+          });
+        }
+      } else {
+        stats.updated++;
+      }
     }
 
     // Incremental early-stop (newest-updated-first ordering).
@@ -292,17 +310,50 @@ export async function syncByConnectionId(connectionId) {
   const sub = await getSubscriptionState(connection.clinicId);
   const cap = sub.limits.storedReviewsLimit;
   if (Number.isFinite(cap)) {
-    const trimmed = await sequelize.query(
+    // RETURNING id + QueryTypes.SELECT is the only shape that yields a usable
+    // count here. With `type: QueryTypes.DELETE` sequelize resolves to a bare
+    // [], so the old `trimmed[1] ?? 0` reported 0 rows trimmed no matter how
+    // many were actually deleted — the scheduler logged "0 trimmed" while
+    // silently dropping 14 rows.
+    const trimmedRows = await sequelize.query(
       `DELETE FROM reviews
         WHERE clinic_id = $1::uuid AND id NOT IN (
           SELECT id FROM reviews WHERE clinic_id = $1::uuid
            ORDER BY COALESCE(review_date, created_at) DESC
-           LIMIT $2::int)`,
-      { bind: [connection.clinicId, cap], type: QueryTypes.DELETE },
+           LIMIT $2::int)
+        RETURNING id`,
+      { bind: [connection.clinicId, cap], type: QueryTypes.SELECT },
     );
-    // sequelize DELETE returns [results, metadata] variably; count via change
-    stats.trimmed = Array.isArray(trimmed) ? (trimmed[1] ?? 0) : 0;
+    stats.trimmed = trimmedRows.length;
+
+    // Never alert on a review the trim just deleted. notifications.review_id
+    // points at a row that no longer exists, and "new 1-star review" about
+    // something the user cannot open is worse than no alert at all.
+    if (stats.trimmed > 0 && lowRatingAlerts.length > 0) {
+      const deleted = new Set(trimmedRows.map((t) => t.id));
+      for (let i = lowRatingAlerts.length - 1; i >= 0; i--) {
+        if (deleted.has(lowRatingAlerts[i].id)) lowRatingAlerts.splice(i, 1);
+      }
+    }
   }
+
+  // ── Urgent-review alerts ────────────────────────────────────────────────
+  // This call is the write path behind the notification bell. It was missing
+  // entirely: notifyLowRatingReviews was imported, lowRatingAlerts was built
+  // (well, declared), and nothing ever invoked it — so a clinic could ingest
+  // eleven 1-star reviews and receive zero notifications.
+  //
+  // Never throws (see reviewAlerts.service.js's failure posture): a
+  // notification problem must not fail a sync that has already committed real
+  // review rows, because claim-by-stamping would then cost the clinic a full
+  // interval of real data.
+  stats.alerted = (
+    await notifyLowRatingReviews({
+      clinicId: connection.clinicId,
+      candidates: lowRatingAlerts,
+      isBackfill,
+    })
+  ).created;
 
   return stats;
 }
