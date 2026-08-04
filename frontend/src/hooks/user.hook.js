@@ -19,7 +19,6 @@ import {
   updateUserClinicName,
   addUserSettings,
   toggleUserSettingNotification,
-  addUserActivity,
   addUserSubscription,
 } from "../store/userSlice.js";
 
@@ -131,18 +130,12 @@ export const changeUserPassword = async (currentPassword, newPassword) => {
   }
 };
 
-// ── Get user activity log ─────────────────────────────────────────────────────
-export const getUserActivity = async (dispatch) => {
-  try {
-    const response = await axiosInstance.get("/activity");
-    if (response?.data?.data) {
-      dispatch(addUserActivity(response.data.data));
-      return response.data;
-    }
-  } catch (error) {
-    console.error("getUserActivity error:", error);
-  }
-};
+// NOTE: there is no getUserActivity() here on purpose. It used to GET
+// /activity, an endpoint the backend has never implemented, and nothing
+// rendered the result (the Activity tab is absent from ProfileTabs). The
+// userActivity slice field stays — reviews.hook and requests.hook still push
+// client-side entries onto it via addSingleUserActivity. Restore this fetch
+// when a server-side activity feed actually exists to call.
 
 // ── Get user subscription ─────────────────────────────────────────────────────
 export const getUserSubscription = async (dispatch) => {

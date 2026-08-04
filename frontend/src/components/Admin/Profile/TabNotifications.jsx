@@ -1,4 +1,3 @@
-import React from "react";
 import ToggleButton from "../UI/ToggleButton.jsx";
 
 export default function TabNotifications({ prefs, onPrefChange, dark }) {

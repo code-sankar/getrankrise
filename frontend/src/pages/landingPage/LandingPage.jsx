@@ -1,4 +1,3 @@
-import React from 'react'
 import Navbar from './LandingPageNavbar.jsx';
 import Hero from './LandingPageHero.jsx';
 import Logos from './Logos.jsx';

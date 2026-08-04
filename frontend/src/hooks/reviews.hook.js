@@ -18,7 +18,7 @@
  */
 
 import { toast } from "react-toastify";
-import axiosInstance from "../utils/axios.helper.js";
+import axiosInstance, { LONG_TIMEOUT } from "../utils/axios.helper.js";
 import { getFriendlyError } from "../utils/parseErrorMsg.js";
 import {
   addUserReviews,
@@ -135,7 +135,10 @@ export const generateAIReply = async (reviewId, reviewText, tone = "professional
 // toast on top of a modal is noise.
 export const syncReviewsNow = async (dispatch) => {
   try {
-    const { data } = await axiosInstance.post("/reviews/sync");
+    // Walks paginated provider APIs — routinely longer than the 10s default.
+    const { data } = await axiosInstance.post("/reviews/sync", null, {
+      timeout: LONG_TIMEOUT,
+    });
     toast.success(data?.message || "Reviews synced.");
     return data?.data ?? null;
   } catch (error) {

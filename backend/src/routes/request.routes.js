@@ -95,26 +95,4 @@ router.patch(
   asyncHandler(updateRequestStatus),
 );
 
-export const listRequests = async (req, res) => {
-  const rows = await ReviewRequest.findAll({
-    where: { clinicId: req.clinic.id },
-    order: [["createdAt", "DESC"]],
-    limit: Math.min(parseInt(req.query.limit, 10) || 100, 200),
-  });
-  return successResponse(res, { message: "Requests fetched", data: rows });
-};
-
-export const updateRequestStatus = async (req, res) => {
-  const { status } = req.body; // Joi already validated
-  const [updated] = await ReviewRequest.update(
-    { status },
-    { where: { id: req.params.id, clinicId: req.clinic.id } }, // tenant scope
-  );
-  if (!updated) return notFoundResponse(res, "Request not found");
-  return successResponse(res, {
-    message: "Status updated",
-    data: { id: req.params.id, status },
-  });
-};
-
 export default router;

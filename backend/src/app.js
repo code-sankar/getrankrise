@@ -43,6 +43,7 @@ import oauthRoutes        from "./routes/oauth.routes.js";      // Step 1: new
 import campaignRoutes     from "./routes/campaign.routes.js";   // Step 1: now mounted
 import usageRoutes        from "./routes/usage.routes.js";      // Step 1: now mounted
 import webhookRoutes      from "./routes/webhooks.routes.js";   // Step 1: now mounted
+import planRoutes         from "./routes/plans.routes.js";      // public plan catalogue
 
 // ── Middleware ────────────────────────────────────────────────────────────────
 import { sanitize }     from "./middleware/sanitize.middleware.js";
@@ -148,14 +149,21 @@ if (env.NODE_ENV === "development") {
 }
 
 // ── Health check ──────────────────────────────────────────────────────────────
-app.get("/health", (req, res) => {
+// Mounted at BOTH paths on purpose:
+//   /health         — root, where load balancers and platform probes expect it
+//   /api/v1/health  — reachable by the frontend axios client, whose baseURL is
+//                     already /api/v1 (hooks/healthCheck.js calls this one)
+const health = (req, res) => {
   res.status(200).json({
     success:     true,
     message:     "GetRankRise API is running",
     environment: env.NODE_ENV,
     timestamp:   new Date().toISOString(),
   });
-});
+};
+
+app.get("/health", health);
+app.get("/api/v1/health", health);
 
 // ── API Routes — mounted under /api/v1 ───────────────────────────────────────
 app.use("/api/v1/auth",          authRoutes);
@@ -172,6 +180,10 @@ app.use("/api/v1/oauth",         oauthRoutes);     // Google connect flow
 app.use("/api/v1/campaigns",     campaignRoutes);  // Pulse Campaigns
 app.use("/api/v1/usage",         usageRoutes);     // metered usage summary
 app.use("/api/v1/webhooks",      webhookRoutes);   // inbound Twilio (STOP)
+// Public on purpose — the marketing page's pricing section is an unauthenticated
+// caller. Serving the catalogue from config/plans.js is what stops the frontend's
+// FALLBACK_PLANS mirror from drifting.
+app.use("/api/v1/plans",         planRoutes);
 
 // ── 404 handler ───────────────────────────────────────────────────────────────
 app.use((req, res) => {

@@ -16,7 +16,7 @@
  *     transition is illegal from the campaign's current state.
  */
 
-import axiosInstance from "../utils/axios.helper.js";
+import axiosInstance, { LONG_TIMEOUT } from "../utils/axios.helper.js";
 
 // ── Status metadata (presentation lives with the frontend) ───────────────────
 // Campaign statuses drive the runner backend-side; these are just labels+colors.
@@ -79,7 +79,12 @@ export const campaignsAPI = {
    *     creditsEstimate, creditsRemaining, creditWarning }
    */
   create: async (payload) => {
-    const { data } = await axiosInstance.post("/campaigns", payload);
+    // Parses and dedupes up to 300KB of CSV server-side — needs more than the
+    // 10s default, and a client-side abort here would leave a created campaign
+    // the user never saw.
+    const { data } = await axiosInstance.post("/campaigns", payload, {
+      timeout: LONG_TIMEOUT,
+    });
     return data.data;
   },
 

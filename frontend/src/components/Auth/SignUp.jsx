@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { useDispatch } from "react-redux";
 import { Link, useNavigate } from "react-router-dom";
@@ -52,7 +52,10 @@ function SignUp() {
       // Auto-login the new user — better UX than redirecting to login
       dispatch(loginSuccess(payload));
       toast.success("Welcome to GetRankRise! 🎉");
-      navigate("/dashboard");
+      // Straight to onboarding, not the dashboard: a brand-new clinic has no
+      // platform connected, so the dashboard is necessarily empty. Onboarding
+      // collects clinic details and walks them through connecting Google.
+      navigate("/onboarding");
     } catch (err) {
       const msg = getFriendlyError(
         err?.response?.data?.message || err?.message

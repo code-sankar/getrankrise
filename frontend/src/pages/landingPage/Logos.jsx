@@ -1,4 +1,3 @@
-import React from 'react';
 
 export default function Logos() {
   const companies = ['BrightSmile', 'Luxe Salon', 'Trattoria 9', 'PeakFit', 'Northside Clinic', 'HomeCo'];

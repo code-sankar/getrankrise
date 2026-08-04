@@ -1,4 +1,3 @@
-import React from 'react';
 import { ArrowRight, Star, Sparkles, Check } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import DashboardPreview from './LandingPageDashboardPreview.jsx';

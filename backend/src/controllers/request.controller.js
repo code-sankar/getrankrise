@@ -25,7 +25,11 @@ import {
   refundUsage,
   usageErrorResponse,
 } from "../services/usage/usage.service.js";
-import { successResponse, serverErrorResponse } from "../utils/apiResponse.js";
+import {
+  successResponse,
+  serverErrorResponse,
+  notFoundResponse,
+} from "../utils/apiResponse.js";
 
 import {
   isEmailConfigured,
@@ -167,6 +171,43 @@ export const sendRequest = async (req, res) => {
     console.error("sendRequest error:", err);
     return serverErrorResponse(res, "Could not send review request");
   }
+};
+
+// GET /api/v1/requests — send history, newest first.
+// Returns a BARE ARRAY in `data`: the frontend hook does
+// dispatch(addUserRequests(response.data.data)) and the reducer spreads it.
+export const listRequests = async (req, res) => {
+  const limit = Math.min(parseInt(req.query.limit, 10) || 100, 200);
+  const offset = Math.max(parseInt(req.query.offset, 10) || 0, 0);
+
+  const rows = await ReviewRequest.findAll({
+    where: { clinicId: req.clinic.id }, // tenant scope
+    order: [["createdAt", "DESC"]],
+    limit,
+    offset,
+  });
+
+  return successResponse(res, { message: "Requests fetched", data: rows });
+};
+
+// PATCH /api/v1/requests/:id/status — advance Sent → Opened → Reviewed.
+// The clinicId in the WHERE clause is the tenant boundary: without it, any
+// authenticated user could advance another clinic's request by guessing a UUID.
+export const updateRequestStatus = async (req, res) => {
+  const { status } = req.body; // Joi already validated the enum
+  const { id } = req.params;
+
+  const [updated] = await ReviewRequest.update(
+    { status },
+    { where: { id, clinicId: req.clinic.id } }
+  );
+
+  if (!updated) return notFoundResponse(res, "Request not found");
+
+  return successResponse(res, {
+    message: "Status updated",
+    data: { id, status },
+  });
 };
 
 // ── Helpers ──────────────────────────────────────────────────────────────
