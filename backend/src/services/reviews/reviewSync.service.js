@@ -83,11 +83,6 @@ const MAX_PAGES = 40; // 40 × 50 = 2000 reviews per sync — plenty, bounded
 const EARLY_STOP_BUFFER_MS = 24 * 3600e3;
 
 // ── Provider factory (mirrors the competitor-intelligence factory) ──────────
-// Platform-aware. REVIEWS_MOCK (or GOOGLE_MOCK_DISCOVERY) still forces the
-// shared mock provider for EVERY platform in dev — a fully offline pipeline.
-// Otherwise google → GBP provider, yelp → Fusion provider, facebook → Graph
-// provider. Widen this switch as new providers land; the caller passes
-// connection.platform.
 function getProvider(platform) {
   const mock =
     String(
@@ -96,28 +91,16 @@ function getProvider(platform) {
   if (mock) return mockProvider;
   if (platform === "yelp") return yelpProvider;
   if (platform === "facebook") return facebookProvider;
-  return googleProvider; // platform === "google"
+  return googleProvider;
 }
 
 // ── The tested upsert ────────────────────────────────────────────────────────
-// The platform literal is the ONLY thing that varies per provider, so the SQL
-// is built once per supported platform from a fixed label map (NOT user input —
-// no injection surface). Merge rules are byte-for-byte the tested Google ones
-// and hold for Yelp and Facebook unchanged: both yield replied=false /
-// reply_text=NULL on plain fetch (Yelp has no reply API at all; Facebook's
-// /ratings edge doesn't return the Page's own replies), so
-// `replied = reviews.replied OR EXCLUDED.replied` keeps a locally-saved reply
-// sticky and the reply_text COALESCE never clobbers it.
 const PLATFORM_LABEL = Object.freeze({
   google: "Google",
   yelp: "Yelp",
   facebook: "Facebook",
 });
 
-// Fail at import time, not mid-sync, if a platform is ever added to the
-// provider factory / claim SQL without a matching label here. This is
-// exactly the class of bug the missing `facebook` key produced — cheap
-// insurance against it happening again.
 for (const [key, label] of Object.entries(PLATFORM_LABEL)) {
   if (!label) {
     throw new Error(
@@ -205,21 +188,10 @@ export async function syncByConnectionId(connectionId) {
   );
   const isBackfill = priorCount === 0;
 
-  // Newly-INSERTED low-rating reviews, collected for one batched alert write
-  // at the end. Not written inline: an alert per row inside the pagination
-  // loop would be N round trips and would fire before the free-tier trim
-  // decides which rows survive.
   const lowRatingAlerts = [];
 
   const provider = getProvider(connection.platform);
 
-  // Token resolution is per-provider:
-  //   Google   → per-clinic OAuth access token (auto-refreshed)
-  //   Facebook → per-clinic PAGE access token (re-derived from the long-lived
-  //              user token if the cached one is missing)
-  //   Yelp     → account-level API key, read inside yelpReviews.provider.js
-  //   mock     → nothing
-  // Only Google and Facebook need anything fetched here.
   let accessToken = null;
   if (provider === googleProvider) {
     ({ accessToken } = await getValidAccessToken(connection.clinicId));
@@ -260,8 +232,6 @@ export async function syncByConnectionId(connectionId) {
         : Date.now();
       if (updated < oldestUpdate) oldestUpdate = updated;
 
-      // GBP can return comment-less star ratings; rating-less rows can't —
-      // rating is NOT NULL in our schema and drives sentiment. Skip nulls.
       if (!r.rating) {
         stats.skippedNoRating++;
         continue;
@@ -284,7 +254,6 @@ export async function syncByConnectionId(connectionId) {
       row?.inserted ? stats.created++ : stats.updated++;
     }
 
-    // Incremental early-stop (newest-updated-first ordering).
     if (
       lastSynced &&
       oldestUpdate !== Infinity &&
@@ -307,7 +276,6 @@ export async function syncByConnectionId(connectionId) {
            LIMIT $2::int)`,
       { bind: [connection.clinicId, cap], type: QueryTypes.DELETE },
     );
-    // sequelize DELETE returns [results, metadata] variably; count via change
     stats.trimmed = Array.isArray(trimmed) ? (trimmed[1] ?? 0) : 0;
   }
 
@@ -317,12 +285,6 @@ export async function syncByConnectionId(connectionId) {
 /**
  * Convenience for the manual endpoint: sync the clinic's Google connection
  * without the caller needing the connection id.
- *
- * NOTE: this stays Google-only by design (matching reviewSync.controller.js,
- * which currently looks up only the clinic's Google connection). If you fix
- * the controller to support Yelp/Facebook manual syncs too (tracked as M2 in
- * the audit), extend this to accept a platform or to loop every connected
- * platform for the clinic — syncByConnectionId already works for all three.
  */
 export async function syncClinicReviews(clinicId) {
   const connection = await PlatformConnection.findOne({
@@ -337,8 +299,6 @@ export async function syncClinicReviews(clinicId) {
   }
   const stats = await syncByConnectionId(connection.id);
 
-  // The manual path stamps the sync clock itself (the scheduler stamps its
-  // own claims) — so a manual sync also resets the automatic interval.
   await sequelize.query(
     `UPDATE platform_connections
         SET last_synced_at = NOW(), last_sync_error = NULL

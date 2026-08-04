@@ -37,7 +37,7 @@ export const updateClinicSchema = Joi.object({
   countryCode:       Joi.string().length(2).uppercase().allow("", null),
   googleBusinessUrl: Joi.string().uri().allow(""),
   googleReviewLink:  Joi.string().uri().allow(""),
-}).min(1); // require at least one field
+}).min(1);
 
 // ── SETTINGS (notification preferences) ───────────────────────────────────────
 export const updateSettingsSchema = Joi.object({
@@ -75,8 +75,6 @@ export const sendRequestSchema = Joi.object({
     then:      email.required(),
     otherwise: Joi.alternatives().try(email, Joi.string().allow("", null)),
   }),
-  // Optional idempotency key — if same key sent twice within 24h, second request
-  // returns the original result instead of double-charging SMS credits
   idempotencyKey: Joi.string().max(80).optional(),
 });
 
@@ -134,7 +132,6 @@ export const validate = (schema, source = "body") => (req, res, next) => {
     return badRequestResponse(res, "Validation failed", errors);
   }
 
-  // Re-assign so downstream gets the cleaned/casted version
   assignValidated(req, source, value);
   next();
 };
@@ -153,4 +150,4 @@ export const updateCompetitorSchema = Joi.object({
   location:   Joi.string().trim().max(200).allow("", null),
   profileUrl: Joi.string().uri().max(2048).allow("", null),
   isActive:   Joi.boolean(),
-}).min(1); // at least one field
+}).min(1);
