@@ -244,10 +244,57 @@ if (isProduction) {
         "checkouts will hit Paddle sandbox and no real money will move."
     );
   }
-  if (!FEATURES.twilio && !FEATURES.msg91) {
+
+  // ── Twilio is MANDATORY in production ──────────────────────────────────────
+  // This used to be a console.warn, and only when BOTH providers were absent.
+  // Two things were wrong with that.
+  //
+  // First, a warning is invisible: it scrolls past in a deploy log and the app
+  // serves traffic. The providers respond to missing credentials by returning
+  // { status: "simulated" }, which every caller treats as success — campaigns
+  // increment sent_count, the UI shows "Sent", the clinic's credit is spent,
+  // and no patient receives anything. There is no error anywhere to find.
+  //
+  // Second, requiring only "one of the two" was wrong on the merits. Twilio
+  // carries international SMS AND every WhatsApp message on every plan (MSG91's
+  // sendWhatsApp throws "not implemented"), so an MSG91-only production deploy
+  // silently simulates the entire Premium WhatsApp channel. MSG91 stays
+  // optional — it is a cost optimisation for Indian SMS, and sms/index.js now
+  // falls back to Twilio for Indian numbers when it is absent.
+  //
+  // ALLOW_SIMULATED_SENDS exists for the genuine case of a production instance
+  // that never sends (a read-only analytics replica, a web role with
+  // CAMPAIGN_RUNNER_DISABLED). It has to be set deliberately, which is the
+  // point — the default cannot be "quietly pretend".
+  const allowSimulated =
+    String(process.env.ALLOW_SIMULATED_SENDS).toLowerCase() === "true";
+
+  if (!FEATURES.twilio && !allowSimulated) {
+    console.error(
+      "\n❌ No Twilio configuration with NODE_ENV=production.\n" +
+        "   TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN and TWILIO_PHONE_NUMBER are\n" +
+        "   required: Twilio carries international SMS and EVERY WhatsApp message.\n" +
+        "   Without them the providers return status:\"simulated\", which the whole\n" +
+        "   codebase treats as a successful send — campaigns would report \"Sent\",\n" +
+        "   spend the clinic's credits, and deliver nothing.\n\n" +
+        "   Set them, or set ALLOW_SIMULATED_SENDS=true if this instance is\n" +
+        "   genuinely not meant to send anything.\n"
+    );
+    process.exit(1);
+  }
+
+  if (FEATURES.twilio && !process.env.TWILIO_WHATSAPP_NUMBER && !allowSimulated) {
     console.warn(
-      "⚠️  No SMS provider configured — Pulse Campaigns and review requests will " +
-        "fail for every clinic."
+      "⚠️  TWILIO_WHATSAPP_NUMBER is not set — WhatsApp sends will throw rather " +
+        "than deliver. Premium's WhatsApp channel is effectively off."
+    );
+  }
+
+  if (allowSimulated) {
+    console.warn(
+      "⚠️  ALLOW_SIMULATED_SENDS=true in production — the SMS credential check is " +
+        "bypassed. Sends will THROW rather than silently simulate, so campaigns " +
+        "will fail visibly if this instance ever tries to send."
     );
   }
 }

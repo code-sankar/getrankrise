@@ -36,9 +36,31 @@ const PLANS = [
   },
 ];
 
+// The eyebrow + headline the three server conditions deserve. QUOTA_EXCEEDED
+// is the one that matters most here: it reaches a customer who is already
+// paying and has simply used up the period's allowance, and telling them
+// "Upgrade Required / Unlock the full engine" reads as though their plan never
+// included the feature.
+const COPY = {
+  UPGRADE_REQUIRED: {
+    eyebrow: "Upgrade Required",
+    heading: (feature) =>
+      feature ? `Unlock ${feature}` : "Unlock the full GetRankRise engine",
+  },
+  SUBSCRIPTION_INACTIVE: {
+    eyebrow: "Subscription Paused",
+    heading: () => "Reactivate your subscription",
+  },
+  QUOTA_EXCEEDED: {
+    eyebrow: "Limit Reached",
+    heading: (feature) =>
+      feature ? `You've used all your ${feature}` : "You've hit this plan's limit",
+  },
+};
+
 export default function UpgradeModal() {
   const dispatch = useDispatch();
-  const { open, currentPlan, requiredPlans, featureName, message } =
+  const { open, currentPlan, requiredPlans, featureName, message, reason } =
     useSelector((s) => s.upgradeModal);
 
   // Close on Escape
@@ -51,7 +73,14 @@ export default function UpgradeModal() {
 
   if (!open) return null;
 
-  const visiblePlans = PLANS.filter((p) => requiredPlans.includes(p.id));
+  // Never offer the plan they are already on. axios.helper.js only opens this
+  // modal for QUOTA_EXCEEDED when something better exists, but filtering here
+  // too means no future caller can produce a modal whose single card is the
+  // customer's current plan.
+  const visiblePlans = PLANS.filter(
+    (p) => requiredPlans.includes(p.id) && p.id !== currentPlan,
+  );
+  const copy = COPY[reason] ?? COPY.UPGRADE_REQUIRED;
   const close = () => dispatch(hideUpgradeModal());
 
   return (
@@ -79,10 +108,10 @@ export default function UpgradeModal() {
         <div className="px-8 pt-10 pb-8 text-center">
           <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-cyan-500/10 border border-cyan-500/20 text-cyan-400 text-[10px] font-bold tracking-[0.2em] uppercase mb-4">
             <Sparkles size={12} />
-            Upgrade Required
+            {copy.eyebrow}
           </div>
           <h2 className="text-3xl sm:text-4xl font-bold text-white tracking-tight mb-3">
-            {featureName ? `Unlock ${featureName}` : "Unlock the full GetRankRise engine"}
+            {copy.heading(featureName)}
           </h2>
           <p className="text-sm text-slate-400 max-w-xl mx-auto leading-relaxed">
             {message || `You're on the ${currentPlan} plan. Pick a plan below to keep moving — most teams break even within their first reclaimed review.`}

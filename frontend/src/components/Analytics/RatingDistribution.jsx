@@ -8,7 +8,8 @@
  * Props:
  *   ratingData — selectRatingBreakdown from Redux
  *                [ { star, count, percentage, color } ]
- *   total      — summary.totalReviews (shown in subtitle)
+ *   total      — summary.totalReviews, i.e. the count for the SELECTED RANGE,
+ *                not the clinic's lifetime total (that is summary.lifetimeReviews)
  *   dark       — boolean
  */
 import {
@@ -38,7 +39,9 @@ export default function RatingDistribution({ ratingData, total, dark }) {
     <AnalyticsCard
       dark={dark}
       title="Rating Distribution"
-      subtitle={`Breakdown of all ${total} reviews by star`}
+      // "all N reviews" — but ratingData, like `total`, is range-scoped, so
+      // "all" overclaimed on every range except all_time.
+      subtitle={`Breakdown of ${total} reviews in range by star`}
     >
       {/* Horizontal bar chart */}
       <div className="h-[210px]">

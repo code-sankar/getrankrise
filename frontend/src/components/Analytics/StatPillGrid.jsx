@@ -38,10 +38,18 @@ function StatPill({ label, value, sub, subColor, dark }) {
 export default function StatPillGrid({ summary, trend, sentiment, lastMonth, dark }) {
   const pills = [
     {
-      label:    "Total Reviews",
+      // Labelled "Total Reviews" until this pill was caught reading 1 while
+      // the review feed showed 34 — it has always counted only the SELECTED
+      // RANGE, like every other pill here. The name now says so, and the
+      // sub-line carries the lifetime figure the feed agrees with.
+      label:    "Reviews in Range",
       value:    summary.totalReviews,
-      sub:      trend.label,
-      subColor: trend.color,
+      sub:      summary.lifetimeReviews > summary.totalReviews
+        ? `${summary.lifetimeReviews} all time`
+        : trend.label,
+      subColor: summary.lifetimeReviews > summary.totalReviews
+        ? undefined
+        : trend.color,
     },
     {
       label:    "Avg Rating",

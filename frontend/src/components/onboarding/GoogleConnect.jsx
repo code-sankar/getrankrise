@@ -116,8 +116,15 @@ export default function GoogleConnect({ onConnected, dark = true }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // Awaited inside an async IIFE rather than called bare. A bare `loadState()`
+  // reads to the linter — correctly — as "this effect body sets state", which
+  // is the cascading-render pattern react-hooks/set-state-in-effect flags. The
+  // IIFE makes the asynchrony explicit: nothing here sets state during the
+  // effect's own execution.
   useEffect(() => {
-    loadState();
+    (async () => {
+      await loadState();
+    })();
   }, [loadState]);
 
   // ── Actions ────────────────────────────────────────────────────────────────

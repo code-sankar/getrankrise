@@ -116,6 +116,22 @@ export async function getAnalytics(clinicId, rangeKey = "last_30_days") {
 }
 
 // ── Summary pills ────────────────────────────────────────────────────────────
+//
+// ⚠ EVERY NUMBER HERE IS RANGE-SCOPED. That is deliberate and correct for
+// avgRating / responseRate / sentimentScore — "what is my rating in the last 30
+// days" is the question the range selector asks.
+//
+// It was NOT correct for the count, because the frontend labelled it
+// "Total Reviews" and the Analytics page rendered "All data calculated from N
+// real reviews". With the default last_30_days range and a clinic whose reviews
+// predate that window, the pill read 1 while the review feed and the competitor
+// self-metrics both read 34 — three surfaces of the same app disagreeing about
+// how many reviews exist, with no way for the user to tell which was lying.
+//
+// Both numbers are now returned. `totalReviews` keeps its range scope (renamed
+// in the UI to "Reviews in Range"); `lifetimeReviews` counts the whole base
+// relation and is what the feed shows — for a Free clinic that is the capped
+// window, so the two surfaces still agree exactly.
 async function summaryStats({ base, range, clinicId }) {
   const sql = q({
     base,
@@ -133,10 +149,23 @@ async function summaryStats({ base, range, clinicId }) {
     `,
   });
 
-  const [row] = await sequelize.query(sql, { bind: base.binds, type: QueryTypes.SELECT });
+  // Same base relation, no range filter — i.e. exactly the rows the review
+  // feed can show. RANGES.all_time has interval:null, which is what makes q()
+  // omit the range predicate.
+  const lifetimeSql = q({
+    base,
+    range: RANGES.all_time,
+    select: `COUNT(*)::int AS lifetime_reviews`,
+  });
+
+  const [[row], [lifetimeRow]] = await Promise.all([
+    sequelize.query(sql, { bind: base.binds, type: QueryTypes.SELECT }),
+    sequelize.query(lifetimeSql, { bind: base.binds, type: QueryTypes.SELECT }),
+  ]);
 
   return {
     totalReviews: row?.total_reviews ?? 0,
+    lifetimeReviews: lifetimeRow?.lifetime_reviews ?? 0,
     avgRating: row?.avg_rating ?? 0,
     responseRate: row?.response_rate ?? 0,
     sentimentScore: row?.sentiment_score ?? 0,

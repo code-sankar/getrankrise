@@ -59,9 +59,25 @@ export default function Campaigns() {
     }
   }, []);
 
+  // Both loads are awaited inside an async IIFE — a bare `loadCampaigns()` in
+  // the effect body is the cascading-render pattern the linter flags. The
+  // `alive` guard is the substantive part: this page is reachable from the
+  // sidebar and navigating away before the list returns would otherwise set
+  // state on an unmounted component.
   useEffect(() => {
-    loadCampaigns();
-    getUserCredits().then(setCredits).catch(() => {});
+    let alive = true;
+    (async () => {
+      await loadCampaigns();
+      try {
+        const c = await getUserCredits();
+        if (alive) setCredits(c);
+      } catch {
+        // Credits are a decorative pill here — the page works without them.
+      }
+    })();
+    return () => {
+      alive = false;
+    };
   }, [loadCampaigns]);
 
   // ── Wizard → created ───────────────────────────────────────────────────────

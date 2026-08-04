@@ -30,6 +30,41 @@ const CALLBACK_ERRORS = {
   exchange_failed: "We couldn't complete the Facebook connection. Please try again.",
 };
 
+// ── Presentational bits — MODULE SCOPE, deliberately ─────────────────────────
+// Declared inside the component body these are a fresh component TYPE on every
+// render, so React unmounts and remounts the subtree each time rather than
+// updating it. Harmless-looking today (neither holds state), but it is the
+// standing trap react-hooks/static-components exists to catch: the first
+// <input> added inside Banner would lose focus on every keystroke.
+function Header({ textPrimary, textMuted }) {
+  return (
+    <div className="flex items-center gap-3 mb-1">
+      <div className="w-9 h-9 rounded-xl bg-[#1877f2]/10 flex items-center justify-center flex-shrink-0">
+        <span className="text-[#1877f2] font-black text-base">f</span>
+      </div>
+      <div>
+        <h3 className={`font-bold text-sm ${textPrimary}`}>Facebook</h3>
+        <p className={`text-xs ${textMuted}`}>Sync your Page recommendations into the feed</p>
+      </div>
+    </div>
+  );
+}
+
+function Banner({ banner }) {
+  if (!banner) return null;
+  return (
+    <div
+      className={`mt-3 text-xs rounded-lg px-3 py-2 border ${
+        banner.tone === "error"
+          ? "bg-red-500/10 border-red-500/30 text-red-400"
+          : "bg-cyan-500/10 border-cyan-500/30 text-cyan-300"
+      }`}
+    >
+      {banner.text}
+    </div>
+  );
+}
+
 export default function FacebookConnect({ onConnected, dark = true }) {
   const [searchParams, setSearchParams] = useSearchParams();
 
@@ -38,7 +73,20 @@ export default function FacebookConnect({ onConnected, dark = true }) {
   const [pages, setPages] = useState(null); // [{ id, name, category }]
   const [selectedId, setSelectedId] = useState(null);
   const [busy, setBusy] = useState(false);
-  const [banner, setBanner] = useState(null); // { tone: "error"|"info", text }
+
+  // The ?facebook=… param is an INITIAL CONDITION, not evolving state: it is
+  // present on the first render after the consent redirect and never again
+  // (the effect below strips it). Capturing it in a lazy initialiser lets the
+  // banner render correctly on the very first paint, and keeps the URL-derived
+  // state out of an effect that would have to setState to express it.
+  const [callbackParam] = useState(
+    () => new URLSearchParams(window.location.search).get("facebook"),
+  );
+  const [banner, setBanner] = useState(() =>
+    callbackParam && callbackParam !== "connected" && CALLBACK_ERRORS[callbackParam]
+      ? { tone: "error", text: CALLBACK_ERRORS[callbackParam] }
+      : null,
+  ); // { tone: "error"|"info", text }
 
   // ── Theme tokens (obsidian design system) ───────────────────────────────────
   const card = dark ? "bg-slate-900 border-slate-800" : "bg-white border-slate-200 shadow-sm";
@@ -76,38 +124,57 @@ export default function FacebookConnect({ onConnected, dark = true }) {
   }, []);
 
   // ── Initial load: connection status + callback params ───────────────────────
-  const loadState = useCallback(async () => {
-    // Handle callback params first (?facebook=connected|denied|...).
-    const cb = searchParams.get("facebook");
-    if (cb && cb !== "connected" && CALLBACK_ERRORS[cb]) {
-      setBanner({ tone: "error", text: CALLBACK_ERRORS[cb] });
-    }
-    if (cb) {
-      // Clean the URL so a refresh doesn't replay the banner/picker.
+  // The OAuth callback param is read in the effect below rather than in a
+  // useCallback the effect invokes. Two things changed and both were bugs:
+  //
+  //   1. loadState() called setBanner SYNCHRONOUSLY in the effect body, which
+  //      is the cascading render react-hooks/set-state-in-effect flags. The
+  //      banner is now seeded in the lazy useState initialiser above, so it is
+  //      correct on the FIRST paint instead of flashing in on a second render.
+  //   2. loadState depended on [searchParams, setSearchParams] and its own
+  //      body called setSearchParams — so cleaning the URL changed the dep,
+  //      rebuilt the callback, and re-ran the effect, refetching the
+  //      connection list a second time on every return from consent. Mount-only
+  //      is what this was always meant to be.
+  useEffect(() => {
+    let alive = true;
+
+    // Clean the URL so a refresh doesn't replay the banner or re-enter the
+    // picker. callbackParam holds the value captured before this strips it.
+    if (callbackParam) {
       searchParams.delete("facebook");
       setSearchParams(searchParams, { replace: true });
     }
 
-    try {
-      const connections = await facebookAPI.getConnections();
-      const fb = connections.find((c) => c.platform === "facebook");
+    (async () => {
+      try {
+        const connections = await facebookAPI.getConnections();
+        if (!alive) return;
+        const fb = connections.find((c) => c.platform === "facebook");
 
-      if (fb && fb.status === "connected") {
-        setConnection(fb);
-        setPhase("connected");
-      } else if ((fb && fb.status === "pending_location") || cb === "connected") {
-        await loadPages();
-      } else {
-        setPhase("disconnected");
+        if (fb && fb.status === "connected") {
+          setConnection(fb);
+          setPhase("connected");
+        } else if (
+          (fb && fb.status === "pending_location") ||
+          callbackParam === "connected"
+        ) {
+          await loadPages();
+        } else {
+          setPhase("disconnected");
+        }
+      } catch {
+        if (alive) setPhase("disconnected");
       }
-    } catch {
-      setPhase("disconnected");
-    }
-  }, [searchParams, setSearchParams, loadPages]);
+    })();
 
-  useEffect(() => {
-    loadState();
-  }, [loadState]);
+    return () => {
+      alive = false;
+    };
+    // Mount-only by design — see the note above. searchParams/setSearchParams
+    // are intentionally omitted: including them reintroduces the double fetch.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // ── Actions ─────────────────────────────────────────────────────────────────
   const handleConnect = async () => {
@@ -159,32 +226,6 @@ export default function FacebookConnect({ onConnected, dark = true }) {
     }
   };
 
-  // ── Presentational bits ─────────────────────────────────────────────────────
-  const Header = () => (
-    <div className="flex items-center gap-3 mb-1">
-      <div className="w-9 h-9 rounded-xl bg-[#1877f2]/10 flex items-center justify-center flex-shrink-0">
-        <span className="text-[#1877f2] font-black text-base">f</span>
-      </div>
-      <div>
-        <h3 className={`font-bold text-sm ${textPrimary}`}>Facebook</h3>
-        <p className={`text-xs ${textMuted}`}>Sync your Page recommendations into the feed</p>
-      </div>
-    </div>
-  );
-
-  const Banner = () =>
-    banner ? (
-      <div
-        className={`mt-3 text-xs rounded-lg px-3 py-2 border ${
-          banner.tone === "error"
-            ? "bg-red-500/10 border-red-500/30 text-red-400"
-            : "bg-cyan-500/10 border-cyan-500/30 text-cyan-300"
-        }`}
-      >
-        {banner.text}
-      </div>
-    ) : null;
-
   if (phase === "loading") {
     return (
       <div className={`border rounded-2xl p-5 ${card}`}>
@@ -197,7 +238,7 @@ export default function FacebookConnect({ onConnected, dark = true }) {
   if (phase === "connected" && connection) {
     return (
       <div className={`border rounded-2xl p-5 ${card}`}>
-        <Header />
+        <Header textPrimary={textPrimary} textMuted={textMuted} />
         <div className={`mt-4 flex items-center justify-between gap-3 rounded-xl border px-4 py-3 ${rowBorder}`}>
           <div className="min-w-0">
             <p className={`text-sm font-semibold truncate ${textPrimary}`}>
@@ -227,8 +268,8 @@ export default function FacebookConnect({ onConnected, dark = true }) {
   if (phase === "picking") {
     return (
       <div className={`border rounded-2xl p-5 ${card}`}>
-        <Header />
-        <Banner />
+        <Header textPrimary={textPrimary} textMuted={textMuted} />
+        <Banner banner={banner} />
 
         {pages && pages.length > 0 && (
           <>
@@ -272,8 +313,8 @@ export default function FacebookConnect({ onConnected, dark = true }) {
   // ── Disconnected ────────────────────────────────────────────────────────────
   return (
     <div className={`border rounded-2xl p-5 ${card}`}>
-      <Header />
-      <Banner />
+      <Header textPrimary={textPrimary} textMuted={textMuted} />
+      <Banner banner={banner} />
       <button
         onClick={handleConnect}
         disabled={busy}

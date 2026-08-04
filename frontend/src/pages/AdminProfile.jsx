@@ -42,22 +42,32 @@ export default function AdminProfile() {
   const [isSaving,    setIsSaving]    = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
-  // Profile data, hydrated from Redux
-  const [profile,    setProfile]    = useState({
-    name:       "",
-    email:      "",
-    phone:      "",
-    role:       "Administrator",
-    clinicName: "",
-    avatar:     avatarFor(""),
-    bio:        "",
-  });
+  // Profile data DERIVED from Redux, with the user's unsaved edits layered on
+  // top. This used to be a full local copy that two effects pushed Redux into
+  // — the cascading render react-hooks/set-state-in-effect flags, and a live
+  // hazard besides: any Redux refresh of authUser/userClinic overwrote fields
+  // the user was mid-way through editing, because the effect merged server
+  // values over the local ones on every store change.
+  const [profileEdits, setProfileEdits] = useState({});
+  const profile = {
+    name:       authUser?.name  || "",
+    email:      authUser?.email || "",
+    role:       authUser?.role === "admin" ? "Administrator" : (authUser?.role || "Administrator"),
+    avatar:     avatarFor(authUser?.name),
+    phone:      userClinic?.phone      || "",
+    clinicName: userClinic?.clinicName || clinicName || "",
+    bio:        userClinic?.location   || "",
+    ...profileEdits,
+  };
 
-  const [notifPrefs, setNotifPrefs] = useState({
-    email:   true,
-    browser: true,
-    sms:     false,
-  });
+  const [notifEdits, setNotifEdits] = useState({});
+  const notifPrefs = {
+    // Backend keys → the simpler three the notifications tab renders.
+    email:   userSettings?.weeklyReport ?? userSettings?.monthlyReport ?? true,
+    browser: userSettings?.urgentAlerts ?? true,
+    sms:     userSettings?.newReviewAlert ?? false,
+    ...notifEdits,
+  };
 
   // ── Load clinic & settings on mount ──────────────────────────────────────
   useEffect(() => {
@@ -65,38 +75,16 @@ export default function AdminProfile() {
     getUserSettings(dispatch).catch(() => {});
   }, [dispatch]);
 
-  // ── Hydrate the local form whenever Redux updates ─────────────────────────
-  useEffect(() => {
-    setProfile((prev) => ({
-      ...prev,
-      name:       authUser?.name  || prev.name,
-      email:      authUser?.email || prev.email,
-      role:       authUser?.role === "admin" ? "Administrator" : (authUser?.role || prev.role),
-      avatar:     avatarFor(authUser?.name),
-      phone:      userClinic?.phone     || prev.phone,
-      clinicName: userClinic?.clinicName || clinicName || prev.clinicName,
-      bio:        userClinic?.location   || prev.bio,
-    }));
-  }, [authUser, userClinic, clinicName]);
-
-  useEffect(() => {
-    if (userSettings) {
-      // Map backend keys to the simpler tab prefs
-      setNotifPrefs({
-        email:   userSettings.weeklyReport ?? userSettings.monthlyReport ?? true,
-        browser: userSettings.urgentAlerts ?? true,
-        sms:     userSettings.newReviewAlert ?? false,
-      });
-    }
-  }, [userSettings]);
+  // (The two "hydrate the local form whenever Redux updates" effects that used
+  // to sit here are gone — that hydration is the derivation above.)
 
   // ── Handlers ─────────────────────────────────────────────────────────────
   const handleProfileChange = (field, value) => {
-    setProfile((prev) => ({ ...prev, [field]: value }));
+    setProfileEdits((prev) => ({ ...prev, [field]: value }));
   };
 
   const handleNotifChange = (field, value) => {
-    setNotifPrefs((prev) => ({ ...prev, [field]: value }));
+    setNotifEdits((prev) => ({ ...prev, [field]: value }));
     // Persist to backend immediately
     updateUserSettings(dispatch, {
       ...userSettings,
@@ -115,6 +103,9 @@ export default function AdminProfile() {
         location:   profile.bio,
       });
       dispatch(updateClinicName(profile.clinicName));
+      // Saved values now live in Redux; drop the overlay so the form reads
+      // straight through to them.
+      setProfileEdits({});
       setEditMode(false);
     } catch (err) {
       console.error("Profile save failed:", err?.message);

@@ -62,16 +62,25 @@ export const generateAiReplySchema = Joi.object({
 });
 
 // ── REQUESTS (Pulse Campaigns) ────────────────────────────────────────────────
+// The `.required()` on each `is:` schema is LOAD-BEARING, not decoration.
+// A bare Joi.valid(...) also matches `undefined` — Joi treats "not present" as
+// satisfying the condition unless presence is stated. So a body that omitted
+// sendVia entirely matched BOTH branches, making phone AND email required, and
+// the caller got three validation errors ("sendVia is required", "phone is
+// required", "email is required") for one mistake. With `.required()` the
+// condition only matches when sendVia is actually present and equal, so the
+// `otherwise` branch handles the missing-sendVia case and the response names
+// the single real problem.
 export const sendRequestSchema = Joi.object({
   patientName: Joi.string().min(2).max(100).required(),
   sendVia:     Joi.string().valid("SMS", "Email", "Both", "WhatsApp").required(),
   phone:       Joi.when("sendVia", {
-    is:        Joi.valid("SMS", "Both", "WhatsApp"),
+    is:        Joi.valid("SMS", "Both", "WhatsApp").required(),
     then:      phone.required(),
     otherwise: Joi.alternatives().try(phone, Joi.string().allow("", null)),
   }),
   email: Joi.when("sendVia", {
-    is:        Joi.valid("Email", "Both"),
+    is:        Joi.valid("Email", "Both").required(),
     then:      email.required(),
     otherwise: Joi.alternatives().try(email, Joi.string().allow("", null)),
   }),

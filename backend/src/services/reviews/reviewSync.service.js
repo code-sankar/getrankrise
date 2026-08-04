@@ -359,36 +359,107 @@ export async function syncByConnectionId(connectionId) {
 }
 
 /**
- * Convenience for the manual endpoint: sync the clinic's Google connection
- * without the caller needing the connection id.
+ * Convenience for the manual endpoint ("Sync now"): sync EVERY connected
+ * platform for the clinic, without the caller needing connection ids.
  *
- * NOTE: this stays Google-only by design (matching reviewSync.controller.js,
- * which currently looks up only the clinic's Google connection). If you fix
- * the controller to support Yelp/Facebook manual syncs too (tracked as M2 in
- * the audit), extend this to accept a platform or to loop every connected
- * platform for the clinic — syncByConnectionId already works for all three.
+ * This used to filter `platform: "google"` and throw NO_CONNECTION otherwise,
+ * which meant a clinic connected only to Yelp or Facebook was told to "connect
+ * your Google Business Profile" while holding a perfectly good working
+ * connection — the button was dead for them. syncByConnectionId has always
+ * supported all three platforms; only this lookup was narrow.
+ *
+ * PARTIAL FAILURE IS NOT TOTAL FAILURE. With N connections, one provider being
+ * down must not discard the results of the others, so each connection is run
+ * independently and its error is recorded rather than thrown. The endpoint only
+ * fails outright when EVERY connection failed — and then it rethrows the first
+ * error so the controller's existing GBP_AUTH / GBP_NOT_APPROVED mappings still
+ * produce their specific messages instead of a generic 500.
+ *
+ * @returns {{ platforms: Array<{platform,connectionId,ok,error?,...stats}>,
+ *             connectionId: string|null, ...aggregateStats }}
  */
 export async function syncClinicReviews(clinicId) {
-  const connection = await PlatformConnection.findOne({
-    where: { clinicId, platform: "google", status: "connected" },
+  const connections = await PlatformConnection.findAll({
+    where: { clinicId, status: "connected" },
+    order: [["platform", "ASC"]],
   });
-  if (!connection) {
+
+  if (connections.length === 0) {
     const err = new Error(
-      "No connected Google Business Profile for this clinic.",
+      "No connected review platform for this clinic. Connect Google, Yelp, or Facebook in Settings.",
     );
     err.code = "NO_CONNECTION";
     throw err;
   }
-  const stats = await syncByConnectionId(connection.id);
 
-  // The manual path stamps the sync clock itself (the scheduler stamps its
-  // own claims) — so a manual sync also resets the automatic interval.
-  await sequelize.query(
-    `UPDATE platform_connections
-        SET last_synced_at = NOW(), last_sync_error = NULL
-      WHERE id = $1::uuid`,
-    { bind: [connection.id], type: QueryTypes.UPDATE },
-  );
+  const totals = {
+    fetched: 0,
+    created: 0,
+    updated: 0,
+    skippedNoRating: 0,
+    trimmed: 0,
+    pages: 0,
+    alerted: 0,
+  };
+  const platforms = [];
+  let firstError = null;
 
-  return { connectionId: connection.id, ...stats };
+  for (const connection of connections) {
+    try {
+      const stats = await syncByConnectionId(connection.id);
+      for (const key of Object.keys(totals)) totals[key] += stats[key] ?? 0;
+
+      // The manual path stamps the sync clock itself (the scheduler stamps its
+      // own claims) — so a manual sync also resets the automatic interval.
+      await sequelize.query(
+        `UPDATE platform_connections
+            SET last_synced_at = NOW(), last_sync_error = NULL
+          WHERE id = $1::uuid`,
+        { bind: [connection.id], type: QueryTypes.UPDATE },
+      );
+
+      platforms.push({
+        platform: connection.platform,
+        connectionId: connection.id,
+        ok: true,
+        ...stats,
+      });
+    } catch (err) {
+      firstError ??= err;
+      // Record it on the connection the same way the scheduler does, so the
+      // Settings page shows why this platform is stale.
+      await sequelize
+        .query(
+          `UPDATE platform_connections
+              SET last_sync_error = $2::text
+            WHERE id = $1::uuid`,
+          {
+            bind: [connection.id, String(err.message).slice(0, 500)],
+            type: QueryTypes.UPDATE,
+          },
+        )
+        .catch(() => {});
+
+      platforms.push({
+        platform: connection.platform,
+        connectionId: connection.id,
+        ok: false,
+        code: err.code || null,
+        error: err.message,
+      });
+    }
+  }
+
+  // Every connection failed → surface the first real error so the controller
+  // can map it to its specific message. A partial success returns normally
+  // with the per-platform breakdown carrying the bad news.
+  if (platforms.every((p) => !p.ok)) throw firstError;
+
+  return {
+    // Kept for response-shape compatibility with the single-connection era.
+    connectionId: platforms.find((p) => p.ok)?.connectionId ?? null,
+    platforms,
+    ...totals,
+    totalOnPlatform: null, // meaningless once several platforms are summed
+  };
 }

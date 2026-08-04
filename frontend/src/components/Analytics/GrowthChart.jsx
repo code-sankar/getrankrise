@@ -47,7 +47,10 @@ export default function GrowthChart({ growthData, summary, trend, dark }) {
     <AnalyticsCard
       dark={dark}
       title="Review Growth"
-      subtitle={`${summary.totalReviews} total reviews · ${summary.responseRate}% response rate`}
+      // "total reviews" here named the range-scoped count. Both this chart and
+      // the count it describes are range-scoped, so the wording — not the
+      // number — was the wrong half.
+      subtitle={`${summary.totalReviews} reviews in range · ${summary.responseRate}% response rate`}
       badge={
         <span className={`text-[10px] font-bold px-2 py-1 rounded-full ${
           dark ? "bg-emerald-500/10 text-emerald-400" : "bg-emerald-50 text-emerald-600"

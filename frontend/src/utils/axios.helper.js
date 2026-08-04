@@ -159,20 +159,56 @@ axiosInstance.interceptors.response.use(
     }
 
     // ── 403 Forbidden ─────────────────────────────────────────────────────
+    // Three distinct server conditions arrive as 403, and only two were
+    // handled. QUOTA_EXCEEDED fell through to `getFriendlyError("FORBIDDEN")`,
+    // so a paying customer who had used all 48 of their daily review syncs was
+    // told "Access denied." — indistinguishable from a permissions bug, and
+    // the server's actual sentence ("You've used all 48 review syncs for this
+    // day") was discarded. That applied to all four metered features and to
+    // SMS/WhatsApp credits.
     if (status === 403) {
-      const code = error.response?.data?.code;
+      const data = error.response?.data ?? {};
+      const code = data.code;
 
       if (code === "UPGRADE_REQUIRED" || code === "SUBSCRIPTION_INACTIVE") {
         store.dispatch(
           showUpgradeModal({
-            currentPlan: error.response.data.currentPlan,
-            requiredPlans: error.response.data.requiredPlans,
-            message: error.response.data.message,
+            currentPlan: data.currentPlan,
+            requiredPlans: data.requiredPlans,
+            message: data.message,
+            reason: code,
           }),
         );
         // Don't toast — the modal is the UX
+      } else if (code === "QUOTA_EXCEEDED") {
+        // Running out is not the same as being locked out, and the right UI
+        // depends on whether upgrading would actually help.
+        //
+        // On a lower plan there is a bigger limit to buy, so the modal is
+        // useful. On the TOP plan the server still sends
+        // requiredPlans:["premium"] — a modal whose only offer is the plan they
+        // already own is worse than useless, so they get the server's own
+        // message, which names the limit and when it resets.
+        const upgradable = (data.requiredPlans ?? []).some(
+          (p) => p !== data.currentPlan,
+        );
+
+        if (upgradable) {
+          store.dispatch(
+            showUpgradeModal({
+              currentPlan: data.currentPlan,
+              requiredPlans: data.requiredPlans,
+              message: data.message,
+              reason: code,
+            }),
+          );
+        } else {
+          toast.warning(data.message || "You've reached this plan's limit.");
+        }
       } else {
-        toast.error(getFriendlyError("FORBIDDEN"));
+        // A genuine permissions failure. Prefer the server's explanation when
+        // it wrote one; "Access denied." is the last resort, not the default.
+        toast.error(data.message || getFriendlyError("FORBIDDEN"));
       }
       return Promise.reject(error);
     }
