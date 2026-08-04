@@ -12,8 +12,15 @@
  * encoding is the right place for XSS defence — stripping tags on input would
  * corrupt legitimate data (review replies, business names with "&", etc.).
  *
- * Express 5 note: req.query is a read-only getter, so this mutates objects in
- * place rather than reassigning req.query / req.body / req.params.
+ * Express 5 note: req.query is a getter with no setter AND no memoisation — it
+ * re-parses the query string and returns a FRESH object on every access. So
+ * `req.query = clean` throws, and mutating `req.query` in place is silently
+ * discarded (the previous version of this file did the latter, which meant
+ * query strings were never sanitised at all — no control-char stripping, no
+ * trim, no prototype-pollution key removal). The fix is to shadow the
+ * prototype getter with a own data property holding the sanitised snapshot.
+ * req.body and req.params are ordinary writable properties and are mutated
+ * in place as before.
  */
 
 const MAX_DEPTH = 20; // guard against maliciously deep payloads
@@ -48,8 +55,23 @@ const sanitizeInPlace = (node, depth = 0) => {
 
 // ── Middleware ────────────────────────────────────────────────────────────────
 export const sanitize = (req, res, next) => {
-  for (const src of [req.body, req.params, req.query]) {
+  for (const src of [req.body, req.params]) {
     if (src && typeof src === "object") sanitizeInPlace(src);
   }
+
+  // See the Express 5 note in the header: req.query must be snapshotted and
+  // pinned, not mutated. Reading it once here also means the query string is
+  // parsed once per request instead of once per access downstream.
+  const query = req.query;
+  if (query && typeof query === "object") {
+    sanitizeInPlace(query);
+    Object.defineProperty(req, "query", {
+      value: query,
+      writable: true,
+      enumerable: true,
+      configurable: true,
+    });
+  }
+
   next();
 };

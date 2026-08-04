@@ -159,7 +159,14 @@ UPDATE platform_connections p
               END AS interval_hours
      ) plan_interval
     WHERE pc.status = 'connected'
-      AND pc.platform = ANY($4::text[])
+      -- platform_connections.platform is the ENUM platform_enum. Comparing it
+      -- against $4::text[] needs an "enum = text" operator that does not exist
+      -- (42883) — the claim threw on EVERY tick, tick()'s catch logged one line,
+      -- and automatic review sync never claimed a single connection. Cast the
+      -- column to text instead of the parameter: the enum side is what has to
+      -- give, and the candidate set here is small enough that losing the index
+      -- on platform costs nothing.
+      AND pc.platform::text = ANY($4::text[])
       AND (
             -- (a) RECURRING — paid plans on their cadence
             (plan_interval.interval_hours IS NOT NULL

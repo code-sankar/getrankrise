@@ -97,33 +97,57 @@ export async function reserveCredits({ clinicId, channel, amount = 1 }) {
   // through checkout) every comparison against it is NULL, so the reset branch
   // never fires. That is correct — such a clinic is on Free, whose limit is 0,
   // and the early return above means we never reach this statement.
+  // ── The ::int / ::text casts below are LOAD-BEARING, not style ─────────────
+  // Postgres deduces ONE type per parameter across the whole statement. The
+  // WHERE clause contains a bare `$3 <= $2` — two untyped parameters compared
+  // to each other, with no column to anchor them — which PG resolves to `text`.
+  // That decision then propagates: `${usedCol} + $3` becomes `integer + text`
+  // and the statement dies with 42883 before it ever runs.
+  //
+  // The symptom was total and silent: every SMS/WhatsApp review request 500'd,
+  // and campaignRunner's tick() caught the throw and logged one line, so Pulse
+  // Campaigns sat in `running` forever having sent nothing.
+  //
+  // usage.service.js hit the same class of bug and documents it there. Do not
+  // "clean up" these casts.
+  //
+  // ── AND each column is assigned EXACTLY ONCE ────────────────────────────────
+  // The previous shape opened with `SET ${usedCol} = CASE …` and then also
+  // listed sms_credits_used and whatsapp_credits_used explicitly. For
+  // channel='sms', ${usedCol} expands to sms_credits_used and the statement
+  // assigns that column twice — Postgres rejects the whole UPDATE with 42701
+  // "multiple assignments to same column". Symmetrically for 'whatsapp'. There
+  // was no channel for which this statement could parse, which is why
+  // reserveCredits() had never once succeeded.
+  //
+  // The two per-column CASEs below cover both channels on their own, so the
+  // interpolated opening assignment is gone. `usedCol` now appears only in the
+  // WHERE gate and the RETURNING clause.
   const sql = `
     UPDATE subscriptions
-       SET ${usedCol} = CASE
-             WHEN credits_reset_at < current_period_start THEN $3
-             ELSE ${usedCol} + $3
-           END,
-           sms_credits_used = CASE
-             WHEN credits_reset_at < current_period_start AND $4 = 'sms'      THEN $3
-             WHEN credits_reset_at < current_period_start                     THEN 0
+       SET sms_credits_used = CASE
+             WHEN credits_reset_at < current_period_start AND $4::text = 'sms'      THEN $3::int
+             WHEN credits_reset_at < current_period_start                           THEN 0
+             WHEN $4::text = 'sms'                                                  THEN sms_credits_used + $3::int
              ELSE sms_credits_used
            END,
            whatsapp_credits_used = CASE
-             WHEN credits_reset_at < current_period_start AND $4 = 'whatsapp' THEN $3
-             WHEN credits_reset_at < current_period_start                     THEN 0
+             WHEN credits_reset_at < current_period_start AND $4::text = 'whatsapp' THEN $3::int
+             WHEN credits_reset_at < current_period_start                           THEN 0
+             WHEN $4::text = 'whatsapp'                                             THEN whatsapp_credits_used + $3::int
              ELSE whatsapp_credits_used
            END,
            credits_reset_at = CASE
              WHEN credits_reset_at < current_period_start THEN NOW()
              ELSE credits_reset_at
            END
-     WHERE clinic_id = $1
+     WHERE clinic_id = $1::uuid
        AND (
             -- post-reset case: amount alone must fit
-            (credits_reset_at < current_period_start AND $3 <= $2)
+            (credits_reset_at < current_period_start AND $3::int <= $2::int)
             OR
             -- normal case: current usage + amount must fit
-            (credits_reset_at >= current_period_start AND ${usedCol} + $3 <= $2)
+            (credits_reset_at >= current_period_start AND ${usedCol} + $3::int <= $2::int)
        )
     RETURNING ${usedCol} AS used
   `;
@@ -166,8 +190,8 @@ export async function refundCredits({ clinicId, channel, amount = 1 }) {
   try {
     await sequelize.query(
       `UPDATE subscriptions
-          SET ${col} = GREATEST(${col} - $2, 0)
-        WHERE clinic_id = $1`,
+          SET ${col} = GREATEST(${col} - $2::int, 0)
+        WHERE clinic_id = $1::uuid`,
       { bind: [clinicId, amount], type: QueryTypes.UPDATE }
     );
   } catch (err) {

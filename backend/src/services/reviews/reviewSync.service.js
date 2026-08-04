@@ -126,11 +126,19 @@ for (const [key, label] of Object.entries(PLATFORM_LABEL)) {
   }
 }
 
+// `id` is supplied explicitly with gen_random_uuid(). It has to be: `reviews`
+// is a CORE table — created by sequelize.sync() from models/Review.js, where
+// the primary key is `defaultValue: DataTypes.UUIDV4`. That default lives in
+// JAVASCRIPT, not in Postgres, so the column has NO database-level DEFAULT and
+// every INSERT that omits it dies with 23502 "null value in column id". Only
+// the MIGRATED tables (subscriptions, campaigns, platform_connections, …) get
+// gen_random_uuid() from their CREATE TABLE, which is why every other raw
+// INSERT in this codebase can leave the id out and this one cannot.
 const buildUpsertSql = (platformLabel) => `
-INSERT INTO reviews (clinic_id, platform, external_id, reviewer_name, rating,
+INSERT INTO reviews (id, clinic_id, platform, external_id, reviewer_name, rating,
                      review_text, review_date, replied, reply_text, sentiment,
                      created_at, updated_at)
-VALUES ($1::uuid, '${platformLabel}', $2::text, $3::text, $4::int, $5::text,
+VALUES (gen_random_uuid(), $1::uuid, '${platformLabel}', $2::text, $3::text, $4::int, $5::text,
         $6::timestamptz, $7::bool, $8::text, $9::int, NOW(), NOW())
 ON CONFLICT (clinic_id, platform, external_id) WHERE external_id IS NOT NULL
 DO UPDATE SET
@@ -182,8 +190,14 @@ export async function syncByConnectionId(connectionId) {
   // backfill guard in reviewAlerts — see that file for why last_synced_at
   // cannot be used for this (the scheduler stamps it before calling us).
   const [{ n: priorCount }] = await sequelize.query(
+    // reviews.platform is the Postgres ENUM `enum_reviews_platform`. Binding
+    // the label as $2::text asks for an `enum = text` comparison, which has no
+    // operator — 42883, thrown before a single review is fetched. Leaving the
+    // parameter untyped lets PG coerce the unknown literal into the enum, which
+    // is what we want (and which also rejects a bogus label at the DB layer).
+    // Do not add ::text here.
     `SELECT COUNT(*)::int AS n FROM reviews
-      WHERE clinic_id = $1::uuid AND platform = $2::text`,
+      WHERE clinic_id = $1::uuid AND platform = $2`,
     {
       bind: [connection.clinicId, PLATFORM_LABEL[connection.platform]],
       type: QueryTypes.SELECT,

@@ -90,6 +90,36 @@ export const idParamSchema = Joi.object({
   id: uuid.required(),
 });
 
+// ── Writing the cleaned value back onto the request ──────────────────────────
+// `req.body` and `req.params` are plain writable properties, but Express 5
+// defines `req.query` as a GETTER on the request prototype with no setter. A
+// plain `req.query = value` therefore throws
+//
+//     TypeError: Cannot set property query of #<IncomingMessage> which has only a getter
+//
+// which asyncHandler turns into a 500. Every route using validate(schema,
+// "query") — GET /oauth/yelp/search and GET /oauth/yelp/business, i.e. the
+// whole Yelp connect flow — failed on the middleware, before its controller ran.
+//
+// Defining an own property on the request instance shadows the prototype getter,
+// so downstream handlers read the validated value. This is also the ONLY way to
+// make query validation stick: Express 5's getter re-parses the query string on
+// every access and returns a fresh object, so mutating `req.query` in place is
+// silently discarded (see the same hazard in sanitize.middleware.js).
+const assignValidated = (req, source, value) => {
+  const descriptor = Object.getOwnPropertyDescriptor(req, source);
+  if (descriptor && descriptor.writable) {
+    req[source] = value;
+    return;
+  }
+  Object.defineProperty(req, source, {
+    value,
+    writable: true,
+    enumerable: true,
+    configurable: true,
+  });
+};
+
 // ── Validation middleware factory ─────────────────────────────────────────────
 // Usage: router.post("/register", validate(registerSchema), controller)
 export const validate = (schema, source = "body") => (req, res, next) => {
@@ -105,7 +135,7 @@ export const validate = (schema, source = "body") => (req, res, next) => {
   }
 
   // Re-assign so downstream gets the cleaned/casted version
-  req[source] = value;
+  assignValidated(req, source, value);
   next();
 };
 
