@@ -12,8 +12,8 @@
  * encoding is the right place for XSS defence — stripping tags on input would
  * corrupt legitimate data (review replies, business names with "&", etc.).
  *
- * Express 5 note: req.query is a read-only getter, so this mutates objects in
- * place rather than reassigning req.query / req.body / req.params.
+ * Express 5 note: req.query is a getter with no setter, so req.body / req.params
+ * are mutated in place while req.query is shadowed with an own data property.
  */
 
 const MAX_DEPTH = 20; // guard against maliciously deep payloads
@@ -48,8 +48,24 @@ const sanitizeInPlace = (node, depth = 0) => {
 
 // ── Middleware ────────────────────────────────────────────────────────────────
 export const sanitize = (req, res, next) => {
-  for (const src of [req.body, req.params, req.query]) {
+  for (const src of [req.body, req.params]) {
     if (src && typeof src === "object") sanitizeInPlace(src);
   }
+
+  // req.query in Express 5 is a non-memoised prototype getter: it re-parses the
+  // query string on every access, so an in-place sanitise is discarded the
+  // instant anything reads it again. Pin the cleaned object as an own property
+  // so the sanitised values are what downstream actually sees.
+  const query = req.query;
+  if (query && typeof query === "object") {
+    sanitizeInPlace(query);
+    Object.defineProperty(req, "query", {
+      value:        query,
+      writable:     true,
+      enumerable:   true,
+      configurable: true,
+    });
+  }
+
   next();
 };

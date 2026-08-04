@@ -159,7 +159,11 @@ UPDATE platform_connections p
               END AS interval_hours
      ) plan_interval
     WHERE pc.status = 'connected'
-      AND pc.platform = ANY($4::text[])
+      -- pc.platform is the platform ENUM: "enum = ANY(text[])" has no operator
+      -- (42883), so the whole claim threw on every tick inside the swallowing
+      -- catch and the scheduler never claimed a single connection. Cast the
+      -- COLUMN to text rather than the array to the enum.
+      AND pc.platform::text = ANY($4::text[])
       AND (
             -- (a) RECURRING — paid plans on their cadence
             (plan_interval.interval_hours IS NOT NULL

@@ -92,6 +92,25 @@ export const idParamSchema = Joi.object({
 
 // ── Validation middleware factory ─────────────────────────────────────────────
 // Usage: router.post("/register", validate(registerSchema), controller)
+
+// Express 5 defines req.query as a prototype getter with no setter, so a plain
+// `req.query = value` throws in strict mode (ES modules are always strict) and
+// every validated GET route 500s. Shadow it with an own data property instead;
+// body and params are ordinary writable properties and assign normally.
+const assignValidated = (req, source, value) => {
+  const descriptor = Object.getOwnPropertyDescriptor(req, source);
+  if (descriptor && descriptor.writable) {
+    req[source] = value;
+    return;
+  }
+  Object.defineProperty(req, source, {
+    value,
+    writable:     true,
+    enumerable:   true,
+    configurable: true,
+  });
+};
+
 export const validate = (schema, source = "body") => (req, res, next) => {
   const { error, value } = schema.validate(req[source], {
     abortEarly:    false,
@@ -105,7 +124,7 @@ export const validate = (schema, source = "body") => (req, res, next) => {
   }
 
   // Re-assign so downstream gets the cleaned/casted version
-  req[source] = value;
+  assignValidated(req, source, value);
   next();
 };
 
