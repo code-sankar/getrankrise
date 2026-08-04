@@ -32,8 +32,13 @@ const Request = sequelize.define(
         isEmail: { msg: "Must be a valid email address" },
       },
     },
+    // "WhatsApp" was missing here while validate.middleware.js accepted it and
+    // request.controller.js reserved a WhatsApp credit and called the provider
+    // for it. The message went out, then this insert threw 22P02 and the
+    // handler refunded and returned a 500 — Premium's headline channel could
+    // never complete a send. See migrations/0011 for the enum backfill.
     sendVia: {
-      type:      DataTypes.ENUM("SMS", "Email", "Both"),
+      type:      DataTypes.ENUM("SMS", "Email", "Both", "WhatsApp"),
       allowNull: false,
     },
     status: {
@@ -47,6 +52,15 @@ const Request = sequelize.define(
     // Message that was sent to patient
     messageBody: {
       type:      DataTypes.TEXT,
+      allowNull: true,
+    },
+    // Optional client-supplied dedupe key. The uniqueness that actually
+    // enforces it is the PARTIAL unique index in migrations/0011
+    // (clinic_id, idempotency_key) WHERE idempotency_key IS NOT NULL — a
+    // model-level `unique: true` would emit a plain unique index that treats
+    // every NULL-keyed row as a candidate and cannot express the predicate.
+    idempotencyKey: {
+      type:      DataTypes.STRING(80),
       allowNull: true,
     },
   },

@@ -18,7 +18,34 @@ import { showUpgradeModal } from "../store/upgradeModalSlice.js";
 // no cycle.
 import store from "../store/store.js";
 
-const API_BASE = import.meta.env.VITE_API_URL || "http://localhost:5000/api/v1";
+// ── API base ─────────────────────────────────────────────────────────────────
+// The localhost default is DEV-ONLY on purpose. It used to apply to every
+// build, so a production bundle with VITE_API_URL unset silently shipped
+// pointing at http://localhost:5000 — every request in the deployed app failed
+// against the user's own machine, and nothing in the build output said so.
+//
+// Two guards, because they catch it at different moments:
+//   * vite.config.js fails `vite build` outright when VITE_API_URL is unset —
+//     that is the one that stops a broken bundle from ever being deployed.
+//   * the throw below is the backstop for anything that reaches this module
+//     without a base URL anyway (a hand-rolled bundler, a test harness). It
+//     surfaces in the browser rather than at deploy time, so it is the weaker
+//     of the two — but a blank page with a precise console error still beats
+//     an app that silently calls the visitor's own machine.
+//
+// VITE_API_URL is inlined at BUILD time, so it must be present when
+// `vite build` runs — setting it on the server afterwards is too late.
+const API_BASE =
+  import.meta.env.VITE_API_URL ||
+  (import.meta.env.DEV ? "http://localhost:5000/api/v1" : null);
+
+if (!API_BASE) {
+  throw new Error(
+    "VITE_API_URL is not set. Production builds have no API URL to fall back to — " +
+      "set it in your hosting provider's build environment (e.g. Vercel → Settings → " +
+      "Environment Variables) and rebuild.",
+  );
+}
 
 // ── Base instance ─────────────────────────────────────────────────────────────
 // 10s suits ordinary CRUD. Two endpoints legitimately exceed it and pass their

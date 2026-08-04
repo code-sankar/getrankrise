@@ -14,8 +14,14 @@
 // promotion: 1 winner). This is the .agents/skills lock-skip-locked pattern.
 //
 // PER-RECIPIENT FLOW (inside a claimed batch):
-//   opt-out re-check → reserveCredits → sendMessage → mark sent
+//   opt-out re-check → reserveCredits → stamp send_started_at → sendMessage
+//                                     → mark sent
 //                                     ↘ provider fail → refundCredits, mark failed
+//
+// DELIVERY SEMANTICS: AT-MOST-ONCE. The send_started_at stamp is written
+// before the provider call so crash recovery can tell "never sent" from
+// "outcome unknown". Unknown outcomes are failed, never retried — see
+// requeueStuck below for why that is the correct trade for paid SMS.
 //   reserve fails with QUOTA_EXCEEDED → campaign PAUSES (resumable after
 //   upgrade/renewal) and the recipient row returns to pending — running dry
 //   mid-campaign must never mark people "failed" who were simply unlucky
@@ -72,11 +78,44 @@ export async function tick() {
   }
 }
 
+// ── Crash recovery: AT-MOST-ONCE, not at-least-once ─────────────────────────
+// A stuck 'processing' row is one whose worker died mid-batch. Whether it is
+// safe to retry depends entirely on whether the provider call had already been
+// made, which is exactly what send_started_at (migration 0011) records.
+//
+// The previous single statement returned EVERY stuck row to 'pending'. For a
+// row that had already handed a message to Twilio, that re-reserved a credit
+// and sent the patient a SECOND text. The header used to claim the
+// idempotencyKey passed to sendMessage was a "provider-level double-send
+// guard" — Twilio's Messages API has no such parameter and both providers
+// destructure only { to, body }, so nothing downstream deduplicated anything.
+//
+// SMS is not idempotent and costs real money, so the tie-breaker is: a review
+// request that never arrives is recoverable, a duplicate text plus a duplicate
+// charge is not. Unknown outcomes therefore fail closed.
 async function requeueStuck() {
+  // (a) Provider was never called → genuinely safe to retry.
   await sequelize.query(
     `UPDATE campaign_recipients
         SET status = 'pending', claimed_at = NULL
       WHERE status = 'processing'
+        AND send_started_at IS NULL
+        AND claimed_at < NOW() - INTERVAL '${STUCK_MINUTES} minutes'`,
+    { type: QueryTypes.UPDATE }
+  );
+
+  // (b) Provider WAS called and we never saw the outcome → do not re-send.
+  // The credit is deliberately NOT refunded: the most likely history is that
+  // the message was delivered and the worker died before recording it, and
+  // refunding would hand back a credit for a message the clinic was billed for
+  // by the carrier. The error text is written for the human who will read it
+  // in the campaign detail view.
+  await sequelize.query(
+    `UPDATE campaign_recipients
+        SET status = 'failed',
+            error  = 'Delivery outcome unknown — the worker stopped after the message was handed to the provider. Not retried automatically to avoid sending this recipient a duplicate.'
+      WHERE status = 'processing'
+        AND send_started_at IS NOT NULL
         AND claimed_at < NOW() - INTERVAL '${STUCK_MINUTES} minutes'`,
     { type: QueryTypes.UPDATE }
   );
@@ -166,12 +205,26 @@ async function processCampaignBatch(c) {
         channel: c.channel,
       });
 
+      // Stamp BEFORE the provider call. This write is the crash-recovery
+      // record: if the process dies anywhere after it, requeueStuck sees a
+      // started-but-unfinished send and fails it closed instead of texting
+      // this recipient twice. It must not be batched or deferred — the whole
+      // guarantee is that it lands before the message can possibly go out.
+      await sequelize.query(
+        `UPDATE campaign_recipients SET send_started_at = NOW() WHERE id = $1::uuid`,
+        { bind: [r.id], type: QueryTypes.UPDATE }
+      );
+
       const result = await sendMessage({
         channel: c.channel,
         to: r.phone,
         body,
         countryCode: c.country_code,
-        idempotencyKey: `campaign:${r.id}`, // provider-level double-send guard
+        // Carried for provider-side logging and future providers that support
+        // it. NOT a delivery guard: Twilio's Messages API accepts no
+        // idempotency parameter, and neither provider reads this today. The
+        // real double-send protection is send_started_at above.
+        idempotencyKey: `campaign:${r.id}`,
       });
 
       await markRecipient(r.id, "sent", { providerId: result?.id || null });
@@ -204,7 +257,13 @@ async function markRecipient(id, status, { error = null, providerId = null, uncl
             error = $3::text,
             provider_id = COALESCE($4::text, provider_id),
             sent_at = CASE WHEN $2::text = 'sent' THEN NOW() ELSE sent_at END,
-            claimed_at = CASE WHEN $5::bool THEN NULL ELSE claimed_at END
+            claimed_at = CASE WHEN $5::bool THEN NULL ELSE claimed_at END,
+            -- Unclaiming returns a row to the queue as if it had never been
+            -- touched, so the pre-send stamp has to come off with the claim.
+            -- Leaving it set would make requeueStuck later mistake a recipient
+            -- that was never sent to for one whose outcome is unknown, and
+            -- fail it closed forever.
+            send_started_at = CASE WHEN $5::bool THEN NULL ELSE send_started_at END
       WHERE id = $1::uuid`,
     { bind: [id, status, error, providerId, unclaim], type: QueryTypes.UPDATE }
   );

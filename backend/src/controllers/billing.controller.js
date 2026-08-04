@@ -242,8 +242,14 @@ async function upsertSubscription(sub) {
          gateway_customer_id     = EXCLUDED.gateway_customer_id,
          gateway_subscription_id = EXCLUDED.gateway_subscription_id,
          gateway_price_id        = EXCLUDED.gateway_price_id,
-         current_period_start    = EXCLUDED.current_period_start,
-         current_period_end      = EXCLUDED.current_period_end,
+         -- COALESCE, not a bare overwrite. Paddle omits current_billing_period
+         -- on trialing subscriptions and on several subscription.updated
+         -- payload shapes; assigning EXCLUDED unconditionally then NULLed a
+         -- period we already knew, and a NULL current_period_start is what
+         -- made reserveCredits refuse every SMS/WhatsApp send for that clinic.
+         -- Never downgrade known billing state to unknown on an update event.
+         current_period_start    = COALESCE(EXCLUDED.current_period_start, subscriptions.current_period_start),
+         current_period_end      = COALESCE(EXCLUDED.current_period_end,   subscriptions.current_period_end),
          canceled_at             = NULL`,
       {
         bind: [

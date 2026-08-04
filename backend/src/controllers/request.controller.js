@@ -77,6 +77,61 @@ export const sendRequest = async (req, res) => {
     }
   };
 
+  // ── 0. CLAIM the idempotency key before any money is spent ─────────────
+  // Deliberately an INSERT rather than a SELECT-then-INSERT. A lookup would
+  // leave a TOCTOU window in which two concurrent retries both see "no prior
+  // row", both reserve a credit, and both text the patient — which is the
+  // exact failure this key exists to prevent. Letting the partial unique index
+  // (clinic_id, idempotency_key) arbitrate means Postgres picks the winner and
+  // the loser replays, with no window at all.
+  //
+  // The message body is rendered up here because the row is written before the
+  // send, so it must already know what it is about to say.
+  const body = renderMessage({
+    patientName,
+    clinicName: req.clinic.clinicName,
+    reviewLink: req.clinic.googleReviewLink,
+  });
+
+  let requestRow;
+  try {
+    requestRow = await ReviewRequest.create({
+      clinicId,
+      patientName,
+      phone: phone || null,
+      email: email || null,
+      sendVia,
+      status: "Sent",
+      messageBody: body,
+      idempotencyKey: idempotencyKey || null,
+    });
+  } catch (err) {
+    if (err.name === "SequelizeUniqueConstraintError" && idempotencyKey) {
+      const prior = await ReviewRequest.findOne({
+        where: { clinicId, idempotencyKey },
+      });
+      if (prior) {
+        return successResponse(res, {
+          message: "Review request already sent (idempotent replay)",
+          data: { request: prior, replayed: true },
+        });
+      }
+    }
+    console.error("sendRequest claim error:", err);
+    return serverErrorResponse(res, "Could not send review request");
+  }
+
+  // Releasing the claim is what keeps a FAILED send retryable with the same
+  // key. Without it the first failure would poison the key forever and every
+  // retry would replay a request that never actually went out.
+  const releaseClaim = async () => {
+    try {
+      await requestRow.destroy();
+    } catch (e) {
+      console.error("sendRequest claim release failed:", e.message);
+    }
+  };
+
   try {
     // ── 1. Reserve EVERYTHING before sending ANYTHING ────────────────────
     // A "Both" send must be all-or-nothing at reservation time: if the email
@@ -86,6 +141,7 @@ export const sendRequest = async (req, res) => {
       const r = await reserveCredits({ clinicId, channel: "sms" });
       if (!r.reserved) {
         await refundAll();
+        await releaseClaim();
         return quotaError(res, r);
       }
       creditReservations.push({ channel: "sms", amount: 1 });
@@ -94,6 +150,7 @@ export const sendRequest = async (req, res) => {
       const r = await reserveCredits({ clinicId, channel: "whatsapp" });
       if (!r.reserved) {
         await refundAll();
+        await releaseClaim();
         return quotaError(res, r);
       }
       creditReservations.push({ channel: "whatsapp", amount: 1 });
@@ -102,18 +159,13 @@ export const sendRequest = async (req, res) => {
       const r = await reserveUsage({ clinicId, metric: "email" });
       if (!r.reserved) {
         await refundAll();
+        await releaseClaim();
         return usageErrorResponse(res, r);
       }
       usageReservations.push({ metric: "email", amount: 1 });
     }
 
-    // ── 2. Build the message and send ────────────────────────────────────
-    const body = renderMessage({
-      patientName,
-      clinicName: req.clinic.clinicName,
-      reviewLink: req.clinic.googleReviewLink,
-    });
-
+    // ── 2. Send ──────────────────────────────────────────────────────────
     let providerResult = null;
     if (needsSms) {
       providerResult = await sendMessage({
@@ -146,28 +198,21 @@ export const sendRequest = async (req, res) => {
       if (!providerResult) providerResult = emailResult;
     }
 
-    // ── 3. Persist the request row ───────────────────────────────────────
-    const saved = await ReviewRequest.create({
-      clinicId,
-      patientName,
-      phone: phone || null,
-      email: email || null,
-      sendVia,
-      status: "Sent",
-      messageBody: body,
-    });
-
+    // ── 3. The row already exists — it was written in step 0 to claim the
+    //      idempotency key before the send. Nothing left to persist.
     return successResponse(res, {
       message: "Review request sent",
       data: {
-        request: saved,
+        request: requestRow,
         provider: providerResult?.provider,
         simulated: providerResult?.simulated || false,
       },
     });
   } catch (err) {
-    // ── 4. Provider blew up → refund every reservation of both kinds ────
+    // ── 4. Provider blew up → refund every reservation of both kinds, and
+    //      release the idempotency claim so the caller can genuinely retry.
     await refundAll();
+    await releaseClaim();
     console.error("sendRequest error:", err);
     return serverErrorResponse(res, "Could not send review request");
   }
