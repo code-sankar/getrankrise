@@ -126,11 +126,15 @@ for (const [key, label] of Object.entries(PLATFORM_LABEL)) {
   }
 }
 
+// `id` is supplied explicitly. reviews is a CORE table built by sequelize.sync(),
+// so its UUID default lives in the model layer, not in Postgres — there is no
+// DEFAULT on the column. A raw INSERT that omits id therefore dies on 23502
+// (null value in column "id"), which meant no synced review was ever stored.
 const buildUpsertSql = (platformLabel) => `
-INSERT INTO reviews (clinic_id, platform, external_id, reviewer_name, rating,
+INSERT INTO reviews (id, clinic_id, platform, external_id, reviewer_name, rating,
                      review_text, review_date, replied, reply_text, sentiment,
                      created_at, updated_at)
-VALUES ($1::uuid, '${platformLabel}', $2::text, $3::text, $4::int, $5::text,
+VALUES (gen_random_uuid(), $1::uuid, '${platformLabel}', $2::text, $3::text, $4::int, $5::text,
         $6::timestamptz, $7::bool, $8::text, $9::int, NOW(), NOW())
 ON CONFLICT (clinic_id, platform, external_id) WHERE external_id IS NOT NULL
 DO UPDATE SET
@@ -182,8 +186,11 @@ export async function syncByConnectionId(connectionId) {
   // backfill guard in reviewAlerts — see that file for why last_synced_at
   // cannot be used for this (the scheduler stamps it before calling us).
   const [{ n: priorCount }] = await sequelize.query(
+    // No ::text on $2 — reviews.platform is an ENUM and there is no
+    // "enum = text" operator (42883). Leaving the bind untyped lets Postgres
+    // resolve it as the enum via the column on the left-hand side.
     `SELECT COUNT(*)::int AS n FROM reviews
-      WHERE clinic_id = $1::uuid AND platform = $2::text`,
+      WHERE clinic_id = $1::uuid AND platform = $2`,
     {
       bind: [connection.clinicId, PLATFORM_LABEL[connection.platform]],
       type: QueryTypes.SELECT,

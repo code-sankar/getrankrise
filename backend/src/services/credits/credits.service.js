@@ -97,33 +97,41 @@ export async function reserveCredits({ clinicId, channel, amount = 1 }) {
   // through checkout) every comparison against it is NULL, so the reset branch
   // never fires. That is correct — such a clinic is on Free, whose limit is 0,
   // and the early return above means we never reach this statement.
+  // Each column is assigned EXACTLY ONCE. An earlier version wrote
+  // `SET ${usedCol} = …, sms_credits_used = …, whatsapp_credits_used = …`,
+  // which names the active channel's column twice — Postgres rejects that with
+  // 42701 (multiple assignments to same column), so every reserve threw and no
+  // SMS or WhatsApp message was ever sent. Both channels are therefore folded
+  // into the two per-column CASE blocks below and $4 selects between them.
+  //
+  // The casts are load-bearing too: `$3 <= $2` gives Postgres two untyped binds
+  // with no column to anchor on, so both resolve as text and `${usedCol} + $3`
+  // then fails with 42883 (operator does not exist: integer + text).
   const sql = `
     UPDATE subscriptions
-       SET ${usedCol} = CASE
-             WHEN credits_reset_at < current_period_start THEN $3
-             ELSE ${usedCol} + $3
-           END,
-           sms_credits_used = CASE
-             WHEN credits_reset_at < current_period_start AND $4 = 'sms'      THEN $3
-             WHEN credits_reset_at < current_period_start                     THEN 0
+       SET sms_credits_used = CASE
+             WHEN credits_reset_at < current_period_start AND $4::text = 'sms'      THEN $3::int
+             WHEN credits_reset_at < current_period_start                           THEN 0
+             WHEN $4::text = 'sms'                                                  THEN sms_credits_used + $3::int
              ELSE sms_credits_used
            END,
            whatsapp_credits_used = CASE
-             WHEN credits_reset_at < current_period_start AND $4 = 'whatsapp' THEN $3
-             WHEN credits_reset_at < current_period_start                     THEN 0
+             WHEN credits_reset_at < current_period_start AND $4::text = 'whatsapp' THEN $3::int
+             WHEN credits_reset_at < current_period_start                           THEN 0
+             WHEN $4::text = 'whatsapp'                                             THEN whatsapp_credits_used + $3::int
              ELSE whatsapp_credits_used
            END,
            credits_reset_at = CASE
              WHEN credits_reset_at < current_period_start THEN NOW()
              ELSE credits_reset_at
            END
-     WHERE clinic_id = $1
+     WHERE clinic_id = $1::uuid
        AND (
             -- post-reset case: amount alone must fit
-            (credits_reset_at < current_period_start AND $3 <= $2)
+            (credits_reset_at < current_period_start AND $3::int <= $2::int)
             OR
             -- normal case: current usage + amount must fit
-            (credits_reset_at >= current_period_start AND ${usedCol} + $3 <= $2)
+            (credits_reset_at >= current_period_start AND ${usedCol} + $3::int <= $2::int)
        )
     RETURNING ${usedCol} AS used
   `;
