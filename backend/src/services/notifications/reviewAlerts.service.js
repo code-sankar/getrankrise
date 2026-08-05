@@ -47,7 +47,8 @@
 //      forty bad reviews between two syncs has a crisis, not a notification
 //      list, and forty rows would bury every other alert they have.
 
-import { Op } from "sequelize";
+import { Op, QueryTypes } from "sequelize";
+import { sequelize } from "../../config/db.js";
 import { Clinic, Notification } from "../../models/index.js";
 
 /** Ratings at or below this are "urgent". 1★ and 2★. */
@@ -95,10 +96,32 @@ export async function notifyLowRatingReviews({
     const prefs = clinic.notificationPrefs || {};
     if (prefs.urgentAlerts === false) return { created: 0, skipped: "prefs_off" };
 
+    // ── Who gets told ────────────────────────────────────────────────────
+    // Every member of the clinic, not just clinics.user_id.
+    //
+    // That column is the ORIGINAL-OWNER pointer, and alerting on it alone meant
+    // a receptionist whose entire job is answering 1-star reviews received
+    // exactly zero notifications about them — while the owner, who may not log
+    // in for a week, got all of them. Membership is the authorization record
+    // (migration 0015); it is the right list to notify.
+    const recipients = await sequelize.query(
+      `SELECT user_id FROM clinic_members WHERE clinic_id = $1::uuid`,
+      { bind: [clinicId], type: QueryTypes.SELECT }
+    );
+    const recipientIds = recipients.map((r) => r.user_id);
+    if (recipientIds.length === 0) {
+      return { created: 0, skipped: "no_members" };
+    }
+
     // Guard 3 — dedupe on review_id.
     const ids = candidates.map((c) => c.id).filter(Boolean);
     if (ids.length === 0) return { created: 0, skipped: "no_review_ids" };
 
+    // Deduped against the OWNER's notifications specifically, not against all
+    // recipients'. Otherwise a member who joined after an alert was sent would
+    // permanently suppress it for everyone, and a member who dismissed theirs
+    // would resurrect it for the whole team on the next sync. The owner's row
+    // is the stable "has this clinic been told?" marker.
     const already = await Notification.findAll({
       where: { userId: clinic.userId, reviewId: { [Op.in]: ids } },
       attributes: ["reviewId"],
@@ -115,8 +138,11 @@ export async function notifyLowRatingReviews({
     const head = fresh.slice(0, MAX_ALERTS_PER_SYNC);
     const overflow = fresh.length - head.length;
 
-    const rows = head.map((c) => ({
-      userId: clinic.userId,
+    // One row per member per alert. notifications is user-scoped (see the
+    // model), so "the clinic was notified" is expressed as a row for each
+    // person who can act on it — and each of them can read or dismiss theirs
+    // without touching anyone else's.
+    const alerts = head.map((c) => ({
       type: "urgent",
       reviewId: c.id,
       message: `New ${c.rating}-star review from ${String(
@@ -125,21 +151,27 @@ export async function notifyLowRatingReviews({
     }));
 
     if (overflow > 0) {
-      rows.push({
-        userId: clinic.userId,
+      alerts.push({
         type: "urgent",
         reviewId: null, // a summary points at no single review
         message: `And ${overflow} more review${overflow === 1 ? "" : "s"} at ${LOW_RATING_THRESHOLD} stars or below arrived in this sync.`,
       });
     }
 
+    const rows = recipientIds.flatMap((userId) =>
+      alerts.map((a) => ({ ...a, userId }))
+    );
+
     await Notification.bulkCreate(rows);
 
     console.log(
-      `[reviewAlerts] clinic ${clinicId.slice(0, 8)}…: created ${rows.length} urgent alert(s)` +
+      `[reviewAlerts] clinic ${clinicId.slice(0, 8)}…: created ${alerts.length} urgent alert(s) ` +
+        `for ${recipientIds.length} member(s) = ${rows.length} row(s)` +
         (overflow > 0 ? ` (${overflow} collapsed into a summary)` : "")
     );
-    return { created: rows.length };
+    // The count is ALERTS, not rows: callers report it to the user as "N new
+    // urgent reviews", and multiplying that by the team size would be wrong.
+    return { created: alerts.length };
   } catch (err) {
     // See the failure-posture note at the top: a broken alert must never cost
     // the clinic a sync interval of real review data.

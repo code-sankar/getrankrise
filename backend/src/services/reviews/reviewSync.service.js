@@ -89,10 +89,16 @@ const EARLY_STOP_BUFFER_MS = 24 * 3600e3;
 // provider. Widen this switch as new providers land; the caller passes
 // connection.platform.
 function getProvider(platform) {
-  const mock =
-    String(
-      process.env.REVIEWS_MOCK ?? env.GOOGLE_MOCK_DISCOVERY ?? "",
-    ).toLowerCase() === "true";
+  // Either flag turns the mock on. The previous expression was
+  //   process.env.REVIEWS_MOCK ?? env.GOOGLE_MOCK_DISCOVERY ?? ""
+  // which reads like a fallback chain but is not one: ?? only falls through on
+  // null/undefined, and env.js defaults GOOGLE_MOCK_DISCOVERY to the STRING
+  // "false". So REVIEWS_MOCK=false with GOOGLE_MOCK_DISCOVERY=true resolved to
+  // "false" and quietly used live providers, contradicting the comment above
+  // it. Harmless in production (both are fatal at boot there) and confusing
+  // everywhere else.
+  const isOn = (v) => String(v).toLowerCase() === "true";
+  const mock = isOn(process.env.REVIEWS_MOCK) || isOn(env.GOOGLE_MOCK_DISCOVERY);
   if (mock) return mockProvider;
   if (platform === "yelp") return yelpProvider;
   if (platform === "facebook") return facebookProvider;

@@ -1,8 +1,8 @@
-import { Op } from "sequelize";
+import { Op, QueryTypes } from "sequelize";
+import { sequelize } from "../config/db.js";
 import {
   Competitor,
   CompetitorSnapshot,
-  Review,
 } from "../models/index.js";
 import {
   successResponse,
@@ -23,28 +23,37 @@ import { auditFromReq, AUDIT_EVENTS } from "../utils/auditLog.js";
 // ── Helper: the clinic's own metrics, for side-by-side comparison ─────────────
 // Computed from the clinic's stored reviews so "you vs them" uses the same
 // definitions the rest of the app uses (see reviewsSlice.selectReviewStats).
+// Aggregated in Postgres rather than in Node. This used to be a bare
+// Review.findAll() that pulled EVERY review row for the clinic across the wire
+// — with no limit — to produce four scalars. At MVP scale that is invisible; at
+// ten thousand reviews it is a multi-megabyte transfer and a GC spike on a
+// page that renders a comparison table.
+//
+// One round trip, and the arithmetic happens where the rows already live.
+// FILTER is the standard SQL way to express a conditional aggregate and reads
+// closer to the definitions than a pile of CASE expressions.
 const buildSelfMetrics = async (clinicId) => {
-  const reviews = await Review.findAll({
-    where:      { clinicId },
-    attributes: ["rating", "replied"],
-    raw:        true,
-  });
+  const [row] = await sequelize.query(
+    `SELECT COUNT(*)::int                                      AS total,
+            COALESCE(AVG(rating), 0)::float                    AS avg_rating,
+            COUNT(*) FILTER (WHERE replied)::int               AS replied,
+            COUNT(*) FILTER (WHERE rating >= 4)::int           AS positive
+       FROM reviews
+      WHERE clinic_id = $1::uuid`,
+    { bind: [clinicId], type: QueryTypes.SELECT }
+  );
 
-  const total = reviews.length;
+  const total = row?.total ?? 0;
   if (total === 0) {
     return { name: "You", rating: 0, totalReviews: 0, responseRate: 0, sentiment: 0 };
   }
 
-  const replied   = reviews.filter((r) => r.replied).length;
-  const positive  = reviews.filter((r) => r.rating >= 4).length;
-  const ratingSum = reviews.reduce((s, r) => s + r.rating, 0);
-
   return {
     name:         "You",
-    rating:       Math.round((ratingSum / total) * 10) / 10,
+    rating:       Math.round(row.avg_rating * 10) / 10,
     totalReviews: total,
-    responseRate: Math.round((replied / total) * 100),
-    sentiment:    Math.round((positive / total) * 100),
+    responseRate: Math.round((row.replied / total) * 100),
+    sentiment:    Math.round((row.positive / total) * 100),
   };
 };
 

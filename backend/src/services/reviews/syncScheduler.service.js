@@ -87,6 +87,7 @@ import {
   syncByConnectionId,
   isImplemented as reviewSyncImplemented,
 } from "./reviewSync.service.js";
+import { reportError } from "../../utils/observability.js";
 
 // ── Tuning ───────────────────────────────────────────────────────────────────
 // 60s tick against 1h/24h intervals: a connection becomes due at most 60s
@@ -215,6 +216,19 @@ export async function tick() {
       err.original?.code ? `[${err.original.code}]` : "",
       err.original?.detail || err.original?.hint || ""
     );
+    // This is the exact failure assertSchema.js was written about: a claim
+    // query that throws every tick, caught and logged, while "syncing nothing"
+    // and "nothing due" look the same from outside. The Postgres code travels
+    // with the report because it is the thing that identifies the class of
+    // fault at a glance.
+    reportError(err, {
+      source: "sync-scheduler",
+      extra: {
+        stage: "claim",
+        pgCode: err.original?.code ?? null,
+        pgDetail: err.original?.detail ?? err.original?.hint ?? null,
+      },
+    });
   } finally {
     ticking = false;
   }

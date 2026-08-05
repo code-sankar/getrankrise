@@ -17,6 +17,7 @@
 import { QueryTypes } from "sequelize";
 import { sequelize } from "../../config/db.js";
 import { getLimitsFor } from "../../config/plans.js";
+import { toSubscriptionState } from "../subscription/subscriptionState.service.js";
 
 /**
  * Atomically reserves N credits of the given channel for a clinic.
@@ -218,7 +219,25 @@ export async function getCreditSummary(clinicId) {
   if (rows.length === 0) return null;
 
   const sub = rows[0];
-  const limits = getLimitsFor(sub.plan_type);
+
+  // ── Resolve the plan, don't read the column ─────────────────────────────
+  // plan_type is what the row LITERALLY says; toSubscriptionState is what the
+  // clinic is actually entitled to right now. They diverge after a
+  // cancellation whose grace period has elapsed: markCanceled only writes
+  // plan_type='free' if the period had already ended when the webhook arrived,
+  // so a subscription cancelled mid-period keeps plan_type='premium' forever.
+  //
+  // Reading the column meant the credits pill showed an ex-customer Premium's
+  // 500 SMS credits indefinitely. No money leaked — reserveCredits blocks the
+  // send on subscription_status — but the number on screen was a promise the
+  // product would not keep. Every other enforcement read in the app already
+  // goes through this resolver; this was the last one that did not.
+  const state = toSubscriptionState({
+    planType: sub.plan_type,
+    subscriptionStatus: sub.subscription_status,
+    currentPeriodEnd: sub.current_period_end,
+  });
+  const limits = getLimitsFor(state.plan);
 
   // If period has rolled over but the lazy-reset hasn't fired yet, report 0.
   const periodHasRolled =
@@ -230,7 +249,7 @@ export async function getCreditSummary(clinicId) {
   const waUsed = periodHasRolled ? 0 : Number(sub.whatsapp_credits_used);
 
   return {
-    plan: sub.plan_type,
+    plan: state.plan,
     status: sub.subscription_status,
     currentPeriodEnd: sub.current_period_end,
     sms: {

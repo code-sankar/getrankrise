@@ -19,13 +19,22 @@ export default defineConfig([
     },
   },
   {
-    // Unit tests run under `node --test`, not in the browser: they need node
-    // globals, and they stub localStorage on globalThis before importing the
-    // slices (authSlice reads it at module scope), which browser-only globals
-    // would flag as an assignment to a read-only global.
-    files: ['**/*.test.js'],
+    // Tests run under Vitest in a jsdom environment: browser globals apply, and
+    // `globals: true` in vite.config.js injects describe/test/expect/vi. Node
+    // globals are here too because setup and helpers legitimately reach for
+    // process and friends.
+    files: ['**/*.test.{js,jsx}', 'src/test/**/*.{js,jsx}'],
     languageOptions: {
-      globals: { ...globals.node, localStorage: 'writable' },
+      globals: {
+        ...globals.browser,
+        ...globals.node,
+        ...globals.vitest,
+        localStorage: 'writable',
+      },
+    },
+    rules: {
+      // A test may legitimately render a component defined inside the file.
+      'react-refresh/only-export-components': 'off',
     },
   },
 ])

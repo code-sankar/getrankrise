@@ -40,6 +40,14 @@ export default defineConfig(({ command, mode }) => {
   return {
     plugins: [react(), tailwindcss()],
 
+    // The automatic JSX runtime, stated explicitly rather than left to the
+    // plugin's defaults. Test files are transformed by Vitest through this same
+    // config, and without this they were compiled with the CLASSIC runtime —
+    // which needs `React` in scope and fails with "React is not defined" on
+    // every .test.jsx. Application code never hit it because those files are
+    // handled by the react plugin's own include pattern.
+    esbuild: { jsx: 'automatic', jsxImportSource: 'react' },
+
     build: {
       // ── Why chunking is configured by hand ────────────────────────────────
       // Everything shipped as ONE 1.08MB chunk (304KB gzipped), which the build
@@ -81,6 +89,45 @@ export default defineConfig(({ command, mode }) => {
       // The remaining chunks are genuinely small; keep the warning meaningful
       // rather than silencing it with a large threshold.
       chunkSizeWarningLimit: 600,
+    },
+
+    // ── Tests ────────────────────────────────────────────────────────────
+    // Vitest rather than plain `node --test`, for one specific reason: the
+    // store tests could run under Node because slices import nothing but
+    // Redux, but ANY module that reaches utils/axios.helper.js reads
+    // import.meta.env at module scope and throws outside a Vite build. That
+    // ruled out testing every hook, every api/ client, and every component
+    // that fetches — which is to say, all the code where the interesting bugs
+    // have actually been.
+    //
+    // Running through this config (rather than a separate vitest.config.js)
+    // means tests resolve modules exactly the way the bundle does. A test that
+    // passes against different resolution rules than production uses is
+    // testing a different program.
+    test: {
+      environment: 'jsdom',
+      globals: true,
+      setupFiles: ['./src/test/setup.js'],
+      include: ['src/**/*.{test,spec}.{js,jsx}'],
+      // jsdom is heavier than Node's default; a single fork avoids paying
+      // environment setup per file on a suite this size.
+      pool: 'forks',
+      poolOptions: { forks: { singleFork: true } },
+      coverage: {
+        provider: 'v8',
+        include: ['src/**/*.{js,jsx}'],
+        // Excluded because coverage of them is meaningless, not because they
+        // do not matter: entry points wire things together, and the long legal
+        // pages are static prose.
+        exclude: [
+          'src/main.jsx',
+          'src/test/**',
+          'src/**/*.test.{js,jsx}',
+          'src/assets/**',
+          'src/pages/PrivacyPolicy.jsx',
+          'src/pages/TermsAndConditions.jsx',
+        ],
+      },
     },
   }
 })

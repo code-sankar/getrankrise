@@ -28,12 +28,23 @@ export default function VerifyEmailBanner({ dark = true }) {
   const [hidden, setHidden] = useState(false);
   const [sent, setSent] = useState(false);
 
-  // `emailVerifiedAt` is undefined until /auth/me has answered. Rendering the
-  // banner during that window would flash it at every already-verified user on
-  // every cold load, so an unknown value is treated as verified.
-  const verified = user?.emailVerifiedAt !== null && user?.emailVerifiedAt !== undefined;
+  // Three states, not two, and conflating them is what a test caught here:
+  //
+  //   undefined → NOT KNOWN YET. /auth/me hasn't answered, or a payload omitted
+  //               the field. Render nothing — flashing "confirm your email" at
+  //               an already-verified user on every cold load is worse than
+  //               being a beat late to show it.
+  //   null      → definitively unverified. This is the banner's whole reason
+  //               to exist. Both auth reducers coalesce with `?? null`, so this
+  //               is what a real unverified session actually looks like.
+  //   a date    → verified.
+  //
+  // The previous expression collapsed undefined into "unverified", which is the
+  // opposite of what the comment above it claimed.
+  const known = user?.emailVerifiedAt !== undefined;
+  const verified = Boolean(user?.emailVerifiedAt);
 
-  if (!user || verified || hidden) return null;
+  if (!user || !known || verified || hidden) return null;
 
   const resend = async () => {
     setSending(true);

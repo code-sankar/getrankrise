@@ -8,8 +8,10 @@
     "build": "vite build",
     "lint": "eslint .",
     "preview": "vite preview",
-    "//test": "Plain node --test — no bundler, no extra dependency. Suites must therefore avoid importing anything that reads import.meta.env at module scope (utils/axios.helper.js above all); that constraint is why store/sessionTeardown.js exists as a separate pure module.",
-    "test": "node --test \"src/**/*.test.js\""
+    "//test": "Vitest through vite.config.js, so tests resolve modules exactly as the bundle does. Replaces the earlier `node --test` runner, which could not load anything importing utils/axios.helper.js (it reads import.meta.env at module scope) — i.e. every hook, api client and fetching component.",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage"
   },
   "dependencies": {
     "@reduxjs/toolkit": "^2.11.2",
@@ -27,13 +29,20 @@
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
+    "@testing-library/jest-dom": "^7.0.0",
+    "@testing-library/react": "^16.3.2",
+    "@testing-library/user-event": "^14.6.3",
     "@types/react": "^19.2.14",
     "@types/react-dom": "^19.2.3",
     "@vitejs/plugin-react": "^6.0.1",
+    "@vitest/coverage-v8": "^3.2.7",
+    "axios-mock-adapter": "^2.1.0",
     "eslint": "^10.2.1",
     "eslint-plugin-react-hooks": "^7.1.1",
     "eslint-plugin-react-refresh": "^0.5.2",
     "globals": "^17.5.0",
-    "vite": "^8.0.10"
+    "jsdom": "^30.0.1",
+    "vite": "^8.0.10",
+    "vitest": "^3.2.7"
   }
 }

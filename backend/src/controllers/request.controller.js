@@ -51,6 +51,27 @@ export const sendRequest = async (req, res) => {
   const needsWhatsApp = sendVia === "WhatsApp";
   const needsEmail = sendVia === "Email" || sendVia === "Both";
 
+  // ── Nothing to point the patient AT ───────────────────────────────────
+  // renderMessage interpolates googleReviewLink and falls back to an em-dash,
+  // so an unset link produced "…we'd love your feedback: —" — a real SMS, sent
+  // to a real patient, charged to the clinic's credits, asking them to leave a
+  // review with no way to leave one. The Onboarding wizard is the only place
+  // this field gets set and it is skippable, so a brand-new clinic hits this
+  // by default.
+  //
+  // Refused BEFORE any reservation, for the same reason the email check below
+  // is: a send that cannot achieve anything must not cost anything.
+  if (!req.clinic.googleReviewLink) {
+    return res.status(409).json({
+      success: false,
+      code: "NO_REVIEW_LINK",
+      message:
+        "Add your Google review link before sending requests — without it, " +
+        "patients get a message with nothing to click. You can set it in " +
+        "Settings → Business Profile.",
+    });
+  }
+
   // Fail fast BEFORE reserving anything: if email is requested but no provider
   // is configured, don't burn an SMS credit on a "Both" send that can only
   // half-work.

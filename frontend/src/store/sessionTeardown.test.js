@@ -18,24 +18,27 @@
 //      all defined for logout and never dispatched, leaving the previous
 //      clinic's data in the store for the next user of a shared browser.
 //
-// Run with:  npm test    (node --test, no bundler and no extra dependencies)
+// Run with:  npm test
+//
+// Migrated from `node --test` to Vitest. The assertions are unchanged; what
+// changed is that jsdom now provides a real localStorage, so the hand-rolled
+// Map stub is gone. authSlice still reads that storage at MODULE scope, which
+// is why the seed below happens before the dynamic imports.
 
-import test from "node:test";
-import assert from "node:assert/strict";
+import { test, expect } from "vitest";
 import { configureStore } from "@reduxjs/toolkit";
 
-// authSlice reads localStorage at module scope to seed its initial state, so
-// the stub has to exist BEFORE the dynamic imports below. This is also what
-// lets the test assert that the token key is cleared by the teardown rather
-// than by a separate removeItem somewhere.
-const memory = new Map();
-globalThis.localStorage = {
-  getItem: (k) => (memory.has(k) ? memory.get(k) : null),
-  setItem: (k, v) => memory.set(k, String(v)),
-  removeItem: (k) => memory.delete(k),
-  clear: () => memory.clear(),
+// A thin node:assert-shaped shim over expect, so the migration to Vitest did
+// not require rewriting every assertion in this file.
+const assert = {
+  equal: (a, b, m) => expect(a, m).toBe(b),
+  notEqual: (a, b, m) => expect(a, m).not.toBe(b),
+  deepEqual: (a, b, m) => expect(a, m).toEqual(b),
+  ok: (v, m) => expect(v, m).toBeTruthy(),
+  doesNotThrow: (fn, m) => expect(fn, m).not.toThrow(),
 };
-memory.set("token", "a-real-access-token");
+
+localStorage.setItem("token", "a-real-access-token");
 
 const [
   { clearSessionState, SESSION_TEARDOWN_ACTIONS },
@@ -74,7 +77,7 @@ const makeStore = () =>
 
 /** A store carrying a signed-in user with one clinic's data loaded. */
 const signedInStore = () => {
-  memory.set("token", "a-real-access-token");
+  localStorage.setItem("token", "a-real-access-token");
   const store = makeStore();
 
   store.dispatch(

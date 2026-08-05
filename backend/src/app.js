@@ -48,9 +48,20 @@ import planRoutes         from "./routes/plans.routes.js";      // public plan c
 
 // ── Middleware ────────────────────────────────────────────────────────────────
 import { sanitize }     from "./middleware/sanitize.middleware.js";
+import {
+  withRequestContext,
+  enrichRequestContext,
+} from "./middleware/requestContext.middleware.js";
 import { errorHandler } from "./middleware/error.middleware.js";
 
 const app = express();
+
+// ── Request correlation — FIRST, before anything that can fail ───────────────
+// Every error reported from here on carries a request id, and the response
+// echoes it in X-Request-Id. Mounted above the webhook route on purpose: a
+// signature-verification failure is exactly the kind of thing you later need to
+// correlate with Paddle's delivery log.
+app.use(withRequestContext);
 
 // ── Paddle webhook — raw body, BEFORE any parser ─────────────────────────────
 // See invariant block at the top of this file.
@@ -159,6 +170,12 @@ app.use(cookieParser());
 
 // ── Input sanitization (after body-parser, before routes) ────────────────────
 app.use(sanitize);
+
+// Copies req.user / req.clinic into the async context once the routers' own
+// protect + loadClinic have set them. It runs BEFORE those, so it reads nulls
+// on the first pass — the errorHandler re-reads at report time, by which point
+// the router has filled them in on the same mutable store object.
+app.use(enrichRequestContext);
 
 // ── Request logging ───────────────────────────────────────────────────────────
 // In dev: full pretty logs. In production: redacted format — never logs

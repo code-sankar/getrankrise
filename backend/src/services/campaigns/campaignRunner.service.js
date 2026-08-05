@@ -41,6 +41,7 @@ import { sequelize } from "../../config/db.js";
 import { sendMessage } from "../sms/index.js";
 import { reserveCredits, refundCredits } from "../credits/credits.service.js";
 import { optedOutSet } from "./campaign.service.js";
+import { reportError } from "../../utils/observability.js";
 
 const TICK_MS = 15_000;
 const STUCK_MINUTES = 10;
@@ -84,7 +85,12 @@ export async function tick() {
       await processCampaignBatch(c);
     }
   } catch (err) {
+    // Caught so a bad tick cannot kill the interval — that part was always
+    // right. What was missing is that a PERMANENTLY broken loop looked
+    // identical to an idle one: one line of console.error every 15 seconds and
+    // no campaign ever sending. Reporting it makes the difference visible.
     console.error("[campaigns] tick error:", err.message);
+    reportError(err, { source: "campaign-runner" });
   } finally {
     ticking = false;
   }
