@@ -110,6 +110,15 @@ jobs:
 
       - run: npx eslint .
 
+      - name: Run tests
+        # Store-level unit tests against the real reducers. The sign-out path
+        # is the reason these exist: three separate defects there (a session
+        # never revoked server-side, an auth slice never cleared, and four
+        # reset actions written for logout and never dispatched) all passed
+        # lint and build without complaint, because every one of them was
+        # working code that simply was not reached.
+        run: npm test
+
       - name: Build
         # VITE_API_URL is required at BUILD time — vite.config.js fails the
         # build without it rather than shipping a bundle that calls localhost.

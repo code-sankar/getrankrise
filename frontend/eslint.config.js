@@ -18,4 +18,14 @@ export default defineConfig([
       parserOptions: { ecmaFeatures: { jsx: true } },
     },
   },
+  {
+    // Unit tests run under `node --test`, not in the browser: they need node
+    // globals, and they stub localStorage on globalThis before importing the
+    // slices (authSlice reads it at module scope), which browser-only globals
+    // would flag as an assignment to a read-only global.
+    files: ['**/*.test.js'],
+    languageOptions: {
+      globals: { ...globals.node, localStorage: 'writable' },
+    },
+  },
 ])

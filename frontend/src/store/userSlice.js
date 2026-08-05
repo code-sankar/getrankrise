@@ -197,6 +197,21 @@ const userSlice = createSlice({
         state.userSubscription.plan = action.payload;
       }
     },
+
+    // ── On logout — clear the WHOLE mirror in one action ──────────────────
+    // logoutUser used to dispatch removeUser() + removeUserClinic() and stop
+    // there, which left userReviews, userRequests, userNotifications,
+    // userAnalytics, userCompetitors, userSettings, userActivity and
+    // userSubscription populated with the previous clinic's data.
+    //
+    // One action rather than eight remove* calls, deliberately: the failure
+    // mode being fixed is "somebody added a field and forgot to clear it on
+    // logout", and a list of eight calls at the call site reproduces exactly
+    // that. Returning initialState covers every field this slice will ever
+    // have, including the ones not written yet.
+    resetUser() {
+      return initialState;
+    },
   },
 });
 
@@ -252,6 +267,9 @@ export const {
   addUserSubscription,
   removeUserSubscription,
   updateUserSubscriptionPlan,
+
+  // Logout
+  resetUser,
 } = userSlice.actions;
 
 export default userSlice.reducer;

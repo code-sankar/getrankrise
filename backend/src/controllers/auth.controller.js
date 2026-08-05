@@ -157,8 +157,23 @@ export const login = async (req, res) => {
       return unauthorisedResponse(res, "Invalid email or password");
     }
 
-    // 3. Get clinic name
-    const clinic = await Clinic.findOne({ where: { userId: user.id } });
+    // 3. Get clinic name — resolved through clinic_members, the same way
+    //    loadClinic and getMe do it.
+    //
+    //    This was the last `Clinic.findOne({ where: { userId } })` left in the
+    //    codebase. clinics.user_id is the ORIGINAL-OWNER pointer, not the
+    //    membership record, so a staff member (migration 0015) matched nothing
+    //    and logged in with clinicName: null — the sidebar showed "My Clinic"
+    //    until the next page load, when AppBootstrap's /auth/me quietly
+    //    corrected it through the membership table. Two lookups for one
+    //    question is how they drift; there is now one.
+    const [membership] = await sequelize.query(
+      `SELECT clinic_id FROM clinic_members WHERE user_id = $1::uuid LIMIT 1`,
+      { bind: [user.id], type: QueryTypes.SELECT }
+    );
+    const clinic = membership
+      ? await Clinic.findByPk(membership.clinic_id)
+      : null;
 
     // 4. Generate token pair
     const { accessToken, refreshToken } = generateTokenPair(user);

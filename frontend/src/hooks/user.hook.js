@@ -13,14 +13,15 @@ import axiosInstance from "../utils/axios.helper.js";
 import { getFriendlyError } from "../utils/parseErrorMsg.js";
 import {
   addUser,
-  removeUser,
   addUserClinic,
-  removeUserClinic,
   updateUserClinicName,
   addUserSettings,
   toggleUserSettingNotification,
   addUserSubscription,
 } from "../store/userSlice.js";
+// The one definition of what a sign-out has to forget. See that file for the
+// three obligations and which caller used to drop which.
+import { clearSessionState } from "../store/sessionTeardown.js";
 
 // ── Get current logged-in user profile ───────────────────────────────────────
 export const getUserProfile = async (dispatch) => {
@@ -166,16 +167,51 @@ export const getUserSubscription = async (dispatch) => {
 };
 
 // ── Logout user ───────────────────────────────────────────────────────────────
+//
+// THE single logout path. Sidebar and Settings both call this; nothing else
+// should sign a user out, because "sign out" is three separate obligations and
+// each caller that reimplements it has historically satisfied a different two:
+//
+//   1. END THE SERVER SESSION.  POST /auth/logout revokes the refresh_tokens
+//      row and clears the httpOnly cookie. Only the server can do the latter —
+//      JS cannot touch an httpOnly cookie — so a client-only logout leaves a
+//      live, redeemable session behind for the token's full 7-day life. The
+//      Sidebar button (on every authenticated page) did exactly that: it
+//      dispatched the auth reducer and navigated away, and anyone on that
+//      shared front-desk browser could mint a fresh access token afterwards
+//      with a single POST to /auth/refresh-token.
+//
+//   2. CLEAR THE AUTH SLICE.  This function used to dispatch removeUser() and
+//      removeUserClinic() — both from userSlice — and never authSlice.logout().
+//      state.auth.isAuthenticated stayed true, and PrivateRoute/PublicOnlyRoute
+//      both read exactly that. It only appeared to work because Settings.jsx
+//      followed it with window.location.href, a hard reload that rebuilds the
+//      store from an empty localStorage. Under SPA navigation the user would
+//      have been bounced straight back to /dashboard by PublicOnlyRoute.
+//
+//   3. DROP THE TENANT-SCOPED CACHES.  Four reset actions existed for exactly
+//      this and not one was ever dispatched. Because logout is SPA navigation,
+//      the store survives it: the next person to sign in on that tab rendered
+//      the PREVIOUS clinic's reviews, send history, notifications and analytics
+//      until their own fetches landed. That is patient review content crossing
+//      a tenant boundary, in a product whose deployment model is a shared
+//      front-desk machine.
+//
+// (2) and (3) both live in store/sessionTeardown.js now, so there is one list
+// to keep correct rather than one per call site. clearSessionState also owns
+// localStorage.token — don't remove that key here as well, or the two places
+// drift the next time it changes.
 export const logoutUser = async (dispatch) => {
   try {
     await axiosInstance.post("/auth/logout");
   } catch (error) {
+    // A failed revoke must not strand the user in a signed-in UI. The local
+    // teardown below runs regardless; the worst case is a server session that
+    // outlives the client one — the pre-existing behaviour, not a regression
+    // introduced by swallowing this.
     console.error("logoutUser error:", error);
   } finally {
-    // Always clear local state regardless of API success
-    dispatch(removeUser());
-    dispatch(removeUserClinic());
-    localStorage.removeItem("token");
+    clearSessionState(dispatch);
     localStorage.removeItem("clinicName");
     localStorage.removeItem("userEmail");
   }

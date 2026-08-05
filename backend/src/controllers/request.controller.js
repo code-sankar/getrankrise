@@ -336,7 +336,12 @@ const renderMessage = ({ patientName, clinicName, reviewLink }) =>
   `Hi ${patientName}, thanks for visiting ${clinicName}! ` +
   `If you have a moment, we'd love your feedback: ${reviewLink || "—"}`;
 
-const quotaError = (res, r) => {
+// Exported for the regression test in tests/quotaError.test.js. Every branch
+// below corresponds to one `reason` reserveCredits can return, and the test
+// asserts each one against the literal object that function produces — the
+// SUBSCRIPTION_INACTIVE branch existed nowhere and threw, which is exactly the
+// class of gap a shape test catches and a reading does not.
+export const quotaError = (res, r) => {
   // Same 403 shape the Upgrade modal pattern-matches. The NO_SUBSCRIPTION
   // branch is new: pre-Phase-0 registrations could lack a subscriptions row,
   // and the old fall-through rendered "all undefined SMS credits".
@@ -347,13 +352,43 @@ const quotaError = (res, r) => {
         "Your account is missing billing information. Please contact support.",
     });
   }
+
+  // ── SUBSCRIPTION_INACTIVE is not a quota problem ────────────────────────
+  // reserveCredits returns this branch with { currentPlan, subscriptionStatus }
+  // and NO `channel` (see credits.service.js — the status check runs after the
+  // limit check, so it has no channel context to report). The QUOTA_EXCEEDED
+  // fall-through below therefore evaluated `r.channel.toUpperCase()` on
+  // undefined and threw a TypeError, which sendRequest's outer catch converted
+  // into a generic 500.
+  //
+  // The customers who hit it are the ones who have PAID: a Free clinic is
+  // caught earlier by `limit === 0` → PLAN_DOES_NOT_INCLUDE_CHANNEL, so only a
+  // paid plan whose subscription went past_due or paused reached here. They
+  // clicked Send, saw "Server error. Please try again later.", and were never
+  // told their card needs attention — the one message that would have let them
+  // fix it. The axios interceptor already routes this code to the billing
+  // modal; it was never given the chance.
+  if (r.reason === "SUBSCRIPTION_INACTIVE") {
+    return res.status(403).json({
+      success: false,
+      code: "SUBSCRIPTION_INACTIVE",
+      message: `Your subscription is ${r.subscriptionStatus}. Please update your payment method to continue.`,
+      currentPlan: r.currentPlan,
+      subscriptionStatus: r.subscriptionStatus,
+      requiredPlans: ["starter", "premium"],
+    });
+  }
+
   const isPlanGap = r.reason === "PLAN_DOES_NOT_INCLUDE_CHANNEL";
+  // Defence in depth for any future reason that also arrives without a channel:
+  // a wrong-but-readable word in the message beats a 500.
+  const channelLabel = String(r.channel ?? "message").toUpperCase();
   return res.status(403).json({
     success: false,
     code: isPlanGap ? "UPGRADE_REQUIRED" : "QUOTA_EXCEEDED",
     message: isPlanGap
-      ? `Your ${r.currentPlan} plan doesn't include ${r.channel.toUpperCase()} sends. Upgrade to keep going.`
-      : `You've used all ${r.limit} ${r.channel.toUpperCase()} credits this period. Upgrade or wait until your next billing cycle.`,
+      ? `Your ${r.currentPlan} plan doesn't include ${channelLabel} sends. Upgrade to keep going.`
+      : `You've used all ${r.limit} ${channelLabel} credits this period. Upgrade or wait until your next billing cycle.`,
     currentPlan: r.currentPlan,
     requiredPlans: isPlanGap ? ["starter", "premium"] : ["premium"],
     channel: r.channel,

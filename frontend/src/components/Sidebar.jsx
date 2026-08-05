@@ -1,6 +1,6 @@
 import { NavLink, useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
-import { logout } from "../store/authSlice.js";
+import { logoutUser } from "../hooks/user.hook.js";
 import { useTheme } from "../context/ThemeContext.jsx";
 import logo from "../assets/logo.png";
 
@@ -247,8 +247,14 @@ export default function Sidebar({ onClose }) {
   const clinicName =
     useSelector((state) => state.auth.clinicName) || "My Clinic";
 
-  const handleLogout = () => {
-    dispatch(logout());
+  // This dispatched authSlice.logout() directly and navigated away — which
+  // cleared the client but never told the SERVER, so the refresh_tokens row
+  // stayed live and the httpOnly cookie stayed in the browser for a full week.
+  // logoutUser is the one path that does all three parts of a sign-out; see
+  // its comment in hooks/user.hook.js. Awaiting it means the revoke has been
+  // attempted before the route changes.
+  const handleLogout = async () => {
+    await logoutUser(dispatch);
     navigate("/login");
   };
 

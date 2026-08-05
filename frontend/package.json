@@ -7,7 +7,9 @@
     "dev": "vite",
     "build": "vite build",
     "lint": "eslint .",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "//test": "Plain node --test — no bundler, no extra dependency. Suites must therefore avoid importing anything that reads import.meta.env at module scope (utils/axios.helper.js above all); that constraint is why store/sessionTeardown.js exists as a separate pure module.",
+    "test": "node --test \"src/**/*.test.js\""
   },
   "dependencies": {
     "@reduxjs/toolkit": "^2.11.2",
