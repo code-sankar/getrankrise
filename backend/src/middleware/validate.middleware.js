@@ -52,6 +52,30 @@ export const toggleSettingSchema = Joi.object({
 });
 
 // ── REVIEWS ───────────────────────────────────────────────────────────────────
+
+// GET /api/v1/reviews query params.
+//
+// This endpoint went unvalidated while every other route was guarded, and it
+// is the app's primary data read. Three separate params turned a client typo
+// into a 500, all confirmed against live Postgres:
+//
+//   ?platform=DROP  → where.platform = "DROP", rejected by the reviews
+//                     platform ENUM with 22P02 (invalid input value for enum)
+//   ?rating=abc     → parseInt("abc") is NaN, which reaches the driver as an
+//                     invalid integer
+//   ?limit=-5       → the controller clamped the UPPER bound only
+//                     (Math.min(limit, 100)), so -5 survived into LIMIT -5
+//
+// `platform` is spelled with the same capitalisation as the ENUM, because the
+// controller passes the value through to the WHERE clause unchanged.
+export const listReviewsQuerySchema = Joi.object({
+  platform: Joi.string().valid("Google", "Yelp", "Facebook"),
+  rating:   Joi.number().integer().min(1).max(5),
+  status:   Joi.string().valid("replied", "unreplied"),
+  limit:    Joi.number().integer().min(1).max(100).default(50),
+  offset:   Joi.number().integer().min(0).default(0),
+});
+
 export const replyToReviewSchema = Joi.object({
   reply: Joi.string().min(1).max(5000).required(),
 });

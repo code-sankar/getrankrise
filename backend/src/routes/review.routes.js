@@ -23,6 +23,7 @@ import { loadClinic } from "../middleware/loadClinic.middleware.js";
 import { requireFeature } from "../middleware/tierCap.middleware.js";
 import {
   validate,
+  listReviewsQuerySchema,
   replyToReviewSchema,
   generateAiReplySchema,
   idParamSchema,
@@ -63,8 +64,13 @@ const syncLimiter = rateLimit({
 
 router.use(protect, loadClinic);
 
+// Query params are validated here rather than defensively parsed in the
+// controller: an out-of-range platform/rating/limit used to reach Postgres and
+// come back as a 500. Joi also coerces limit/offset to numbers and applies the
+// defaults, so the controller receives values it can trust.
 router.get(
   "/",
+  validate(listReviewsQuerySchema, "query"),
   asyncHandler(listReviews)
 );
 

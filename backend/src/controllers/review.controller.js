@@ -47,7 +47,15 @@ export const listReviews = async (req, res) => {
     const { platform, rating, status } = req.query;
     let { limit, offset } = req.query;
 
-    limit = Math.min(parseInt(limit, 10) || 50, 100);
+    // listReviewsQuerySchema (route-level) has already validated the enum
+    // values, coerced these to numbers and applied the defaults. The clamps
+    // below are defence in depth for any future caller that reaches this
+    // function without passing through that middleware.
+    //
+    // Note the LOWER bound on limit: the previous `Math.min(x, 100)` bounded
+    // only the top, so a negative limit passed straight through into
+    // `LIMIT -5` and Postgres rejected the statement as a 500.
+    limit = Math.min(Math.max(parseInt(limit, 10) || 50, 1), 100);
     offset = Math.max(parseInt(offset, 10) || 0, 0);
 
     const where = { clinicId: req.clinic.id };

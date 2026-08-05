@@ -40,34 +40,87 @@ export default function Onboarding() {
   const handleChange = (e) =>
     setForm((p) => ({ ...p, [e.target.name]: e.target.value }));
 
+  // ── Why a save failure must NOT advance the wizard ──────────────────────────
+  // Both handlers below used to `catch {}` and call setStep() anyway, with the
+  // comment "if clinic route isn't built yet, still let them proceed". That
+  // route has been built for a long time, and the catch had become a way to
+  // show "You're all set! 🚀" over a clinic row where nothing was written.
+  //
+  // It mattered most for googleReviewLink, because this wizard is the only
+  // place a new clinic sets it and EVERY outbound message interpolates it:
+  // request.controller.js renders `feedback: —` and campaignRunner.js
+  // substitutes {{link}} with "". So a silently-dropped save meant every SMS
+  // and email that clinic ever sent went out with no review link, and a credit
+  // was spent on each one.
+  //
+  // The 400 was easy to trigger by following this page's own instructions:
+  // it tells you to copy the "Get more reviews" short link, Google hands you
+  // g.page/r/xyz, and Joi.string().uri() rejects it for having no scheme.
+  // Hence normaliseUrl below — fix the input rather than punish the paste.
+
+  /** Adds https:// when the user pasted a bare host (g.page/r/xyz). */
+  const normaliseUrl = (value) => {
+    const url = String(value || "").trim();
+    if (!url) return "";
+    return /^https?:\/\//i.test(url) ? url : `https://${url}`;
+  };
+
+  /** Turns the API's field-level validation errors into one readable line. */
+  const describeFailure = (err, fallback) => {
+    const fields = err?.response?.data?.errors;
+    if (Array.isArray(fields) && fields.length > 0) {
+      return fields.map((f) => f.message).join(" · ");
+    }
+    return err?.response?.data?.message || fallback;
+  };
+
   const saveClinic = async () => {
     setSaving(true);
     try {
-      await axiosInstance.put("/clinic/me", form);
+      await axiosInstance.put("/clinic/me", {
+        clinicName: form.clinicName,
+        phone:      form.phone,
+        location:   form.location,
+      });
+      // Only after the write has actually landed — updating this on failure is
+      // what made the sidebar show a clinic name that was never persisted.
       dispatch(updateClinicName(form.clinicName));
       toast.success("Clinic profile saved!");
       setStep(1);
-    } catch {
-      // If clinic route isn't built yet, still let them proceed
-      dispatch(updateClinicName(form.clinicName));
-      setStep(1);
+    } catch (err) {
+      toast.error(
+        describeFailure(err, "Could not save your clinic details. Please try again.")
+      );
+      // Deliberately stay on this step. See the block comment above.
     } finally {
       setSaving(false);
     }
   };
 
   const saveGoogle = async () => {
+    const googleBusinessUrl = normaliseUrl(form.googleBusinessUrl);
+    const googleReviewLink  = normaliseUrl(form.googleReviewLink);
+
     setSaving(true);
     try {
       await axiosInstance.put("/clinic/me", {
-        googleBusinessUrl: form.googleBusinessUrl,
-        googleReviewLink:  form.googleReviewLink,
+        googleBusinessUrl,
+        googleReviewLink,
       });
-    } catch {
-      // proceed anyway
+      // Reflect what the server accepted, so a corrected value is what the
+      // field shows if the user steps back.
+      setForm((p) => ({ ...p, googleBusinessUrl, googleReviewLink }));
+      toast.success("Google links saved!");
+      setStep(2);
+    } catch (err) {
+      toast.error(
+        describeFailure(
+          err,
+          "Could not save your Google links. Check them and try again."
+        )
+      );
     } finally {
       setSaving(false);
-      setStep(2);
     }
   };
 
@@ -150,6 +203,16 @@ export default function Onboarding() {
             <Field label="Google Business Profile URL" name="googleBusinessUrl" value={form.googleBusinessUrl} onChange={handleChange} placeholder="https://g.page/your-clinic" input={input} dark={dark} />
             <Field label="Direct Review Link" name="googleReviewLink" value={form.googleReviewLink} onChange={handleChange} placeholder="https://search.google.com/local/reviews?..." input={input} dark={dark} />
           </div>
+
+          {/* Skipping is a legitimate choice, but it is not a free one: the
+              review link is the payload of every request we send, so without
+              it those messages go out with nowhere to click. Say so here
+              rather than letting the user discover it from a patient. */}
+          <p className={`mt-5 text-xs leading-relaxed ${dark ? "text-amber-400/80" : "text-amber-700"}`}>
+            The review link is what we put in every review request. Skip it for
+            now if you like — you can add it any time in Settings — but requests
+            you send before then won&apos;t have a link for customers to follow.
+          </p>
 
           <div className="flex gap-3 mt-8">
             <button
