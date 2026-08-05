@@ -63,6 +63,14 @@ const Request = sequelize.define(
       type:      DataTypes.STRING(80),
       allowNull: true,
     },
+    // Set only on a PARTIAL send — "Both" where one channel went out and the
+    // other did not. NULL means every requested channel was delivered. A send
+    // where nothing went out leaves no row at all: the idempotency claim is
+    // released so the caller can retry cleanly. See migrations/0013.
+    sendError: {
+      type:      DataTypes.TEXT,
+      allowNull: true,
+    },
   },
   {
     tableName: "requests",

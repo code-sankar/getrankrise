@@ -143,10 +143,24 @@ export const generateAIReply = async (reviewId, reviewText, tone = "professional
       reviewText,
       tone,
     });
-    const reply = response?.data?.data?.reply;
+    const payload = response?.data?.data;
+    const reply = payload?.reply;
     if (!reply) {
       throw new Error("AI service returned an empty reply");
     }
+
+    // The server flags drafts it wrote from a static template because OpenAI is
+    // unconfigured or erroring. That used to be invisible here — only `reply`
+    // was read — so a canned sentence was presented as a model-written reply.
+    // The draft is still worth offering; it just has to be labelled, and the
+    // server no longer charges an AI credit for it.
+    if (payload.fallback) {
+      toast.info(
+        response?.data?.message ||
+          "AI is unavailable right now — here's a template draft to edit. No AI credits were used.",
+      );
+    }
+
     return reply;
   } catch (error) {
     const msg = getFriendlyError(error.response?.data?.message);

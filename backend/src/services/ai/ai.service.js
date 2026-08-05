@@ -77,9 +77,20 @@ export const generateReply = async ({
   tone = "professional",
 }) => {
   // ── Fallback path (no API key or fetch unavailable) ────────────────────
+  //
+  // `fallback` is returned as an explicit boolean rather than left for the
+  // caller to infer from the model string. The caller has to refund the
+  // metered ai_reply unit when this fires — billing a customer's monthly AI
+  // quota for a canned template that never touched a model is the sort of
+  // thing that must not depend on nobody renaming a constant.
   if (!env.OPENAI_API_KEY) {
     const reply = buildFallbackReply({ reviewText, rating, customerName, clinicName, tone });
-    return { reply: reply.slice(0, MAX_REPLY_LENGTH), model: "fallback-template-v1" };
+    return {
+      reply: reply.slice(0, MAX_REPLY_LENGTH),
+      model: "fallback-template-v1",
+      fallback: true,
+      fallbackReason: "AI_NOT_CONFIGURED",
+    };
   }
 
   const toneInstruction = TONE_INSTRUCTIONS[tone] || TONE_INSTRUCTIONS.professional;
@@ -127,12 +138,20 @@ export const generateReply = async ({
     return {
       reply: reply.slice(0, MAX_REPLY_LENGTH),
       model: data.model || "gpt-4o-mini",
+      fallback: false,
     };
 
   } catch (err) {
-    // Don't surface internal errors — fall back gracefully.
+    // Don't surface internal errors — fall back gracefully. Flagged the same
+    // way as the no-key path: the customer still gets a usable draft, but they
+    // are not charged for one the model never wrote.
     console.error("[ai.service] OpenAI call failed, using fallback:", err.message);
     const reply = buildFallbackReply({ reviewText, rating, customerName, clinicName, tone });
-    return { reply: reply.slice(0, MAX_REPLY_LENGTH), model: "fallback-template-v1" };
+    return {
+      reply: reply.slice(0, MAX_REPLY_LENGTH),
+      model: "fallback-template-v1",
+      fallback: true,
+      fallbackReason: "AI_PROVIDER_ERROR",
+    };
   }
 };

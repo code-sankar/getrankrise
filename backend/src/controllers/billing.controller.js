@@ -17,7 +17,6 @@ import {
 } from "../services/billing/paddle.client.js";
 import {
   successResponse,
-  badRequestResponse,
   serverErrorResponse,
 } from "../utils/apiResponse.js";
 
@@ -30,8 +29,26 @@ const PRICE_MAP = () => ({
 export const createCheckout = async (req, res) => {
   try {
     const { plan } = req.body; // 'starter' | 'premium'
+
+    // Joi (billing.routes.js) has already rejected anything that is not a known
+    // plan name, so reaching here with no price id means the SERVER is missing
+    // PADDLE_PRICE_ID_STARTER / _PREMIUM — not that the caller asked for
+    // something invalid. Returning 400 "Invalid plan" for that blamed the user
+    // for a deploy problem and made the upgrade funnel undebuggable: a correct
+    // {"plan":"starter"} came back looking like a client bug.
     const priceId = PRICE_MAP()[plan];
-    if (!priceId) return badRequestResponse(res, "Invalid plan");
+    if (!priceId) {
+      console.error(
+        `[billing] no Paddle price id configured for plan "${plan}" — set PADDLE_PRICE_ID_${plan.toUpperCase()}`
+      );
+      return res.status(503).json({
+        success: false,
+        code: "BILLING_NOT_CONFIGURED",
+        message:
+          "Upgrades aren't available right now. Our team has been notified — please try again shortly.",
+        plan,
+      });
+    }
 
     const clinicId = req.clinic.id;
     const userId = req.user.id;
@@ -336,13 +353,67 @@ async function upsertSubscription(sub) {
   });
 }
 
+// ── Cancellation ────────────────────────────────────────────────────────────
+// Paddle keeps service running until current_period_end, and for a SCHEDULED
+// cancellation it keeps status "active" until the effective date and only then
+// sends subscription.canceled. So by the time this fires the paid period has
+// normally already ended.
+//
+// What this used to leave behind: plan_type stayed "premium" forever. Feature
+// gates blocked the clinic (requireFeature reads isActive), which made it look
+// handled — but every LIMIT comes from the plan, not from isActive, so an
+// ex-customer kept Premium's storedReviewsLimit: Infinity. Their review feed
+// stayed uncapped and analytics kept aggregating all history indefinitely,
+// while a Free clinic that never paid is trimmed to 20 rows.
+//
+// toSubscriptionState() now resolves an expired cancellation to Free on read,
+// so enforcement is correct the moment the period ends whether or not this
+// write ran. This persists the same conclusion so admin queries, the
+// clinics.plan mirror and the sync scheduler's SQL (which reads plan_type
+// directly) agree with it.
+//
+// The gateway ids are deliberately preserved: they are what lets the customer
+// reactivate, and createBillingPortal needs gatewayCustomerId to open the
+// portal for someone who has just cancelled.
 async function markCanceled(sub) {
-  // Paddle keeps service running until current_period_end. Status stays
-  // 'active' until then; we just record the cancellation timestamp.
-  await Subscription.update(
-    { subscriptionStatus: sub.status, canceledAt: new Date() },
-    { where: { gatewaySubscriptionId: sub.id } }
-  );
+  const periodEnd = sub.current_billing_period?.ends_at || null;
+  const stillPaidFor = periodEnd && new Date(periodEnd).getTime() > Date.now();
+
+  await sequelize.transaction(async (transaction) => {
+    const [row] = await sequelize.query(
+      `UPDATE subscriptions
+          SET subscription_status = $2::subscription_status_enum,
+              canceled_at         = NOW(),
+              current_period_end  = COALESCE($3::timestamptz, current_period_end),
+              -- Keep the paid-for plan during any remaining grace; drop to free
+              -- once that time is spent.
+              plan_type           = CASE WHEN $4::bool THEN plan_type
+                                         ELSE 'free'::plan_type_enum END
+        WHERE gateway_subscription_id = $1::text
+        RETURNING clinic_id, plan_type`,
+      {
+        bind: [sub.id, sub.status, periodEnd, Boolean(stillPaidFor)],
+        type: QueryTypes.SELECT,
+        transaction,
+      }
+    );
+
+    if (!row) {
+      console.warn(`[paddle] canceled event for unknown subscription ${sub.id}`);
+      return;
+    }
+
+    // Mirror, same posture as upsertSubscription: never fail the webhook over
+    // a denormalized column that nothing enforces against.
+    try {
+      await Clinic.update(
+        { plan: row.plan_type },
+        { where: { id: row.clinic_id }, transaction }
+      );
+    } catch (e) {
+      console.warn("[paddle] clinic.plan mirror failed on cancel:", e.message);
+    }
+  });
 }
 
 async function updateStatus(sub, status) {

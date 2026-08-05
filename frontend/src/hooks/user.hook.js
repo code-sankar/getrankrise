@@ -120,7 +120,22 @@ export const changeUserPassword = async (currentPassword, newPassword) => {
       currentPassword,
       newPassword,
     });
-    toast.success("Password updated successfully!");
+
+    // The server now ends every session on a password change and re-issues one
+    // for THIS device. Adopting the new access token keeps the current tab
+    // working seamlessly; without it the tab would keep using the old one until
+    // it expired, which still works but leaves a stale credential in play.
+    const { accessToken, otherSessionsEnded } = response?.data?.data ?? {};
+    if (accessToken) {
+      localStorage.setItem("token", accessToken);
+      axiosInstance.defaults.headers.common["Authorization"] = `Bearer ${accessToken}`;
+    }
+
+    toast.success(
+      otherSessionsEnded > 0
+        ? `Password updated. Signed out of ${otherSessionsEnded} other device${otherSessionsEnded === 1 ? "" : "s"}.`
+        : "Password updated successfully!",
+    );
     return response.data;
   } catch (error) {
     const msg = getFriendlyError(error.response?.data?.message);

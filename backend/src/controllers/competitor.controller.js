@@ -14,7 +14,10 @@ import {
   serverErrorResponse,
 } from "../utils/apiResponse.js";
 import { getLimitsFor } from "../config/plans.js";
-import { syncCompetitor } from "../services/competitor/competitor.service.js";
+import {
+  syncCompetitor,
+  competitorDataIsSimulated,
+} from "../services/competitor/competitor.service.js";
 import { auditFromReq, AUDIT_EVENTS } from "../utils/auditLog.js";
 
 // ── Helper: the clinic's own metrics, for side-by-side comparison ─────────────
@@ -97,6 +100,10 @@ export const getOverview = async (req, res) => {
       message: "Overview fetched",
       data: {
         self,
+        // Honesty flag. With no APIFY/DATAFORSEO credentials the tracker serves
+        // deterministic fixture data, and every field below looks exactly like a
+        // real measurement. The client needs to be able to say so.
+        simulated: competitorDataIsSimulated(),
         competitors: competitors.map((c) => ({
           id:           c.id,
           name:         c.name,
