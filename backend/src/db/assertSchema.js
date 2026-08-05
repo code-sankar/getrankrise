@@ -126,6 +126,31 @@ export const REQUIRED_COLUMNS = Object.freeze({
   // services/auth/refreshToken.service.js → the whole session lifecycle.
   // Missing columns here mean nobody can log in or refresh.
   refresh_tokens: ["user_id", "token_hash", "expires_at", "revoked_at", "revoked_reason"],
+
+  // services/auth/authToken.service.js → password reset and email
+  // verification. Both issue and consume are raw SQL with an ON CONFLICT arm
+  // that names the partial unique index by its columns, so a rename here fails
+  // at runtime inside a flow the user reaches only when they are already
+  // locked out — the worst possible place to discover it.
+  auth_tokens: ["user_id", "purpose", "token_hash", "expires_at", "consumed_at"],
+
+  // controllers/member.controller.js → the whole invitation lifecycle.
+  clinic_invitations: [
+    "clinic_id",
+    "email",
+    "role",
+    "token_hash",
+    "invited_by",
+    "expires_at",
+    "accepted_at",
+    "accepted_user_id",
+    "revoked_at",
+  ],
+
+  // middleware/requireVerifiedEmail + the members list query. users is a CORE
+  // table, but this column arrives via migration 0016 on any database that
+  // predates it, so it is worth asserting like the rest.
+  users: ["email_verified_at"],
 });
 
 /**

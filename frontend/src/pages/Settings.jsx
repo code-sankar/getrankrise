@@ -22,6 +22,10 @@ import FacebookConnect from "../components/onboarding/FacebookConnect.jsx";
 
 // ── Real Paddle overlay checkout (already used by the upgrade modal) ──────────
 import UpgradeButton from "../components/billing/UpgradeButton.jsx";
+// ── Step 2: team management, usage meters, verification nudge ────────────────
+import TeamTab from "../components/settings/TeamTab.jsx";
+import UsageMeters from "../components/settings/UsageMeters.jsx";
+import VerifyEmailBanner from "../components/account/VerifyEmailBanner.jsx";
 // ── Paddle-hosted customer portal (update payment / cancel) ───────────────────
 import ManageBillingButton from "../components/billing/ManageBillingButton.jsx";
 
@@ -235,6 +239,10 @@ export default function Settings() {
     { id: "integrations",  label: "Integrations" },
     { id: "notifications", label: "Notifications" },
     { id: "account",       label: "Account" },
+    // Visible to staff as well as owners: the screen itself hides the
+    // owner-only controls, and hiding the whole tab would make the app look
+    // broken to the receptionist it was built for.
+    { id: "team",          label: "Team" },
     { id: "billing",       label: "Plan & Billing" },
   ];
 
@@ -283,6 +291,11 @@ export default function Settings() {
             <h1 className={`text-2xl font-bold ${dark ? "text-white" : "text-slate-900"}`}>Settings</h1>
             <p className="text-slate-500 text-sm mt-1">Manage your business profile, billing, and preferences</p>
           </div>
+
+          {/* Sending is blocked server-side until the address is confirmed
+              (requireVerifiedEmail), so this is the warning that stops that
+              from being a surprise. Renders nothing once verified. */}
+          <VerifyEmailBanner dark={dark} />
 
           {/* Tab Navigation */}
           <div className={`flex overflow-x-auto no-scrollbar gap-1 p-1 mb-8 rounded-xl border ${dark ? "bg-slate-900 border-slate-800" : "bg-slate-200/50 border-slate-200"}`}>
@@ -445,6 +458,17 @@ export default function Settings() {
             )}
 
             {/* ── BILLING TAB ────────────────────────────────────────── */}
+            {activeTab === "team" && (
+              <div className={`border rounded-2xl p-6 sm:p-8 ${cardBg}`}>
+                <SectionHeader
+                  dark={dark}
+                  title="Team"
+                  description="Who can access this clinic, and what they can do"
+                />
+                <TeamTab dark={dark} />
+              </div>
+            )}
+
             {activeTab === "billing" && (
               <div className="space-y-6">
                 <div className={`border rounded-2xl p-6 sm:p-8 ${cardBg}`}>
@@ -482,6 +506,17 @@ export default function Settings() {
                       </div>
                     </div>
                   </div>
+                </div>
+
+                {/* ── What you've actually used ──────────────────────────────
+                    GET /api/v1/usage has been complete and mounted since Phase
+                    5 with no caller, so every metered cap (AI drafts, request
+                    emails, manual syncs, competitor refreshes) could only be
+                    discovered by hitting it mid-task. Directly under the plan
+                    card, because "what am I paying for" and "how much of it
+                    have I used" are the same question. */}
+                <div className={`border rounded-2xl p-6 sm:p-8 ${cardBg}`}>
+                  <UsageMeters dark={dark} />
                 </div>
 
                 {/* Plan comparison */}

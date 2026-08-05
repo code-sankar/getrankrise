@@ -35,6 +35,9 @@ const authSlice = createSlice({
         name:  user.name,
         email: user.email,
         role:  user.role,
+        // NULL until the address is confirmed. VerifyEmailBanner reads this;
+        // requireVerifiedEmail on the server is what actually enforces it.
+        emailVerifiedAt: user.emailVerifiedAt ?? null,
       };
       state.userEmail       = user.email;
       state.clinicName      = user.clinicName || null;
@@ -60,6 +63,7 @@ const authSlice = createSlice({
         name:  user.name,
         email: user.email,
         role:  user.role,
+        emailVerifiedAt: user.emailVerifiedAt ?? null,
       };
       state.userEmail       = user.email;
       state.clinicName      = clinic?.clinicName || null;

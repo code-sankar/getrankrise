@@ -31,6 +31,7 @@ import { handleWebhook } from "./controllers/billing.controller.js";
 // ── Routes ────────────────────────────────────────────────────────────────────
 import authRoutes         from "./routes/auth.routes.js";
 import clinicRoutes       from "./routes/clinic.routes.js";
+import memberRoutes       from "./routes/member.routes.js";   // team invites
 import settingsRoutes     from "./routes/settings.routes.js";
 import reviewRoutes       from "./routes/review.routes.js";
 import requestRoutes      from "./routes/request.routes.js";
@@ -195,6 +196,10 @@ app.get("/api/v1/health", health);
 
 // ── API Routes — mounted under /api/v1 ───────────────────────────────────────
 app.use("/api/v1/auth",          authRoutes);
+// Mounted BEFORE /clinic so "members" resolves here rather than falling
+// through to the clinic router. Express matches mounts in registration order,
+// and a future /clinic/:something route would otherwise shadow it.
+app.use("/api/v1/clinic/members", memberRoutes);
 app.use("/api/v1/clinic",        clinicRoutes);
 app.use("/api/v1/settings",      settingsRoutes);
 app.use("/api/v1/reviews",       reviewRoutes);

@@ -35,6 +35,65 @@ export const changePasswordSchema = Joi.object({
   newPassword:     password.required(),
 });
 
+// ── ACCOUNT RECOVERY / VERIFICATION ───────────────────────────────────────────
+// The emailed secret is 32 random bytes as base64url — 43 characters. The
+// bounds below are a cheap sanity gate so a pathological string never reaches
+// the SHA-256 or the database; they are NOT the security control, which is the
+// single-use consumption in authToken.service.js.
+const emailedToken = Joi.string().trim().min(20).max(512).required();
+
+export const forgotPasswordSchema = Joi.object({
+  email: email.required(),
+});
+
+export const resetPasswordSchema = Joi.object({
+  token:       emailedToken,
+  // Same rules as registration. A reset is not the moment to accept a weaker
+  // password than signup would have.
+  newPassword: password.required()
+    .messages({ "string.min": "Password must be at least 8 characters" }),
+});
+
+export const verifyEmailSchema = Joi.object({
+  token: emailedToken,
+});
+
+// ── TEAM INVITATIONS ──────────────────────────────────────────────────────────
+export const inviteMemberSchema = Joi.object({
+  email: email.required(),
+  // Defaults to staff — granting ownership has to be typed, not defaulted into.
+  role:  Joi.string().valid("owner", "staff").default("staff"),
+});
+
+export const updateMemberRoleSchema = Joi.object({
+  role: Joi.string().valid("owner", "staff").required(),
+});
+
+// Accepting an invitation doubles as signup when the invited address has no
+// account. name/password are therefore OPTIONAL here and required by the
+// controller only on the create path — an existing user accepting an invite
+// must not be asked to invent a new password for the account they already have.
+export const acceptInviteSchema = Joi.object({
+  token:    emailedToken,
+  name:     Joi.string().min(2).max(100),
+  password: password
+    .messages({ "string.min": "Password must be at least 8 characters" }),
+});
+
+export const memberIdParamSchema = Joi.object({
+  userId: uuid.required(),
+});
+
+export const invitationIdParamSchema = Joi.object({
+  id: uuid.required(),
+});
+
+// The invitation token arrives as a PATH segment on the public preview route,
+// so it is validated as a param rather than a body field.
+export const invitationTokenParamSchema = Joi.object({
+  token: emailedToken,
+});
+
 // ── CLINIC ────────────────────────────────────────────────────────────────────
 export const updateClinicSchema = Joi.object({
   clinicName:        Joi.string().min(2).max(150),

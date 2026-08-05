@@ -41,6 +41,7 @@ import {
   idParamSchema,
 } from "../middleware/validate.middleware.js";
 import { asyncHandler } from "../middleware/asyncHandler.js";
+import { requireVerifiedEmail } from "../middleware/requireVerifiedEmail.middleware.js";
 import Joi from "joi";
 import {
   sendRequest,
@@ -80,9 +81,15 @@ router.use(protect, loadClinic);
 router.get("/", asyncHandler(listRequests));
 
 // POST /api/v1/requests — send one review request (SMS / Email / Both).
+// requireVerifiedEmail sits on the SEND, never on the read below. An account
+// that hasn't confirmed its address can still see everything it has sent —
+// locking someone out of their own history over a pending click would be
+// punishment, not protection. It also passes through entirely when SendGrid
+// is unconfigured; see the middleware for why that is not a hole.
 router.post(
   "/",
   sendLimiter,
+  requireVerifiedEmail,
   validate(sendRequestSchema),
   asyncHandler(sendRequest),
 );

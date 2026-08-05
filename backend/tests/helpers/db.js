@@ -39,10 +39,10 @@ export async function resetData() {
   await sequelize.query(`
     TRUNCATE TABLE
       campaign_recipients, campaigns, opt_outs,
-      refresh_tokens, webhook_events, usage_counters,
+      refresh_tokens, auth_tokens, webhook_events, usage_counters,
       competitor_snapshots, competitors,
       notifications, requests, reviews,
-      clinic_members,
+      clinic_invitations, clinic_members,
       platform_connections, subscriptions, clinics, users
     RESTART IDENTITY CASCADE
   `);
