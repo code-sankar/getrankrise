@@ -1,5 +1,10 @@
+import { useSelector } from "react-redux";
 import InputField, { TextAreaField } from "../UI/InputField.jsx";
 import StatBar from "../UI/StatBar.jsx";
+import {
+  selectReviewStats,
+  selectReviewsViewState,
+} from "../../../store/reviewsSlice.js";
 
 export default function TabOverview({
   profile,
@@ -7,6 +12,21 @@ export default function TabOverview({
   onProfileChange,
   dark,
 }) {
+  // ── These two bars used to be literals ─────────────────────────────────────
+  // "Monthly Target 85%" and "Patient Satisfaction 4.9/5.0" were hardcoded
+  // strings rendered as if they were measurements of this clinic. Every clinic
+  // saw the same two numbers regardless of their actual reviews, and nothing on
+  // the page said they were placeholders.
+  //
+  // Monthly Target had no definition anywhere in the product — there is no
+  // target to measure against — so it is gone rather than invented. Patient
+  // satisfaction is a real thing we can compute: it is the average rating
+  // across the loaded reviews, which is what the Dashboard already shows.
+  const stats = useSelector(selectReviewStats);
+  const viewState = useSelector(selectReviewsViewState);
+
+  const hasReviews = !stats.empty;
+  const avgRating = hasReviews ? Number(stats.avg) : null;
   return (
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
       <div
@@ -69,22 +89,35 @@ export default function TabOverview({
           >
             Performance
           </h3>
-          <div className="space-y-6">
-            <StatBar
-              label="Monthly Target"
-              value="85%"
-              percentage={85}
-              dark={dark}
-              colorClass="bg-indigo-500"
-            />
-            <StatBar
-              label="Patient Satisfaction"
-              value="4.9/5.0"
-              percentage={98}
-              dark={dark}
-              colorClass="bg-emerald-500"
-            />
-          </div>
+          {hasReviews ? (
+            <div className="space-y-6">
+              <StatBar
+                label="Patient Satisfaction"
+                value={`${avgRating.toFixed(1)}/5.0`}
+                percentage={Math.round((avgRating / 5) * 100)}
+                dark={dark}
+                colorClass="bg-emerald-500"
+              />
+              <StatBar
+                label="Reviews Answered"
+                value={`${stats.coverage}%`}
+                percentage={stats.coverage}
+                dark={dark}
+                colorClass="bg-indigo-500"
+              />
+              <p
+                className={`text-xs ${dark ? "text-slate-500" : "text-slate-400"}`}
+              >
+                Across {stats.total} loaded review{stats.total === 1 ? "" : "s"}.
+              </p>
+            </div>
+          ) : (
+            <p className={`text-sm ${dark ? "text-slate-400" : "text-slate-500"}`}>
+              {viewState === "loading"
+                ? "Loading your review data…"
+                : "No reviews yet — connect a platform and sync to see your numbers here."}
+            </p>
+          )}
         </div>
       </div>
     </div>

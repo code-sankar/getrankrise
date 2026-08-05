@@ -14,13 +14,22 @@ function NotificationBell() {
   const unreadCount = useSelector(selectUnreadCount);
   const [showNotifs, setShowNotifs] = useState(false);
   const notifications = useSelector((state) => state.notifications.items);
+  const isAuthenticated = useSelector((state) => state.auth.isAuthenticated);
   const notifRef = useRef(null);
 
   // Fetch once on mount. Previously nothing ever populated this slice, so the
   // bell rendered "All caught up!" no matter what the server held.
+  //
+  // Gated on isAuthenticated because TopBar also renders on the public
+  // information pages (/help, /faq, /contact). A logged-out visitor reading the
+  // help centre was firing an authenticated GET /notifications that 401s, which
+  // put a red console error on a marketing page and — via the axios
+  // interceptor's non-expiry 401 branch — could bounce them to /login for
+  // simply reading the docs.
   useEffect(() => {
+    if (!isAuthenticated) return;
     getUserNotifications(dispatch);
-  }, [dispatch]);
+  }, [dispatch, isAuthenticated]);
 
   const theme = {
     text: dark ? "text-slate-100" : "text-slate-900",

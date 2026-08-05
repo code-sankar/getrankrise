@@ -1,7 +1,7 @@
 // backend/src/routes/billing.routes.js
 import { Router } from "express";
 import { protect } from "../middleware/auth.middleware.js";
-import { loadClinic } from "../middleware/loadClinic.middleware.js";
+import { loadClinic, restrictTo } from "../middleware/loadClinic.middleware.js";
 import { validate } from "../middleware/validate.middleware.js";
 import { asyncHandler } from "../middleware/asyncHandler.js";
 import Joi from "joi";
@@ -36,10 +36,17 @@ const checkoutSchema = Joi.object({
 // One webhook route. In app.js. Before the body parser. Do not add another.
 
 // ── Authenticated routes ──────────────────────────────────────────────────
+//
+// OWNER ONLY. Everything in this file either starts a payment or opens the
+// portal where a subscription can be changed or cancelled, and that is exactly
+// the boundary the owner/staff split exists to draw: a receptionist handling
+// review replies all day should not be able to upgrade the plan or cancel the
+// account. Every other feature stays open to staff.
 router.use(protect, loadClinic);
 
 router.post(
   "/create-checkout",
+  restrictTo("owner"),
   validate(checkoutSchema),
   asyncHandler(createCheckout)
 );
@@ -48,6 +55,7 @@ router.post(
 // No body — the customer + subscription are resolved from the clinic's row.
 router.post(
   "/portal-session",
+  restrictTo("owner"),
   asyncHandler(createBillingPortal)
 );
 

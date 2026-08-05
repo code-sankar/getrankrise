@@ -315,11 +315,17 @@ export async function syncByConnectionId(connectionId) {
     // [], so the old `trimmed[1] ?? 0` reported 0 rows trimmed no matter how
     // many were actually deleted — the scheduler logged "0 trimmed" while
     // silently dropping 14 rows.
+    // `replied DESC` first is deliberate. The trim used to keep purely the
+    // newest N, which meant a Free clinic's own carefully-written replies were
+    // hard-deleted the moment they aged past row 20 — work the user did inside
+    // this product, destroyed by a retention rule they never saw. Answered
+    // reviews are the ones with something of theirs in them, so they survive
+    // first; recency breaks the tie as before.
     const trimmedRows = await sequelize.query(
       `DELETE FROM reviews
         WHERE clinic_id = $1::uuid AND id NOT IN (
           SELECT id FROM reviews WHERE clinic_id = $1::uuid
-           ORDER BY COALESCE(review_date, created_at) DESC
+           ORDER BY replied DESC, COALESCE(review_date, created_at) DESC
            LIMIT $2::int)
         RETURNING id`,
       { bind: [connection.clinicId, cap], type: QueryTypes.SELECT },

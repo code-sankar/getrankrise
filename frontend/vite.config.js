@@ -39,5 +39,48 @@ export default defineConfig(({ command, mode }) => {
 
   return {
     plugins: [react(), tailwindcss()],
+
+    build: {
+      // ── Why chunking is configured by hand ────────────────────────────────
+      // Everything shipped as ONE 1.08MB chunk (304KB gzipped), which the build
+      // warned about on every run. That single file is downloaded and parsed
+      // before anything renders — including recharts, which is only ever needed
+      // on /analytics, and the entire authenticated app, which a visitor
+      // landing on the marketing page never opens.
+      //
+      // Route-level React.lazy in App.jsx does most of the work. These manual
+      // groups handle the vendor half, where the split is by change-rate: React
+      // and the router almost never change, so pinning them in their own chunk
+      // keeps them cached across deploys instead of being re-downloaded every
+      // time application code moves.
+      //
+      // manualChunks is a FUNCTION, not the object map Rollup accepts: Vite 8
+      // bundles with rolldown, which only supports the function form and fails
+      // the build with "manualChunks is not a function" otherwise.
+      rollupOptions: {
+        output: {
+          manualChunks(id) {
+            if (!id.includes('node_modules')) return;
+
+            // The big one, and the most skippable: charts are used on a single
+            // route, so this should not be in the initial download at all.
+            if (id.includes('recharts') || id.includes('d3-')) return 'vendor-charts';
+
+            // Changes only on a framework upgrade.
+            if (/[\\/]node_modules[\\/](react|react-dom|react-router|react-router-dom|scheduler)[\\/]/.test(id)) {
+              return 'vendor-react';
+            }
+
+            // State layer — changes rarely.
+            if (id.includes('@reduxjs') || id.includes('react-redux') || id.includes('immer')) {
+              return 'vendor-redux';
+            }
+          },
+        },
+      },
+      // The remaining chunks are genuinely small; keep the warning meaningful
+      // rather than silencing it with a large threshold.
+      chunkSizeWarningLimit: 600,
+    },
   }
 })

@@ -1,5 +1,6 @@
 // frontend/src/components/billing/UpgradeButton.jsx
 import { useState } from "react";
+import { useSelector } from "react-redux";
 import { Zap } from "lucide-react";
 import { toast } from "react-toastify";
 import axiosInstance from "../../utils/axios.helper.js";
@@ -11,6 +12,15 @@ export default function UpgradeButton({
   children,
 }) {
   const [loading, setLoading] = useState(false);
+  // Billing is owner-only (restrictTo("owner") on the route). Staff clicking
+  // this would get a 403 they can do nothing about, so don't offer it — but
+  // note this is PRESENTATION: the server enforces the same rule regardless of
+  // what the client renders. `clinicRole` is null on the public pricing page,
+  // where there is no session yet and the button must still work.
+  const clinicRole = useSelector((s) => s.auth.clinicRole);
+  const isAuthenticated = useSelector((s) => s.auth.isAuthenticated);
+
+  if (isAuthenticated && clinicRole && clinicRole !== "owner") return null;
 
   const handleClick = async () => {
     setLoading(true);

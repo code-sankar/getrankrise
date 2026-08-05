@@ -8,6 +8,14 @@ const email    = Joi.string().email().lowercase().max(150);
 const password = Joi.string().min(8).max(128);
 const phone    = Joi.string().pattern(/^\+?[0-9\s()-]{7,20}$/).message("Phone must be a valid international number");
 
+// Bare Joi.string().uri() accepts ANY scheme, so `javascript:alert(1)` and
+// `data:text/html,...` validated and were stored. googleReviewLink in
+// particular is interpolated into every SMS and email we send to a patient, so
+// a non-web scheme there is at best a broken link in a real message.
+// Restricting to http/https is what "this is a URL someone can visit" means.
+const webUrl = Joi.string().uri({ scheme: ["http", "https"] }).max(2048)
+  .messages({ "string.uriCustomScheme": "Must be a http:// or https:// link" });
+
 // ── AUTH ──────────────────────────────────────────────────────────────────────
 export const registerSchema = Joi.object({
   name:       Joi.string().min(2).max(100).required(),
@@ -35,8 +43,8 @@ export const updateClinicSchema = Joi.object({
   alertEmail:        Joi.alternatives().try(email, Joi.string().allow("")),
   location:          Joi.string().max(200).allow(""),
   countryCode:       Joi.string().length(2).uppercase().allow("", null),
-  googleBusinessUrl: Joi.string().uri().allow(""),
-  googleReviewLink:  Joi.string().uri().allow(""),
+  googleBusinessUrl: webUrl.allow(""),
+  googleReviewLink:  webUrl.allow(""),
 }).min(1); // require at least one field
 
 // ── SETTINGS (notification preferences) ───────────────────────────────────────
@@ -166,13 +174,13 @@ export const addCompetitorSchema = Joi.object({
   name:       Joi.string().trim().min(2).max(150).required(),
   platform:   Joi.string().valid("Google", "Yelp", "Facebook").default("Google"),
   externalId: Joi.string().trim().max(255).allow("", null),
-  profileUrl: Joi.string().uri().max(2048).allow("", null),
+  profileUrl: webUrl.allow("", null),
   location:   Joi.string().trim().max(200).allow("", null),
 });
 
 export const updateCompetitorSchema = Joi.object({
   name:       Joi.string().trim().min(2).max(150),
   location:   Joi.string().trim().max(200).allow("", null),
-  profileUrl: Joi.string().uri().max(2048).allow("", null),
+  profileUrl: webUrl.allow("", null),
   isActive:   Joi.boolean(),
 }).min(1); // at least one field

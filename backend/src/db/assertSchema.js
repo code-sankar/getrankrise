@@ -116,6 +116,16 @@ export const REQUIRED_COLUMNS = Object.freeze({
   // controllers/request.controller.js → the idempotency claim. Without this
   // column the claiming INSERT throws on every send.
   requests: ["clinic_id", "idempotency_key"],
+
+  // middleware/loadClinic.middleware.js → the membership lookup EVERY
+  // authenticated route runs. If this table or its columns are missing, the
+  // query throws and every single authenticated request 500s — so it is worth
+  // failing the boot over rather than discovering per-request.
+  clinic_members: ["clinic_id", "user_id", "role"],
+
+  // services/auth/refreshToken.service.js → the whole session lifecycle.
+  // Missing columns here mean nobody can log in or refresh.
+  refresh_tokens: ["user_id", "token_hash", "expires_at", "revoked_at", "revoked_reason"],
 });
 
 /**
