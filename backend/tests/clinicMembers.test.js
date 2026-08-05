@@ -154,7 +154,7 @@ test("restrictTo FAILS CLOSED when loadClinic did not run", async () => {
 test("the unique constraint makes membership idempotent", async () => {
   const { clinicId, userId } = await createClinic();
 
-  // The upsert scripts/add-clinic-member.js uses — re-running promotes rather
+  // The upsert the invite-acceptance path uses — re-running promotes rather
   // than throwing.
   await sequelize.query(
     `INSERT INTO clinic_members (clinic_id, user_id, role)
@@ -194,7 +194,7 @@ test("a user cannot belong to two clinics", async () => {
 });
 
 test("moving a member between clinics is an update, not a duplicate", async () => {
-  // What scripts/add-clinic-member.js --move relies on.
+  // What moving someone between clinics relies on.
   const a = await createClinic();
   const b = await createClinic();
 

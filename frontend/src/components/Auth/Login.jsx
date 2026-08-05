@@ -163,6 +163,18 @@ function Login() {
             )}
           </div>
 
+          {/* The entry point to account recovery. Under the password field
+              because that is where someone looks the moment they realise they
+              cannot remember it. */}
+          <div className="flex justify-end -mt-2">
+            <Link
+              to="/forgot-password"
+              className="text-xs font-semibold text-slate-400 hover:text-blue-400 transition-colors"
+            >
+              Forgot your password?
+            </Link>
+          </div>
+
           <Button
             type="submit"
             disabled={loading}

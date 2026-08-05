@@ -157,3 +157,183 @@ export async function sendReviewRequestEmail({ to, patientName, clinicName, revi
   await throwForSendgridError(res, "send");
   return { provider: "sendgrid", simulated: false };
 }
+
+// ═══════════════════════════════════════════════════════════════════════════
+// ACCOUNT MAIL — password reset, email verification, team invitations
+// ═══════════════════════════════════════════════════════════════════════════
+//
+// Different in kind from the review-request mail above, and the differences
+// matter:
+//
+//   * NOT METERED. emailPerMonth caps outbound review requests, which are the
+//     product's paid output. Charging a clinic's quota to let them reset their
+//     own password would mean the account they cannot get into is also the
+//     thing rate-limiting their way back in. These bypass usage_counters
+//     entirely; abuse is bounded by the per-route rate limiters instead.
+//
+//   * NOT OPTIONAL. A review request that fails to send is a lost opportunity.
+//     A reset link that fails to send is a locked-out customer, so these
+//     THROW rather than degrade, and every caller decides what the user sees.
+//
+//   * NO OPT-OUT FOOTER. Transactional account mail the recipient explicitly
+//     asked for (or was invited to) is outside CAN-SPAM's commercial-message
+//     definition; an unsubscribe link on a password reset would be actively
+//     wrong — nobody should be able to opt out of account recovery.
+
+/** Shared chrome so account mail is visually one family. */
+function accountEmail({ heading, intro, buttonLabel, url, footnote, expiryNote }) {
+  const safeUrl = escapeHtml(url);
+
+  const text =
+    `${heading}\n\n${intro}\n\n${url}\n\n` +
+    (expiryNote ? `${expiryNote}\n\n` : "") +
+    (footnote || "");
+
+  const html = `
+  <div style="font-family:-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;
+              max-width:520px;margin:0 auto;color:#0f172a;line-height:1.6">
+    <p style="font-size:20px;font-weight:700;margin:0 0 16px">${escapeHtml(heading)}</p>
+    <p style="font-size:16px;margin:0 0 24px">${escapeHtml(intro)}</p>
+    <p style="margin:0 0 24px">
+      <a href="${safeUrl}" style="display:inline-block;padding:12px 22px;
+         background:#4f46e5;color:#ffffff;text-decoration:none;border-radius:8px;
+         font-weight:600;font-size:15px">${escapeHtml(buttonLabel)}</a>
+    </p>
+    <p style="font-size:13px;color:#64748b;margin:0 0 8px">
+      Or paste this link into your browser:<br>
+      <a href="${safeUrl}" style="color:#4f46e5;word-break:break-all">${safeUrl}</a>
+    </p>
+    ${expiryNote ? `<p style="font-size:13px;color:#64748b">${escapeHtml(expiryNote)}</p>` : ""}
+    <hr style="border:none;border-top:1px solid #e2e8f0;margin:28px 0" />
+    <p style="font-size:12px;color:#94a3b8">${escapeHtml(footnote || "")}</p>
+  </div>`;
+
+  return { text, html };
+}
+
+/**
+ * Low-level sender for account mail.
+ *
+ * Deliberately NOT reusing sendReviewRequestEmail: that function's `from.name`
+ * falls back to the clinic name, which would put a clinic's branding on a
+ * GetRankRise password reset. Account mail is always from the platform.
+ */
+async function sendAccountEmail({ to, subject, text, html }) {
+  if (!to) {
+    const err = new Error("Recipient email is required");
+    err.code = "EMAIL_SEND";
+    throw err;
+  }
+
+  if (simulate()) {
+    // The URL is logged on purpose. Without it there is no way to complete a
+    // reset, verification or invite flow on a dev box with no SendGrid key,
+    // which would make all three untestable locally. simulate() is false in
+    // production (and env.js refuses to boot with EMAIL_SIMULATE=true there),
+    // so this cannot leak a live token.
+    const url = String(text).match(/https?:\/\/\S+/)?.[0] ?? "(no link)";
+    console.log(`[email] SIMULATED → ${to} · "${subject}"\n         link: ${url}`);
+    return { provider: "sendgrid", simulated: true };
+  }
+
+  if (!process.env.SENDGRID_API_KEY || !process.env.SENDGRID_FROM_EMAIL) {
+    const err = new Error("SendGrid is not configured");
+    err.code = "EMAIL_NOT_CONFIGURED";
+    throw err;
+  }
+
+  const res = await fetch(SENDGRID_URL, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${process.env.SENDGRID_API_KEY}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      personalizations: [{ to: [{ email: to }] }],
+      from: {
+        email: process.env.SENDGRID_FROM_EMAIL,
+        // Always the platform — never the clinic. See sendAccountEmail's note.
+        name: process.env.SENDGRID_FROM_NAME || "GetRankRise",
+      },
+      subject,
+      content: [
+        { type: "text/plain", value: text },
+        { type: "text/html", value: html },
+      ],
+    }),
+    signal: AbortSignal.timeout(15_000),
+  });
+
+  await throwForSendgridError(res, "send");
+  return { provider: "sendgrid", simulated: false };
+}
+
+/**
+ * "Reset your password" — the link is a bearer credential for full account
+ * takeover, so the copy says plainly what to do if it was not requested.
+ */
+export async function sendPasswordResetEmail({ to, name, resetUrl, expiryMinutes }) {
+  const { text, html } = accountEmail({
+    heading: "Reset your password",
+    intro: `Hi ${name || "there"}, we received a request to reset the password for your GetRankRise account. Click below to choose a new one.`,
+    buttonLabel: "Choose a new password",
+    url: resetUrl,
+    expiryNote: `This link expires in ${expiryMinutes} minutes and can only be used once.`,
+    footnote:
+      "If you didn't request this, you can ignore this email — your password will not change. " +
+      "Requesting a new link immediately invalidates this one.",
+  });
+
+  return sendAccountEmail({ to, subject: "Reset your GetRankRise password", text, html });
+}
+
+/** "Confirm your email" — sent at signup and on demand from Settings. */
+export async function sendEmailVerificationEmail({ to, name, verifyUrl, expiryHours }) {
+  const { text, html } = accountEmail({
+    heading: "Confirm your email address",
+    intro: `Welcome to GetRankRise, ${name || "there"}. Confirm this address so we can send you urgent review alerts and billing notices — and so you can start sending review requests.`,
+    buttonLabel: "Confirm my email",
+    url: verifyUrl,
+    expiryNote: `This link expires in ${expiryHours} hours.`,
+    footnote: "If you didn't create a GetRankRise account, you can safely ignore this email.",
+  });
+
+  return sendAccountEmail({ to, subject: "Confirm your GetRankRise email", text, html });
+}
+
+/**
+ * "You've been invited" — the one piece of account mail whose recipient may
+ * have no account at all, so the copy has to work for both cases.
+ */
+export async function sendClinicInviteEmail({
+  to,
+  clinicName,
+  inviterName,
+  role,
+  acceptUrl,
+  expiryDays,
+}) {
+  const clinic = clinicName || "a clinic";
+  const who = inviterName ? `${inviterName} has` : "You have been";
+  const roleLine =
+    role === "owner"
+      ? "You'll have full access, including billing."
+      : "You'll be able to manage reviews, replies, review requests and campaigns — everything except billing.";
+
+  const { text, html } = accountEmail({
+    heading: `Join ${clinic} on GetRankRise`,
+    intro: `${who} invited you to join ${clinic} on GetRankRise as ${role === "owner" ? "an owner" : "a team member"}. ${roleLine}`,
+    buttonLabel: "Accept invitation",
+    url: acceptUrl,
+    expiryNote: `This invitation expires in ${expiryDays} days.`,
+    footnote:
+      "If you weren't expecting this, you can ignore it — nothing happens until you accept.",
+  });
+
+  return sendAccountEmail({
+    to,
+    subject: `${inviterName || "Someone"} invited you to ${clinic} on GetRankRise`,
+    text,
+    html,
+  });
+}

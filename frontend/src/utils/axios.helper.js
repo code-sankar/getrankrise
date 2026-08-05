@@ -64,6 +64,41 @@ const axiosInstance = axios.create({
 /** Timeout for endpoints that do real work. Use as: { timeout: LONG_TIMEOUT } */
 export const LONG_TIMEOUT = 60000;
 
+// ── Which routes need a session ─────────────────────────────────────────────
+// Used to decide whether a hard auth failure should redirect. Kept as an
+// ALLOW-LIST of public paths rather than a list of protected ones, because the
+// failure modes are asymmetric: forgetting to list a new PUBLIC page means a
+// stale token bounces a visitor off it (annoying, visible, easy to spot),
+// while forgetting to list a new PROTECTED page would leave someone stranded
+// on a screen that cannot load its data with no way to sign in (silent, and
+// looks like the app is broken).
+//
+// Mirrors the public routes in App.jsx. The emailed-link routes are here for a
+// specific reason: /reset-password and /accept-invite are reached BY someone
+// who has no valid session, so redirecting them to /login would discard the
+// token in the URL and make the flow impossible to complete.
+const PUBLIC_PATHS = [
+  "/",
+  "/login",
+  "/signup",
+  "/forgot-password",
+  "/reset-password",
+  "/verify-email",
+  "/accept-invite",
+  "/terms",
+  "/privacy",
+  "/help",
+  "/contact",
+  "/faq",
+];
+
+export const isProtectedPath = (pathname = "/") => {
+  // Trailing slashes are equivalent to the router; "/login/" must not read as
+  // a protected path.
+  const path = pathname.replace(/\/+$/, "") || "/";
+  return !PUBLIC_PATHS.includes(path);
+};
+
 // ── Single-flight refresh ─────────────────────────────────────────────────────
 // The backend ROTATES the refresh token on every /auth/refresh-token call and
 // rejects any token that doesn't match the stored one. So N concurrent 401s
@@ -152,9 +187,24 @@ axiosInstance.interceptors.response.use(
     }
 
     // ── Other 401 — not a token expiry, just unauthorised ─────────────────
+    //
+    // The credential is dead either way, so it always gets cleared. What is
+    // conditional is the REDIRECT.
+    //
+    // This used to bounce to /login unconditionally, which meant a visitor
+    // reading the pricing page or the privacy policy with a stale token in
+    // localStorage — a signed-out session, a rotated secret, a token from a
+    // previous deploy — was thrown to a login screen they never asked for,
+    // mid-scroll, by a background request they never made.
+    //
+    // On a protected route the redirect is right: the page cannot render
+    // without a session. On a public one there is nothing to protect and
+    // nothing to interrupt.
     if (status === 401) {
       localStorage.removeItem("token");
-      window.location.href = "/login";
+      if (isProtectedPath(window.location.pathname)) {
+        window.location.href = "/login";
+      }
       return Promise.reject(error);
     }
 

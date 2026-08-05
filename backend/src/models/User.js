@@ -54,6 +54,20 @@ const User = sequelize.define(
       type:         DataTypes.BOOLEAN,
       defaultValue: true,
     },
+    // When this address was confirmed by clicking an emailed link (0016).
+    // NULL = unverified.
+    //
+    // A timestamp rather than a boolean because the two cost the same and only
+    // one of them can answer "when did they confirm?" in a support thread.
+    //
+    // Declared here AND added by migration 0016 on purpose: users is a CORE
+    // table, so sequelize.sync() owns its CREATE and runs before migrations —
+    // but sync() does not ALTER, so on an existing database the migration is
+    // what actually adds the column. Both are required; neither is redundant.
+    emailVerifiedAt: {
+      type:      DataTypes.DATE,
+      allowNull: true,
+    },
   },
   {
     tableName: "users",

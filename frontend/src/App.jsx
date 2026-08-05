@@ -36,6 +36,14 @@ const HelpCenter         = lazy(() => import("./pages/HelpCenter.jsx"));
 const ContactUs          = lazy(() => import("./pages/ContactUs.jsx"));
 const FAQ                = lazy(() => import("./pages/QandA.jsx"));
 
+// Account recovery, verification and invitation acceptance. Lazy like the rest
+// of the non-critical routes: each is visited once, from an emailed link, and
+// none of them should cost the login page a byte.
+const ForgotPassword     = lazy(() => import("./pages/ForgotPassword.jsx"));
+const ResetPassword      = lazy(() => import("./pages/ResetPassword.jsx"));
+const VerifyEmail        = lazy(() => import("./pages/VerifyEmail.jsx"));
+const AcceptInvite       = lazy(() => import("./pages/AcceptInvite.jsx"));
+
 // Shown while a lazy route's chunk is in flight. Deliberately the same shell
 // AppBootstrap uses for its session probe, so a cold navigation looks like one
 // continuous load rather than two different spinners.
@@ -111,6 +119,21 @@ export default function App() {
             <Route path="/analytics"     element={<PrivateRoute><Analytics /></PrivateRoute>}     />
             <Route path="/competitors"   element={<PrivateRoute><Competitors /></PrivateRoute>}   />
             <Route path="/admin"         element={<PrivateRoute><AdminProfile /></PrivateRoute>}  />
+
+            {/* ── Account recovery / verification / invitations ──────────
+                All four are reached from an emailed link by someone who may
+                not be signed in — and, for /accept-invite, may not have an
+                account at all. The emailed token is the credential, so none of
+                them sits behind PrivateRoute.
+
+                They are NOT wrapped in PublicOnlyRoute either: a signed-in
+                user clicking a verification link from their phone's inbox must
+                land on the verification page, not be bounced to /dashboard
+                with the token discarded. */}
+            <Route path="/forgot-password" element={<ForgotPassword />} />
+            <Route path="/reset-password"  element={<ResetPassword />}  />
+            <Route path="/verify-email"    element={<VerifyEmail />}    />
+            <Route path="/accept-invite"   element={<AcceptInvite />}   />
 
             {/* Public info pages — no auth needed */}
             <Route path="/terms"   element={<TermsAndConditions />} />

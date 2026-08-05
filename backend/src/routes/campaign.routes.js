@@ -6,6 +6,7 @@ import { loadClinic } from "../middleware/loadClinic.middleware.js";
 import { requireFeature } from "../middleware/tierCap.middleware.js";
 import { validate } from "../middleware/validate.middleware.js";
 import { asyncHandler } from "../middleware/asyncHandler.js";
+import { requireVerifiedEmail } from "../middleware/requireVerifiedEmail.middleware.js";
 import {
   create,
   list,
@@ -37,13 +38,16 @@ const optOutSchema = Joi.object({ phone: Joi.string().min(7).max(20).required() 
 router.use(protect, loadClinic, requireFeature("pulseCampaignsEnabled"));
 
 router.get("/", asyncHandler(list));
-router.post("/", validate(createSchema), asyncHandler(create));
+// Creating a campaign is the bulk send path — the same reason requests are
+// gated, multiplied by the recipient list. Reading, pausing and cancelling
+// stay open: someone must always be able to STOP a campaign.
+router.post("/", requireVerifiedEmail, validate(createSchema), asyncHandler(create));
 router.post("/opt-outs", validate(optOutSchema), asyncHandler(addOptOut));
 
 router.get("/:id", validate(idSchema, "params"), asyncHandler(getOne));
-router.post("/:id/start", validate(idSchema, "params"), asyncHandler(start));
+router.post("/:id/start", requireVerifiedEmail, validate(idSchema, "params"), asyncHandler(start));
 router.post("/:id/pause", validate(idSchema, "params"), asyncHandler(pause));
-router.post("/:id/resume", validate(idSchema, "params"), asyncHandler(resume));
+router.post("/:id/resume", requireVerifiedEmail, validate(idSchema, "params"), asyncHandler(resume));
 router.post("/:id/cancel", validate(idSchema, "params"), asyncHandler(cancel));
 
 export default router;

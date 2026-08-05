@@ -16,6 +16,7 @@
 import app from "./src/app.js";
 import { initializeDatabase, closeDatabase } from "./src/db/bootstrap.js";
 import { env } from "./src/config/env.js";
+import { initObservability, reportError } from "./src/utils/observability.js";
 import {
   startCampaignRunner,
   stopCampaignRunner,
@@ -24,6 +25,10 @@ import {
   startSyncScheduler,
   stopSyncScheduler,
 } from "./src/services/reviews/syncScheduler.service.js";
+
+// Before anything can fail. initObservability only reads config and logs what
+// it decided — it never throws, so it is safe this early.
+initObservability({ nodeEnv: env.NODE_ENV });
 
 const PORT = env.PORT;
 
@@ -59,6 +64,9 @@ initializeDatabase()
   .catch((err) => {
     console.error("❌ Failed to initialise database:", err.message);
     if (err.original?.detail) console.error("   detail:", err.original.detail);
+    // A boot failure is the single most important error to have a record of:
+    // the process is about to exit, so nothing else will ever report it.
+    reportError(err, { source: "boot", level: "fatal" });
     process.exit(1);
   });
 
@@ -97,12 +105,26 @@ const shutdown = async (signal) => {
 process.on("SIGTERM", () => shutdown("SIGTERM"));
 process.on("SIGINT", () => shutdown("SIGINT"));
 
+// ── Last-resort handlers ─────────────────────────────────────────────────────
+// Both still exit — a process in an unknown state should be replaced, not
+// nursed — but they now leave a record first. Previously the only trace of a
+// crash-loop was a one-line console.error in a log nobody was reading, which
+// makes "it keeps restarting" almost impossible to diagnose after the fact.
+//
+// The exit is DEFERRED by a beat so the fire-and-forget report has a chance to
+// leave the box. 250ms is not a guarantee — nothing can guarantee delivery from
+// a dying process — but it converts "never sends" into "usually sends", and the
+// structured log line is written synchronously either way.
+const exitAfterReporting = () => setTimeout(() => process.exit(1), 250).unref?.();
+
 process.on("unhandledRejection", (reason) => {
   console.error("Unhandled Rejection:", reason);
-  process.exit(1);
+  reportError(reason, { source: "unhandledRejection", level: "fatal" });
+  exitAfterReporting();
 });
 
 process.on("uncaughtException", (err) => {
   console.error("Uncaught Exception:", err.message);
-  process.exit(1);
+  reportError(err, { source: "uncaughtException", level: "fatal" });
+  exitAfterReporting();
 });

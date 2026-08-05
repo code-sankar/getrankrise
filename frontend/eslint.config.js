@@ -18,4 +18,23 @@ export default defineConfig([
       parserOptions: { ecmaFeatures: { jsx: true } },
     },
   },
+  {
+    // Tests run under Vitest in a jsdom environment: browser globals apply, and
+    // `globals: true` in vite.config.js injects describe/test/expect/vi. Node
+    // globals are here too because setup and helpers legitimately reach for
+    // process and friends.
+    files: ['**/*.test.{js,jsx}', 'src/test/**/*.{js,jsx}'],
+    languageOptions: {
+      globals: {
+        ...globals.browser,
+        ...globals.node,
+        ...globals.vitest,
+        localStorage: 'writable',
+      },
+    },
+    rules: {
+      // A test may legitimately render a component defined inside the file.
+      'react-refresh/only-export-components': 'off',
+    },
+  },
 ])

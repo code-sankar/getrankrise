@@ -110,6 +110,19 @@ jobs:
 
       - run: npx eslint .
 
+      - name: Run tests
+        # Vitest in jsdom. Covers the store reducers, the axios interceptor
+        # (which decides when a session is refreshed and when a user is thrown
+        # to /login) and the components that fetch. None of the latter two were
+        # testable under the previous `node --test` runner, because anything
+        # importing utils/axios.helper.js reads import.meta.env at module scope.
+        #
+        # VITE_API_URL is needed here for the same reason it is needed by the
+        # build below: axios.helper.js throws at import without it.
+        env:
+          VITE_API_URL: https://api.example.com/api/v1
+        run: npm test
+
       - name: Build
         # VITE_API_URL is required at BUILD time — vite.config.js fails the
         # build without it rather than shipping a bundle that calls localhost.

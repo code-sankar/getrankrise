@@ -6,22 +6,27 @@ import { createSlice } from "@reduxjs/toolkit";
  * pattern: fetch lifecycle flags + selectors, no API calls in here (those live
  * in api/competitorsAPI.js and are dispatched from the page).
  */
+// Extracted from the createSlice call so resetCompetitors can return it. The
+// other tenant-scoped slices (reviews, requests, notifications, analytics) all
+// already follow this shape.
+const initialState = {
+  self:        null,   // { name, rating, totalReviews, responseRate, sentiment }
+  list:        [],     // normalized competitor objects
+  usage:       { tracked: 0, limit: 0, canAdd: false },
+
+  selectedId:  null,   // currently inspected competitor
+  snapshots:   [],     // trend rows for the selected competitor
+
+  loading:     false,  // overview fetch
+  trendLoading: false, // snapshot fetch
+  adding:      false,  // add-competitor in flight
+  refreshingId: null,  // id currently being re-synced
+  error:       null,   // string | { blocked: true } when tier-gated
+};
+
 const competitorsSlice = createSlice({
   name: "competitors",
-  initialState: {
-    self:        null,   // { name, rating, totalReviews, responseRate, sentiment }
-    list:        [],     // normalized competitor objects
-    usage:       { tracked: 0, limit: 0, canAdd: false },
-
-    selectedId:  null,   // currently inspected competitor
-    snapshots:   [],     // trend rows for the selected competitor
-
-    loading:     false,  // overview fetch
-    trendLoading: false, // snapshot fetch
-    adding:      false,  // add-competitor in flight
-    refreshingId: null,  // id currently being re-synced
-    error:       null,   // string | { blocked: true } when tier-gated
-  },
+  initialState,
   reducers: {
     // ── Overview ─────────────────────────────────────────────────────────
     fetchStart(state) {
@@ -91,6 +96,13 @@ const competitorsSlice = createSlice({
     clearError(state) {
       state.error = null;
     },
+
+    // On logout — competitor names, ratings and trend snapshots are all
+    // clinic-scoped, so they must not survive into the next session on a
+    // shared browser. See the note on logoutUser in hooks/user.hook.js.
+    resetCompetitors() {
+      return initialState;
+    },
   },
 });
 
@@ -108,6 +120,7 @@ export const {
   setRefreshing,
   competitorRemoved,
   clearError,
+  resetCompetitors,
 } = competitorsSlice.actions;
 
 // ── Selectors ─────────────────────────────────────────────────────────────────
