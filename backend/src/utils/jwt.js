@@ -1,4 +1,5 @@
 import jwt from "jsonwebtoken";
+import crypto from "node:crypto";
 import { env } from "../config/env.js";
 
 // ── Generate access token (short-lived — 15 minutes) ─────────────────────────
@@ -9,8 +10,21 @@ export const generateAccessToken = (payload) => {
 };
 
 // ── Generate refresh token (long-lived — 7 days) ─────────────────────────────
+//
+// The `jti` is load-bearing, not decoration. Without it the payload is just
+// { id, email, role } and `iat` has ONE-SECOND resolution, so two calls for the
+// same user inside the same second produce a BYTE-IDENTICAL token. That is not
+// a theoretical window: logging in on two devices at once, or a login
+// immediately followed by a refresh, lands there routinely.
+//
+// Two devices sharing one refresh token means revoking either revokes both, and
+// the reuse detection in refreshToken.service.js would read the second device's
+// perfectly legitimate refresh as a stolen-token replay and log the whole
+// account out. The refresh_tokens.token_hash UNIQUE constraint surfaced this
+// immediately — a duplicate-key error on the second login — which is exactly
+// what that constraint is for.
 export const generateRefreshToken = (payload) => {
-  return jwt.sign(payload, env.REFRESH_TOKEN_SECRET, {
+  return jwt.sign({ ...payload, jti: crypto.randomUUID() }, env.REFRESH_TOKEN_SECRET, {
     expiresIn: env.REFRESH_TOKEN_EXPIRY,
   });
 };
@@ -33,6 +47,19 @@ export const verifyRefreshToken = (token) => {
   } catch (err) {
     throw new Error(err.name);
   }
+};
+
+// ── Expiry of an already-issued token ────────────────────────────────────────
+// refresh_tokens.expires_at has to match the JWT's own `exp` exactly, or the
+// table and the signature disagree about when a session ends. Reading the claim
+// is precise; re-parsing REFRESH_TOKEN_EXPIRY ("7d") would be a second,
+// drift-prone source of truth for the same number.
+export const getTokenExpiry = (token) => {
+  const decoded = jwt.decode(token);
+  if (!decoded?.exp) {
+    throw new Error("Token has no exp claim — cannot record its expiry");
+  }
+  return new Date(decoded.exp * 1000);
 };
 
 // ── Generate both tokens at once ──────────────────────────────────────────────

@@ -9,7 +9,10 @@
     "migrate":          "node migrate.js up",
     "migrate:status":   "node migrate.js status",
     "migrate:baseline": "node migrate.js baseline",
-    "migrate:check":    "node migrate.js pending"
+    "migrate:check":    "node migrate.js pending",
+    "//test": "Integration tests run against a REAL Postgres — point DB_NAME at a throwaway database, the helpers TRUNCATE. --test-concurrency=1 is required: Node runs each test FILE in its own process, and parallel files would truncate each other's fixtures mid-run.",
+    "test":             "node --test --test-concurrency=1 -r dotenv/config \"tests/**/*.test.js\"",
+    "test:watch":       "node --test --test-concurrency=1 --watch -r dotenv/config \"tests/**/*.test.js\""
   },
   "keywords": [
     "user authentication",

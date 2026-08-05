@@ -7,7 +7,14 @@ import {
   verifyRefreshToken,
   setRefreshTokenCookie,
   clearRefreshTokenCookie,
+  getTokenExpiry,
 } from "../utils/jwt.js";
+import {
+  issueRefreshToken,
+  consumeRefreshToken,
+  revokeRefreshToken,
+  revokeAllForUser,
+} from "../services/auth/refreshToken.service.js";
 import {
   successResponse,
   createdResponse,
@@ -72,10 +79,17 @@ export const register = async (req, res) => {
     //    would rather have a valid account the user can simply log into than
     //    roll back a successful signup.
     const { accessToken, refreshToken } = generateTokenPair(user);
- 
-    // 5. Save refresh token to database
-    await User.update({ refreshToken }, { where: { id: user.id } });
- 
+
+    // 5. Record the session. One row per device (migrations/0014) — this used
+    //    to overwrite a single users.refresh_token column, which is why a
+    //    second login silently ended the first device's session.
+    await issueRefreshToken({
+      userId: user.id,
+      token: refreshToken,
+      expiresAt: getTokenExpiry(refreshToken),
+      req,
+    });
+
     // 6. Set refresh token as httpOnly cookie
     setRefreshTokenCookie(res, refreshToken);
  
@@ -132,11 +146,14 @@ export const login = async (req, res) => {
     // 4. Generate token pair
     const { accessToken, refreshToken } = generateTokenPair(user);
 
-    // 5. Save refresh token to database
-    await User.update(
-      { refreshToken },
-      { where: { id: user.id } }
-    );
+    // 5. Record this session alongside any others the user already has open.
+    //    Signing in on a second device no longer ends the first one's session.
+    await issueRefreshToken({
+      userId: user.id,
+      token: refreshToken,
+      expiresAt: getTokenExpiry(refreshToken),
+      req,
+    });
 
     // 6. Set refresh token cookie
     setRefreshTokenCookie(res, refreshToken);
@@ -165,11 +182,11 @@ export const login = async (req, res) => {
 // ── POST /api/v1/auth/logout ──────────────────────────────────────────────────
 export const logout = async (req, res) => {
   try {
-    // Clear refresh token from database
-    await User.update(
-      { refreshToken: null },
-      { where: { id: req.user.id } }
-    );
+    // Revoke ONLY this device's session. Clearing the old single column ended
+    // every session the account had, so logging out of a shared front-desk
+    // browser also signed the owner out on their phone.
+    const token = req.cookies?.refreshToken;
+    if (token) await revokeRefreshToken(token, "logout");
 
     // Clear cookie
     clearRefreshTokenCookie(res);
@@ -201,23 +218,52 @@ export const refreshToken = async (req, res) => {
       return unauthorisedResponse(res, err.message);
     }
 
-    // 3. Find user and check stored refresh token matches
-    const user = await User.scope("withRefreshToken").findOne({
-      where: { id: decoded.id },
-    });
+    // 3. Consume this token. Single atomic statement: it verifies the session
+    //    is live AND marks it used, so two concurrent refreshes with the same
+    //    token cannot both succeed. A token presented twice is treated as
+    //    theft and ends every session this user has — see the service.
+    const consumed = await consumeRefreshToken(token);
 
-    if (!user || user.refreshToken !== token) {
+    if (!consumed.ok) {
+      clearRefreshTokenCookie(res);
+      if (consumed.reason === "REUSED") {
+        console.warn(
+          `[auth] refresh-token reuse detected for user ${decoded.id} — all sessions revoked`
+        );
+        return unauthorisedResponse(
+          res,
+          "This session was ended for security. Please log in again."
+        );
+      }
+      if (consumed.reason === "REVOKED") {
+        // A session we ourselves ended — a logout elsewhere, or a password
+        // change. Ordinary, and phrased as such rather than as an alarm.
+        return unauthorisedResponse(
+          res,
+          consumed.revokedReason === "password_change"
+            ? "Your password was changed. Please log in again."
+            : "You've been signed out. Please log in again."
+        );
+      }
       return unauthorisedResponse(res, "Invalid refresh token");
     }
 
-    // 4. Generate new token pair
+    // 4. The session was live; confirm the account still is.
+    const user = await User.findByPk(consumed.userId);
+    if (!user || !user.isActive) {
+      clearRefreshTokenCookie(res);
+      return unauthorisedResponse(res, "Account is no longer active");
+    }
+
+    // 5. Issue the replacement and record it as this device's new session.
     const { accessToken, refreshToken: newRefreshToken } = generateTokenPair(user);
 
-    // 5. Update stored refresh token
-    await User.update(
-      { refreshToken: newRefreshToken },
-      { where: { id: user.id } }
-    );
+    await issueRefreshToken({
+      userId: user.id,
+      token: newRefreshToken,
+      expiresAt: getTokenExpiry(newRefreshToken),
+      req,
+    });
 
     // 6. Set new cookie
     setRefreshTokenCookie(res, newRefreshToken);
@@ -279,7 +325,37 @@ export const changePassword = async (req, res) => {
     const hashed = await hashPassword(newPassword);
     await User.update({ password: hashed }, { where: { id: user.id } });
 
-    return successResponse(res, { message: "Password updated successfully" });
+    // ── End every other session ────────────────────────────────────────────
+    // Changing a password is the action people take when they believe they are
+    // compromised. It previously did nothing to existing sessions, so a stolen
+    // refresh token kept working for its full 7-day life — the attacker was
+    // unaffected by the exact step taken to lock them out.
+    //
+    // The caller's own session is re-issued below so they are not logged out of
+    // the device they just used, which is what makes this safe to do silently.
+    // Retire the caller's own session first so the count below is exactly
+    // "other devices", not "other devices plus me".
+    const currentToken = req.cookies?.refreshToken;
+    if (currentToken) await revokeRefreshToken(currentToken, "password_change");
+    const otherSessionsEnded = await revokeAllForUser(user.id, "password_change");
+
+    const { accessToken, refreshToken } = generateTokenPair(user);
+    await issueRefreshToken({
+      userId: user.id,
+      token: refreshToken,
+      expiresAt: getTokenExpiry(refreshToken),
+      req,
+    });
+    setRefreshTokenCookie(res, refreshToken);
+
+    return successResponse(res, {
+      message: "Password updated successfully",
+      data: {
+        accessToken,
+        // How many OTHER devices were signed out, so the UI can say so.
+        otherSessionsEnded,
+      },
+    });
 
   } catch (err) {
     console.error("changePassword error:", err);

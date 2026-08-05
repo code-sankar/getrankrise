@@ -68,12 +68,20 @@ export const sendRequest = async (req, res) => {
   const creditReservations = []; // refund via refundCredits
   const usageReservations = []; // refund via refundUsage
 
+  // Refunds everything still outstanding. The `refunded` flag matters because
+  // the per-channel send blocks below already hand back the reservation for a
+  // channel that failed; without it, a later throw would refund that same
+  // channel twice and credit the clinic for a send it never made.
   const refundAll = async () => {
     for (const r of creditReservations) {
+      if (r.refunded) continue;
       await refundCredits({ clinicId, channel: r.channel, amount: r.amount });
+      r.refunded = true;
     }
     for (const r of usageReservations) {
+      if (r.refunded) continue;
       await refundUsage({ clinicId, metric: r.metric, amount: r.amount });
+      r.refunded = true;
     }
   };
 
@@ -165,52 +173,120 @@ export const sendRequest = async (req, res) => {
       usageReservations.push({ metric: "email", amount: 1 });
     }
 
-    // ── 2. Send ──────────────────────────────────────────────────────────
+    // ── 2. Send — EACH CHANNEL SETTLES INDEPENDENTLY ─────────────────────
+    //
+    // A "Both" send is two unrelated providers (Twilio/MSG91, then SendGrid)
+    // that fail independently. Wrapping the pair in one try/catch made them
+    // look atomic, and the catch below then refunded EVERY reservation and
+    // destroyed the request row. When the SMS had already gone out and only
+    // the email threw, that produced:
+    //
+    //   * the patient holding a text the carrier had already charged us for
+    //   * the SMS credit handed back, as though nothing was sent
+    //   * the row deleted, releasing the idempotency claim
+    //   * a 500 to the caller, who would reasonably retry
+    //   * the retry finding no prior row and TEXTING THE PATIENT AGAIN
+    //
+    // An SMS cannot be un-sent, so a delivered channel must never be rolled
+    // back. Each block below therefore catches its own failure and records it,
+    // and only genuinely-unsent channels are refunded.
+    const failures = [];
     let providerResult = null;
-    if (needsSms) {
-      providerResult = await sendMessage({
-        channel: "SMS",
-        to: phone,
-        body,
-        countryCode: req.clinic.countryCode,
-        idempotencyKey,
-      });
-    } else if (needsWhatsApp) {
-      providerResult = await sendMessage({
-        channel: "WhatsApp",
-        to: phone,
-        body,
-        countryCode: req.clinic.countryCode,
-        idempotencyKey,
-      });
+
+    const smsChannel = needsSms ? "SMS" : needsWhatsApp ? "WhatsApp" : null;
+    if (smsChannel) {
+      try {
+        providerResult = await sendMessage({
+          channel: smsChannel,
+          to: phone,
+          body,
+          countryCode: req.clinic.countryCode,
+          idempotencyKey,
+        });
+      } catch (err) {
+        // Nothing left the building on this channel — give the credit back.
+        const reservation = creditReservations.find(
+          (r) => r.channel === (needsWhatsApp ? "whatsapp" : "sms")
+        );
+        if (reservation) {
+          await refundCredits({ clinicId, channel: reservation.channel, amount: reservation.amount });
+          reservation.refunded = true;
+        }
+        failures.push({ channel: smsChannel, message: err.message });
+      }
     }
 
     if (needsEmail) {
-      const emailResult = await sendReviewRequestEmail({
-        to: email,
-        patientName,
-        clinicName: req.clinic.clinicName,
-        reviewLink: req.clinic.googleReviewLink,
-        body,
-      });
-      // For an email-only send, surface its provider/simulated in the response
-      // (a "Both" send already reported the SMS provider above).
-      if (!providerResult) providerResult = emailResult;
+      try {
+        const emailResult = await sendReviewRequestEmail({
+          to: email,
+          patientName,
+          clinicName: req.clinic.clinicName,
+          reviewLink: req.clinic.googleReviewLink,
+          body,
+        });
+        // For an email-only send, surface its provider/simulated in the
+        // response (a "Both" send already reported the SMS provider above).
+        if (!providerResult) providerResult = emailResult;
+      } catch (err) {
+        const reservation = usageReservations.find((r) => r.metric === "email");
+        if (reservation) {
+          await refundUsage({ clinicId, metric: "email", amount: reservation.amount });
+          reservation.refunded = true;
+        }
+        failures.push({ channel: "Email", message: err.message });
+      }
     }
 
-    // ── 3. The row already exists — it was written in step 0 to claim the
-    //      idempotency key before the send. Nothing left to persist.
+    const requestedChannels = [smsChannel, needsEmail ? "Email" : null].filter(Boolean);
+    const delivered = requestedChannels.filter(
+      (c) => !failures.some((f) => f.channel === c)
+    );
+
+    // ── 3a. Nothing got through → this is a clean failure. Release the
+    //        idempotency claim so an honest retry is possible. (Reservations
+    //        were already refunded per-channel above.)
+    if (delivered.length === 0) {
+      await releaseClaim();
+      console.error(
+        "sendRequest: all channels failed:",
+        failures.map((f) => `${f.channel}: ${f.message}`).join(" | ")
+      );
+      return serverErrorResponse(res, "Could not send review request");
+    }
+
+    // ── 3b. Something got through. The row STAYS — deleting it would release
+    //        the idempotency key and let a retry re-send to a patient who has
+    //        already been contacted. Record the half that failed so the send
+    //        history shows a partial rather than a clean success.
+    const sendError = failures.length
+      ? failures.map((f) => `${f.channel}: ${f.message}`).join(" | ").slice(0, 1000)
+      : null;
+
+    if (sendError) {
+      await requestRow.update({ sendError });
+    }
+
     return successResponse(res, {
-      message: "Review request sent",
+      message: failures.length
+        ? `Review request sent by ${delivered.join(" and ")}, but ${failures
+            .map((f) => f.channel)
+            .join(" and ")} failed.`
+        : "Review request sent",
       data: {
         request: requestRow,
         provider: providerResult?.provider,
         simulated: providerResult?.simulated || false,
+        delivered,
+        failed: failures.map((f) => f.channel),
+        partial: failures.length > 0,
       },
     });
   } catch (err) {
-    // ── 4. Provider blew up → refund every reservation of both kinds, and
-    //      release the idempotency claim so the caller can genuinely retry.
+    // ── 4. Something outside the per-channel sends blew up (rendering, a DB
+    //       write, a reservation lookup). Nothing is known to have been
+    //       delivered here, so refund whatever is still outstanding and
+    //       release the claim. refundAll skips channels already refunded above.
     await refundAll();
     await releaseClaim();
     console.error("sendRequest error:", err);

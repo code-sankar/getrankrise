@@ -199,7 +199,7 @@ export const generateAiReply = async (req, res) => {
     }
     reserved = true;
 
-    const { reply, model } = await generateReply({
+    const { reply, model, fallback, fallbackReason } = await generateReply({
       reviewText: reviewText || review.reviewText,
       rating: review.rating,
       customerName: review.reviewerName,
@@ -207,13 +207,41 @@ export const generateAiReply = async (req, res) => {
       tone,
     });
 
+    // ── A canned template is not an AI reply, and must not be billed as one ──
+    // ai.service falls back to a static template when OPENAI_API_KEY is absent
+    // or the provider call fails. Both paths return a polished, plausible
+    // sentence, so the response was indistinguishable from a real generation —
+    // the caller discarded `model`, the customer's monthly ai_reply quota was
+    // decremented, and a server with no OpenAI key at all looked like a working
+    // AI feature.
+    //
+    // Refunding here keeps the reserve→act→refund shape the rest of the app
+    // uses for provider failures, and `usage` below then reports the quota the
+    // customer actually has left rather than one unit less.
+    let usage = { used: u.used, limit: u.limit, remaining: u.remaining };
+    if (fallback) {
+      await refundUsage({ clinicId: req.clinic.id, metric: "ai_reply" });
+      reserved = false; // already returned; the catch must not refund twice
+      usage = {
+        used: Math.max(u.used - 1, 0),
+        limit: u.limit,
+        remaining: u.limit === Infinity ? Infinity : u.remaining + 1,
+      };
+    }
+
     return successResponse(res, {
-      message: "Reply generated",
+      message: fallback
+        ? "Draft written from a template — AI is not available right now, so this didn't use any of your AI credits."
+        : "Reply generated",
       data: {
         reply,
         model,
+        // Explicit, so the UI can label the draft instead of presenting a
+        // template as a model-written reply.
+        fallback: Boolean(fallback),
+        fallbackReason: fallbackReason ?? null,
         // Let the UI show "187 of 200 AI replies left this month"
-        usage: { used: u.used, limit: u.limit, remaining: u.remaining },
+        usage,
       },
     });
   } catch (err) {

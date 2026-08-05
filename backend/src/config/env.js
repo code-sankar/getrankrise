@@ -245,6 +245,42 @@ if (isProduction) {
     );
   }
 
+  // ── Competitor intelligence must have a real provider ──────────────────────
+  // Unlike REVIEWS_MOCK this mock has no flag to check: competitor.service.js
+  // picks it by the ABSENCE of credentials, so an unfilled block looks exactly
+  // like a working feature. It returns deterministic numbers derived from a sum
+  // of the competitor's name characters, and syncCompetitor writes them with
+  // syncStatus "ok" and no error — so a Starter/Premium clinic paying for
+  // benchmarking sees invented ratings and review counts presented as fact,
+  // with nothing anywhere to indicate they are fabricated.
+  //
+  // Same shape as the Twilio requirement below: refuse to boot rather than let
+  // it be discovered by a customer. ALLOW_MOCK_COMPETITOR_DATA exists for a
+  // prod-like staging box that genuinely wants the fixture data; setting it has
+  // to be deliberate, because the default cannot be "quietly invent numbers".
+  const allowMockCompetitors =
+    String(process.env.ALLOW_MOCK_COMPETITOR_DATA).toLowerCase() === "true";
+
+  if (!FEATURES.apify && !FEATURES.dataForSeo && !allowMockCompetitors) {
+    console.error(
+      "\n❌ No competitor-data provider configured with NODE_ENV=production.\n" +
+        "   Set APIFY_TOKEN, or DATAFORSEO_LOGIN + DATAFORSEO_PASSWORD.\n" +
+        "   Without one, the tracker falls back to a deterministic MOCK whose\n" +
+        "   fabricated ratings and review counts are stored and rendered as real\n" +
+        "   competitor intelligence on a paid feature.\n\n" +
+        "   Set ALLOW_MOCK_COMPETITOR_DATA=true if this instance is a staging\n" +
+        "   environment that deliberately wants fixture data.\n"
+    );
+    process.exit(1);
+  }
+
+  if (allowMockCompetitors) {
+    console.warn(
+      "⚠️  ALLOW_MOCK_COMPETITOR_DATA=true in production — competitor metrics " +
+        "will be FABRICATED fixture data, not real measurements."
+    );
+  }
+
   // ── Twilio is MANDATORY in production ──────────────────────────────────────
   // This used to be a console.warn, and only when BOTH providers were absent.
   // Two things were wrong with that.

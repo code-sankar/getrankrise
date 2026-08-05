@@ -103,9 +103,25 @@ const dataForSeoProvider = {
 // ── Provider: Mock (dev / no-key fallback) ────────────────────────────────────
 // Deterministic per competitor name so values are stable across calls but
 // drift slightly upward over time to simulate organic growth.
+//
+// ⚠ THESE NUMBERS ARE INVENTED. They are a sum of the competitor's name
+// characters, not a measurement of anything. syncCompetitor stores whatever a
+// provider returns with syncStatus "ok" and no error, so in production this is
+// indistinguishable from real competitor intelligence on a paid feature — which
+// is why the guard below refuses to produce them there. env.js additionally
+// refuses to BOOT a production instance with no real provider, so this runtime
+// throw is the backstop for a process whose credentials vanished after start
+// (a rotated secret, a redeploy that dropped a variable).
 const mockProvider = {
   name: "mock",
   async fetchCompetitorMetrics({ name }) {
+    if (isProduction() && !mockCompetitorsAllowed()) {
+      throw new Error(
+        "Competitor data provider is not configured on this server — " +
+          "refusing to return fabricated metrics."
+      );
+    }
+
     const seed = [...String(name)].reduce((a, c) => a + c.charCodeAt(0), 0);
     const drift = Math.floor(Date.now() / (1000 * 60 * 60 * 24)) % 30; // day-based
 
@@ -118,16 +134,32 @@ const mockProvider = {
   },
 };
 
+const isProduction = () => env.NODE_ENV === "production";
+const mockCompetitorsAllowed = () =>
+  String(process.env.ALLOW_MOCK_COMPETITOR_DATA).toLowerCase() === "true";
+
 // ── Factory ───────────────────────────────────────────────────────────────────
 /**
  * Picks the active provider from env, once. Falls back to mock so the feature
  * is fully functional in development without any third-party credentials.
+ *
+ * The mock is a DEVELOPMENT affordance. It is still returned in production when
+ * nothing else is configured, but its fetch throws there rather than inventing
+ * numbers — a loud failure the caller records as syncStatus "failed" beats a
+ * quiet fiction the customer reads as fact.
  */
 export const getCompetitorProvider = () => {
   if (env.APIFY_TOKEN) return apifyProvider;
   if (env.DATAFORSEO_LOGIN && env.DATAFORSEO_PASSWORD) return dataForSeoProvider;
   return mockProvider;
 };
+
+/** Name of the provider actually in use — surfaced by the competitors API. */
+export const getCompetitorProviderName = () => getCompetitorProvider().name;
+
+/** True when the numbers being served are fixture data rather than measured. */
+export const competitorDataIsSimulated = () =>
+  getCompetitorProvider().name === "mock";
 
 // ── Normalisation ─────────────────────────────────────────────────────────────
 // Guarantees a consistent, clamped shape regardless of provider quirks.

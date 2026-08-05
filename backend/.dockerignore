@@ -1,0 +1,10 @@
+node_modules
+npm-debug.log
+.env
+.env.*
+!.env.example
+tests
+.agents
+skills-lock.json
+Dockerfile
+.dockerignore

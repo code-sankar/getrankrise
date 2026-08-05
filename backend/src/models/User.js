@@ -37,11 +37,11 @@ const User = sequelize.define(
       type:         DataTypes.ENUM("admin", "user"),
       defaultValue: "admin", // clinic owners are admins
     },
-    refreshToken: {
-      type:      DataTypes.TEXT,
-      allowNull: true,
-      defaultValue: null,
-    },
+    // NOTE: there is no refreshToken column here any more. Sessions live in the
+    // `refresh_tokens` table (migrations/0014) — one row per device, each
+    // individually revocable. A single column could only ever hold one session,
+    // which meant a second login silently signed out the first device, and it
+    // survived a password change untouched.
     isActive: {
       type:         DataTypes.BOOLEAN,
       defaultValue: true,
@@ -49,17 +49,14 @@ const User = sequelize.define(
   },
   {
     tableName: "users",
-    // Never return password or refreshToken in queries
+    // Never return the password hash in queries
     defaultScope: {
-      attributes: { exclude: ["password", "refreshToken"] },
+      attributes: { exclude: ["password"] },
     },
     scopes: {
       // Use User.scope("withPassword") when you need the password (login)
       withPassword: {
         attributes: { include: ["password"] },
-      },
-      withRefreshToken: {
-        attributes: { include: ["refreshToken"] },
       },
     },
   }
