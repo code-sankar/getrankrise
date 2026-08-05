@@ -52,6 +52,30 @@ export const toggleSettingSchema = Joi.object({
 });
 
 // ── REVIEWS ───────────────────────────────────────────────────────────────────
+
+// GET /api/v1/reviews query params.
+//
+// This endpoint went unvalidated while every other route was guarded, and it
+// is the app's primary data read. Three separate params turned a client typo
+// into a 500, all confirmed against live Postgres:
+//
+//   ?platform=DROP  → where.platform = "DROP", rejected by the reviews
+//                     platform ENUM with 22P02 (invalid input value for enum)
+//   ?rating=abc     → parseInt("abc") is NaN, which reaches the driver as an
+//                     invalid integer
+//   ?limit=-5       → the controller clamped the UPPER bound only
+//                     (Math.min(limit, 100)), so -5 survived into LIMIT -5
+//
+// `platform` is spelled with the same capitalisation as the ENUM, because the
+// controller passes the value through to the WHERE clause unchanged.
+export const listReviewsQuerySchema = Joi.object({
+  platform: Joi.string().valid("Google", "Yelp", "Facebook"),
+  rating:   Joi.number().integer().min(1).max(5),
+  status:   Joi.string().valid("replied", "unreplied"),
+  limit:    Joi.number().integer().min(1).max(100).default(50),
+  offset:   Joi.number().integer().min(0).default(0),
+});
+
 export const replyToReviewSchema = Joi.object({
   reply: Joi.string().min(1).max(5000).required(),
 });
@@ -62,16 +86,25 @@ export const generateAiReplySchema = Joi.object({
 });
 
 // ── REQUESTS (Pulse Campaigns) ────────────────────────────────────────────────
+// The `.required()` on each `is:` schema is LOAD-BEARING, not decoration.
+// A bare Joi.valid(...) also matches `undefined` — Joi treats "not present" as
+// satisfying the condition unless presence is stated. So a body that omitted
+// sendVia entirely matched BOTH branches, making phone AND email required, and
+// the caller got three validation errors ("sendVia is required", "phone is
+// required", "email is required") for one mistake. With `.required()` the
+// condition only matches when sendVia is actually present and equal, so the
+// `otherwise` branch handles the missing-sendVia case and the response names
+// the single real problem.
 export const sendRequestSchema = Joi.object({
   patientName: Joi.string().min(2).max(100).required(),
   sendVia:     Joi.string().valid("SMS", "Email", "Both", "WhatsApp").required(),
   phone:       Joi.when("sendVia", {
-    is:        Joi.valid("SMS", "Both", "WhatsApp"),
+    is:        Joi.valid("SMS", "Both", "WhatsApp").required(),
     then:      phone.required(),
     otherwise: Joi.alternatives().try(phone, Joi.string().allow("", null)),
   }),
   email: Joi.when("sendVia", {
-    is:        Joi.valid("Email", "Both"),
+    is:        Joi.valid("Email", "Both").required(),
     then:      email.required(),
     otherwise: Joi.alternatives().try(email, Joi.string().allow("", null)),
   }),
@@ -92,6 +125,25 @@ export const idParamSchema = Joi.object({
 
 // ── Validation middleware factory ─────────────────────────────────────────────
 // Usage: router.post("/register", validate(registerSchema), controller)
+
+// Express 5 defines req.query as a prototype getter with no setter, so a plain
+// `req.query = value` throws in strict mode (ES modules are always strict) and
+// every validated GET route 500s. Shadow it with an own data property instead;
+// body and params are ordinary writable properties and assign normally.
+const assignValidated = (req, source, value) => {
+  const descriptor = Object.getOwnPropertyDescriptor(req, source);
+  if (descriptor && descriptor.writable) {
+    req[source] = value;
+    return;
+  }
+  Object.defineProperty(req, source, {
+    value,
+    writable:     true,
+    enumerable:   true,
+    configurable: true,
+  });
+};
+
 export const validate = (schema, source = "body") => (req, res, next) => {
   const { error, value } = schema.validate(req[source], {
     abortEarly:    false,
@@ -105,7 +157,7 @@ export const validate = (schema, source = "body") => (req, res, next) => {
   }
 
   // Re-assign so downstream gets the cleaned/casted version
-  req[source] = value;
+  assignValidated(req, source, value);
   next();
 };
 

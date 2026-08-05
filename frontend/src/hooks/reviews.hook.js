@@ -35,20 +35,51 @@ import {
 } from "../store/reviewsSlice.js";
 
 // ── Shared unwrap + normalise ────────────────────────────────────────────────
-const toPayload = (envelope = {}) => ({
+const toPayload = (envelope = {}, { append = false, offset = 0 } = {}) => ({
   reviews: (envelope.reviews ?? []).map(normalizeReview),
   total: envelope.total ?? envelope.reviews?.length ?? 0,
   cappedByPlan: Boolean(envelope.cappedByPlan),
+  append,
+  offset,
 });
 
-// ── Fetch all reviews for the clinic ─────────────────────────────────────────
+// One page. The server's own ceiling is 100 (listReviewsQuerySchema), so this
+// asks for the largest page it will serve and pages from there.
+export const REVIEWS_PAGE_SIZE = 100;
+
+// ── Fetch reviews for the clinic ─────────────────────────────────────────────
+//
+// PAGINATION. This used to be called with no params at all, which took the
+// server's default of 50 — and nothing in the UI ever read `total`, so a clinic
+// with 136 stored reviews saw exactly 50, a badge reading "50 Reviews Found",
+// and no control to load the rest. The dashboard stat pills are derived from
+// whatever is in state.reviews.list, so they described that truncated slice
+// while the Analytics page aggregated server-side over all 136 — two screens of
+// the same app quoting different numbers with no way to tell which was right.
+//
+// `append` is what makes "Load more" additive rather than a page-replacing
+// fetch; the first page (offset 0) always replaces, so filters and refreshes
+// still reset cleanly.
 export const getUserReviews = async (dispatch, params = {}) => {
+  const { append = false, ...query } = params;
+  const offset = query.offset ?? 0;
+
   dispatch(fetchReviewsStart());
   try {
-    const response = await axiosInstance.get("/reviews", { params });
-    const payload = toPayload(response?.data?.data);
+    const response = await axiosInstance.get("/reviews", {
+      params: { limit: REVIEWS_PAGE_SIZE, offset, ...query },
+    });
+    const payload = toPayload(response?.data?.data, { append, offset });
 
     // Both slices get the SAME normalised rows so Dashboard and Profile agree.
+    //
+    // addUserReviews is an unconditional append ([...state, ...payload]), so
+    // the userSlice mirror has to be cleared whenever this is a REPLACING
+    // fetch — otherwise every remount, every filter change and now every
+    // "Load more" stacks another copy of the same rows onto it forever.
+    // Nothing renders userReviews today, which is why the duplication has been
+    // invisible; paging 100 at a time would have made it unbounded growth.
+    if (!append) dispatch(removeUserReviews());
     dispatch(addUserReviews(payload.reviews));
     dispatch(fetchReviewsSuccess(payload));
     return payload;
@@ -60,6 +91,10 @@ export const getUserReviews = async (dispatch, params = {}) => {
     // runs on every page mount — a toast on each navigation would be noise.
   }
 };
+
+/** Next page, appended to what is already in the store. */
+export const getMoreUserReviews = async (dispatch, { offset, ...query } = {}) =>
+  getUserReviews(dispatch, { ...query, offset, append: true });
 
 // ── Fetch reviews filtered by platform (server-side) ─────────────────────────
 export const getReviewsByPlatform = async (dispatch, platform) =>
@@ -130,10 +165,17 @@ export const generateAIReply = async (reviewId, reviewText, tone = "professional
 // (Free 0 / Starter 6 / Premium 48) and refunds on provider failure, so a
 // failed sync never costs budget.
 //
-// Toast policy matches generateAIReply: everything is toasted here EXCEPT 403,
-// which the axios interceptor already turns into the upgrade modal. Stacking a
-// toast on top of a modal is noise.
-export const syncReviewsNow = async (dispatch) => {
+// Toast policy: everything is toasted here EXCEPT the 403 codes the axios
+// interceptor turns into the upgrade modal — stacking a toast on a modal is
+// noise. It used to skip ALL 403s, which meant a QUOTA_EXCEEDED reply produced
+// no modal (the interceptor didn't handle that code) and no toast (this did
+// nothing) — clicking "Sync now" out of quota was completely silent. The
+// interceptor now owns both branches of QUOTA_EXCEEDED, so this only needs to
+// stay out of its way.
+//
+// The `dispatch` parameter was accepted and never used. Callers pass one; it
+// is ignored rather than dropped from the signature so no call site breaks.
+export const syncReviewsNow = async () => {
   try {
     // Walks paginated provider APIs — routinely longer than the 10s default.
     const { data } = await axiosInstance.post("/reviews/sync", null, {
@@ -146,7 +188,8 @@ export const syncReviewsNow = async (dispatch) => {
     const serverMsg = error.response?.data?.message;
 
     if (error.response?.status === 403) {
-      // UPGRADE_REQUIRED / QUOTA_EXCEEDED — interceptor owns the UI.
+      // UPGRADE_REQUIRED / SUBSCRIPTION_INACTIVE / QUOTA_EXCEEDED — the
+      // interceptor owns the UI for all three (modal or toast).
     } else if (code === "NO_CONNECTION") {
       toast.info(serverMsg || "Connect a review platform in Settings first.");
     } else if (code === "GBP_NOT_APPROVED") {

@@ -126,11 +126,15 @@ for (const [key, label] of Object.entries(PLATFORM_LABEL)) {
   }
 }
 
+// `id` is supplied explicitly. reviews is a CORE table built by sequelize.sync(),
+// so its UUID default lives in the model layer, not in Postgres — there is no
+// DEFAULT on the column. A raw INSERT that omits id therefore dies on 23502
+// (null value in column "id"), which meant no synced review was ever stored.
 const buildUpsertSql = (platformLabel) => `
-INSERT INTO reviews (clinic_id, platform, external_id, reviewer_name, rating,
+INSERT INTO reviews (id, clinic_id, platform, external_id, reviewer_name, rating,
                      review_text, review_date, replied, reply_text, sentiment,
                      created_at, updated_at)
-VALUES ($1::uuid, '${platformLabel}', $2::text, $3::text, $4::int, $5::text,
+VALUES (gen_random_uuid(), $1::uuid, '${platformLabel}', $2::text, $3::text, $4::int, $5::text,
         $6::timestamptz, $7::bool, $8::text, $9::int, NOW(), NOW())
 ON CONFLICT (clinic_id, platform, external_id) WHERE external_id IS NOT NULL
 DO UPDATE SET
@@ -156,7 +160,8 @@ const UPSERT_SQL_BY_PLATFORM = Object.freeze({
  * Syncs one platform connection's reviews.
  * @param {string} connectionId platform_connections.id
  * @returns {{ fetched:number, created:number, updated:number, skippedNoRating:number,
- *             trimmed:number, pages:number, totalOnPlatform:number|null }}
+ *             trimmed:number, pages:number, totalOnPlatform:number|null,
+ *             alerted:number }}
  */
 export async function syncByConnectionId(connectionId) {
   const connection = await PlatformConnection.findByPk(connectionId);
@@ -182,8 +187,11 @@ export async function syncByConnectionId(connectionId) {
   // backfill guard in reviewAlerts — see that file for why last_synced_at
   // cannot be used for this (the scheduler stamps it before calling us).
   const [{ n: priorCount }] = await sequelize.query(
+    // No ::text on $2 — reviews.platform is an ENUM and there is no
+    // "enum = text" operator (42883). Leaving the bind untyped lets Postgres
+    // resolve it as the enum via the column on the left-hand side.
     `SELECT COUNT(*)::int AS n FROM reviews
-      WHERE clinic_id = $1::uuid AND platform = $2::text`,
+      WHERE clinic_id = $1::uuid AND platform = $2`,
     {
       bind: [connection.clinicId, PLATFORM_LABEL[connection.platform]],
       type: QueryTypes.SELECT,
@@ -224,6 +232,7 @@ export async function syncByConnectionId(connectionId) {
     trimmed: 0,
     pages: 0,
     totalOnPlatform: null,
+    alerted: 0,
   };
 
   let pageToken = null;
@@ -267,7 +276,23 @@ export async function syncByConnectionId(connectionId) {
         ],
         type: QueryTypes.SELECT,
       });
-      row?.inserted ? stats.created++ : stats.updated++;
+
+      // Only rows the upsert reported as genuinely INSERTED (xmax = 0) are
+      // alert candidates. A re-sync that merely UPDATES an existing 1-star
+      // review is not news, and re-alerting on it is how a notification bell
+      // becomes noise the user learns to ignore.
+      if (row?.inserted) {
+        stats.created++;
+        if (r.rating <= LOW_RATING_THRESHOLD) {
+          lowRatingAlerts.push({
+            id: row.id,
+            rating: r.rating,
+            reviewerName: r.reviewerName || "Anonymous",
+          });
+        }
+      } else {
+        stats.updated++;
+      }
     }
 
     // Incremental early-stop (newest-updated-first ordering).
@@ -285,52 +310,156 @@ export async function syncByConnectionId(connectionId) {
   const sub = await getSubscriptionState(connection.clinicId);
   const cap = sub.limits.storedReviewsLimit;
   if (Number.isFinite(cap)) {
-    const trimmed = await sequelize.query(
+    // RETURNING id + QueryTypes.SELECT is the only shape that yields a usable
+    // count here. With `type: QueryTypes.DELETE` sequelize resolves to a bare
+    // [], so the old `trimmed[1] ?? 0` reported 0 rows trimmed no matter how
+    // many were actually deleted — the scheduler logged "0 trimmed" while
+    // silently dropping 14 rows.
+    const trimmedRows = await sequelize.query(
       `DELETE FROM reviews
         WHERE clinic_id = $1::uuid AND id NOT IN (
           SELECT id FROM reviews WHERE clinic_id = $1::uuid
            ORDER BY COALESCE(review_date, created_at) DESC
-           LIMIT $2::int)`,
-      { bind: [connection.clinicId, cap], type: QueryTypes.DELETE },
+           LIMIT $2::int)
+        RETURNING id`,
+      { bind: [connection.clinicId, cap], type: QueryTypes.SELECT },
     );
-    // sequelize DELETE returns [results, metadata] variably; count via change
-    stats.trimmed = Array.isArray(trimmed) ? (trimmed[1] ?? 0) : 0;
+    stats.trimmed = trimmedRows.length;
+
+    // Never alert on a review the trim just deleted. notifications.review_id
+    // points at a row that no longer exists, and "new 1-star review" about
+    // something the user cannot open is worse than no alert at all.
+    if (stats.trimmed > 0 && lowRatingAlerts.length > 0) {
+      const deleted = new Set(trimmedRows.map((t) => t.id));
+      for (let i = lowRatingAlerts.length - 1; i >= 0; i--) {
+        if (deleted.has(lowRatingAlerts[i].id)) lowRatingAlerts.splice(i, 1);
+      }
+    }
   }
+
+  // ── Urgent-review alerts ────────────────────────────────────────────────
+  // This call is the write path behind the notification bell. It was missing
+  // entirely: notifyLowRatingReviews was imported, lowRatingAlerts was built
+  // (well, declared), and nothing ever invoked it — so a clinic could ingest
+  // eleven 1-star reviews and receive zero notifications.
+  //
+  // Never throws (see reviewAlerts.service.js's failure posture): a
+  // notification problem must not fail a sync that has already committed real
+  // review rows, because claim-by-stamping would then cost the clinic a full
+  // interval of real data.
+  stats.alerted = (
+    await notifyLowRatingReviews({
+      clinicId: connection.clinicId,
+      candidates: lowRatingAlerts,
+      isBackfill,
+    })
+  ).created;
 
   return stats;
 }
 
 /**
- * Convenience for the manual endpoint: sync the clinic's Google connection
- * without the caller needing the connection id.
+ * Convenience for the manual endpoint ("Sync now"): sync EVERY connected
+ * platform for the clinic, without the caller needing connection ids.
  *
- * NOTE: this stays Google-only by design (matching reviewSync.controller.js,
- * which currently looks up only the clinic's Google connection). If you fix
- * the controller to support Yelp/Facebook manual syncs too (tracked as M2 in
- * the audit), extend this to accept a platform or to loop every connected
- * platform for the clinic — syncByConnectionId already works for all three.
+ * This used to filter `platform: "google"` and throw NO_CONNECTION otherwise,
+ * which meant a clinic connected only to Yelp or Facebook was told to "connect
+ * your Google Business Profile" while holding a perfectly good working
+ * connection — the button was dead for them. syncByConnectionId has always
+ * supported all three platforms; only this lookup was narrow.
+ *
+ * PARTIAL FAILURE IS NOT TOTAL FAILURE. With N connections, one provider being
+ * down must not discard the results of the others, so each connection is run
+ * independently and its error is recorded rather than thrown. The endpoint only
+ * fails outright when EVERY connection failed — and then it rethrows the first
+ * error so the controller's existing GBP_AUTH / GBP_NOT_APPROVED mappings still
+ * produce their specific messages instead of a generic 500.
+ *
+ * @returns {{ platforms: Array<{platform,connectionId,ok,error?,...stats}>,
+ *             connectionId: string|null, ...aggregateStats }}
  */
 export async function syncClinicReviews(clinicId) {
-  const connection = await PlatformConnection.findOne({
-    where: { clinicId, platform: "google", status: "connected" },
+  const connections = await PlatformConnection.findAll({
+    where: { clinicId, status: "connected" },
+    order: [["platform", "ASC"]],
   });
-  if (!connection) {
+
+  if (connections.length === 0) {
     const err = new Error(
-      "No connected Google Business Profile for this clinic.",
+      "No connected review platform for this clinic. Connect Google, Yelp, or Facebook in Settings.",
     );
     err.code = "NO_CONNECTION";
     throw err;
   }
-  const stats = await syncByConnectionId(connection.id);
 
-  // The manual path stamps the sync clock itself (the scheduler stamps its
-  // own claims) — so a manual sync also resets the automatic interval.
-  await sequelize.query(
-    `UPDATE platform_connections
-        SET last_synced_at = NOW(), last_sync_error = NULL
-      WHERE id = $1::uuid`,
-    { bind: [connection.id], type: QueryTypes.UPDATE },
-  );
+  const totals = {
+    fetched: 0,
+    created: 0,
+    updated: 0,
+    skippedNoRating: 0,
+    trimmed: 0,
+    pages: 0,
+    alerted: 0,
+  };
+  const platforms = [];
+  let firstError = null;
 
-  return { connectionId: connection.id, ...stats };
+  for (const connection of connections) {
+    try {
+      const stats = await syncByConnectionId(connection.id);
+      for (const key of Object.keys(totals)) totals[key] += stats[key] ?? 0;
+
+      // The manual path stamps the sync clock itself (the scheduler stamps its
+      // own claims) — so a manual sync also resets the automatic interval.
+      await sequelize.query(
+        `UPDATE platform_connections
+            SET last_synced_at = NOW(), last_sync_error = NULL
+          WHERE id = $1::uuid`,
+        { bind: [connection.id], type: QueryTypes.UPDATE },
+      );
+
+      platforms.push({
+        platform: connection.platform,
+        connectionId: connection.id,
+        ok: true,
+        ...stats,
+      });
+    } catch (err) {
+      firstError ??= err;
+      // Record it on the connection the same way the scheduler does, so the
+      // Settings page shows why this platform is stale.
+      await sequelize
+        .query(
+          `UPDATE platform_connections
+              SET last_sync_error = $2::text
+            WHERE id = $1::uuid`,
+          {
+            bind: [connection.id, String(err.message).slice(0, 500)],
+            type: QueryTypes.UPDATE,
+          },
+        )
+        .catch(() => {});
+
+      platforms.push({
+        platform: connection.platform,
+        connectionId: connection.id,
+        ok: false,
+        code: err.code || null,
+        error: err.message,
+      });
+    }
+  }
+
+  // Every connection failed → surface the first real error so the controller
+  // can map it to its specific message. A partial success returns normally
+  // with the per-platform breakdown carrying the bad news.
+  if (platforms.every((p) => !p.ok)) throw firstError;
+
+  return {
+    // Kept for response-shape compatibility with the single-connection era.
+    connectionId: platforms.find((p) => p.ok)?.connectionId ?? null,
+    platforms,
+    ...totals,
+    totalOnPlatform: null, // meaningless once several platforms are summed
+  };
 }

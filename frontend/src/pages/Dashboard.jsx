@@ -5,13 +5,18 @@ import StatCard from "../components/StatCard.jsx";
 import ReviewCard from "../components/ReviewCard/ReviewCard.jsx";
 import TopBar from "../components/TopBar.jsx";
 import { useTheme } from "../context/ThemeContext.jsx";
-import { getUserReviews } from "../hooks/reviews.hook.js";
+import {
+  getUserReviews,
+  getMoreUserReviews,
+  REVIEWS_PAGE_SIZE,
+} from "../hooks/reviews.hook.js";
 import ReviewsQueueState from "../components/Dashboard/ReviewsQueueState.jsx";
 import SyncNowButton from "../components/Dashboard/SyncNowButton.jsx";
 import {
   selectFilteredReviews,
   selectReviewStats,
   selectReviewsViewState,
+  selectReviewsTotal,
   setFilter,
   clearFilters,
 } from "../store/reviewsSlice.js";
@@ -97,13 +102,32 @@ export default function Dashboard() {
   // loading / error / empty / ready — the four states the queue must tell
   // apart. Before this was wired, all four rendered as "no reviews".
   const viewState = useSelector(selectReviewsViewState);
+  // How many reviews the SERVER holds, vs how many we have actually loaded.
+  // The gap between these two numbers was previously invisible: the page took
+  // the server's default page of 50 and reported that as the whole truth.
+  const totalReviews = useSelector(selectReviewsTotal);
+  const loadedCount = useSelector((state) => state.reviews.list.length);
+  const isFetching = useSelector((state) => state.reviews.loading);
   // ──────────────────────────────────────────────────────────────────────────
 
-  // Fetch once on mount. getUserReviews dispatches start/success/failure
-  // itself, so viewState above is driven entirely by the slice.
+  const hasMore = loadedCount < totalReviews;
+
+  // Fetch the first page on mount. getUserReviews dispatches
+  // start/success/failure itself, so viewState above is driven by the slice.
   useEffect(() => {
-    getUserReviews(dispatch);
+    getUserReviews(dispatch, { offset: 0 });
   }, [dispatch]);
+
+  // Filtering is client-side over what has been loaded, so "Load more" is how
+  // a filter reaches reviews deeper than the current page.
+  const handleLoadMore = () => {
+    if (isFetching || !hasMore) return;
+    getMoreUserReviews(dispatch, { offset: loadedCount });
+  };
+
+  // A sync can change the underlying set, so re-fetch from the top rather than
+  // appending onto a window that may no longer line up.
+  const handleRefresh = () => getUserReviews(dispatch, { offset: 0 });
 
   const handleFilterChange = (key, value) => {
     dispatch(setFilter({ key, value }));
@@ -222,15 +246,15 @@ export default function Dashboard() {
                   </p>
                 </div>
                 <div className="flex items-center gap-3">
+                  {/* "N Reviews Found" used to report the length of the loaded
+                      page, which silently became the number the user believed
+                      they had. It now names the server total alongside it. */}
                   <div
                     className={`px-3 py-1 rounded-full text-xs font-bold ${dark ? "bg-indigo-500/10 text-indigo-400" : "bg-indigo-50 text-indigo-600"}`}
                   >
-                    {filteredReviews.length} Reviews Found
+                    {filteredReviews.length} of {totalReviews} Reviews
                   </div>
-                  <SyncNowButton
-                    dark={dark}
-                    onSynced={() => getUserReviews(dispatch)}
-                  />
+                  <SyncNowButton dark={dark} onSynced={handleRefresh} />
                 </div>
               </div>
 
@@ -272,7 +296,7 @@ export default function Dashboard() {
                 <ReviewsQueueState
                   state={viewState}
                   dark={dark}
-                  onRetry={() => getUserReviews(dispatch)}
+                  onRetry={handleRefresh}
                 />
               ) : filteredReviews.length === 0 ? (
                 <EmptyState dark={dark} onClear={handleClearFilters} />
@@ -282,6 +306,33 @@ export default function Dashboard() {
                 ))
               )}
             </div>
+
+            {/* Pagination. Filters run client-side over the loaded set, so the
+                second line is the honest caveat: a filter can only match what
+                has been fetched so far. */}
+            {viewState === "ready" && hasMore && (
+              <div className="p-6 border-t border-inherit flex flex-col items-center gap-2">
+                <button
+                  onClick={handleLoadMore}
+                  disabled={isFetching}
+                  className={`px-6 py-2.5 rounded-full text-sm font-bold border transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed ${
+                    dark
+                      ? "border-slate-700 text-slate-300 hover:border-slate-500 bg-slate-800/40"
+                      : "border-slate-200 text-slate-700 hover:border-slate-300 bg-white"
+                  }`}
+                >
+                  {isFetching
+                    ? "Loading…"
+                    : `Load ${Math.min(REVIEWS_PAGE_SIZE, totalReviews - loadedCount)} more`}
+                </button>
+                <p
+                  className={`text-xs ${dark ? "text-slate-500" : "text-slate-400"}`}
+                >
+                  Showing {loadedCount} of {totalReviews} · filters apply to
+                  loaded reviews
+                </p>
+              </div>
+            )}
           </section>
         </main>
       </div>

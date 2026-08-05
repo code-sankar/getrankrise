@@ -1,6 +1,6 @@
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { useSelector } from "react-redux";
-import { ThemeProvider } from "./context/ThemeContext.jsx";
+import { ThemeProvider } from "./context/ThemeProvider.jsx";
 import AppBootstrap from "./components/AppBootstrap.jsx";
 import LoginPage from "./pages/LoginPage.jsx";
 import Dashboard from "./pages/Dashboard.jsx";

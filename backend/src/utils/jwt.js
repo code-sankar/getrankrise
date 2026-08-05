@@ -50,24 +50,62 @@ export const generateTokenPair = (user) => {
   };
 };
 
-// ── Set refresh token as httpOnly cookie ──────────────────────────────────────
+// ── Refresh-token cookie policy ───────────────────────────────────────────────
 // httpOnly = JS cannot read it (XSS protection)
-// secure   = only sent over HTTPS (in production)
-// sameSite = CSRF protection
+// secure   = only sent over HTTPS
+// sameSite = CSRF protection, but ALSO the thing that decides whether the
+//            cookie is sent at all on a split-domain deployment.
+//
+// This was hardcoded to "strict", which silently breaks the session on the
+// most likely production topology for this app. The SPA ships to Vercel while
+// the API runs somewhere else; if those are different registrable domains
+// (getrankrise.vercel.app vs an api host on another domain), a "strict" cookie
+// is NEVER sent cross-site. POST /auth/refresh-token then 401s every time, and
+// every user is hard-logged-out the moment their 15-minute access token
+// expires — with nothing in the logs but routine 401s.
+//
+// "none" is what a cross-site cookie requires, and browsers only accept it
+// alongside secure:true (HTTPS). So production defaults to none+secure, which
+// is correct for both topologies: it also works when the app and API DO share
+// a parent domain, just with weaker CSRF hardening than "lax"/"strict".
+//
+// If you deploy app + API under one registrable domain (getrankrise.com and
+// api.getrankrise.com), set COOKIE_SAMESITE=lax to get that hardening back.
+// CSRF risk is contained regardless: this cookie is only ever exchanged at
+// /auth/refresh-token, every other endpoint authenticates from the
+// Authorization header, and CORS is a strict CLIENT_URL allow-list.
+const isProd = () => env.NODE_ENV === "production";
+
+const sameSitePolicy = () => {
+  const configured = (process.env.COOKIE_SAMESITE || "").toLowerCase();
+  if (["strict", "lax", "none"].includes(configured)) return configured;
+  // Dev runs over http://localhost, where "none" would be rejected for not
+  // being secure — so dev gets "lax", which works same-site on localhost.
+  return isProd() ? "none" : "lax";
+};
+
+const cookieOptions = () => {
+  const sameSite = sameSitePolicy();
+  return {
+    httpOnly: true,
+    // sameSite:"none" is invalid without secure — browsers drop the cookie
+    // outright. Force the pairing rather than emitting a Set-Cookie that
+    // silently does nothing.
+    secure: isProd() || sameSite === "none",
+    sameSite,
+  };
+};
+
 export const setRefreshTokenCookie = (res, refreshToken) => {
   res.cookie("refreshToken", refreshToken, {
-    httpOnly: true,
-    secure:   env.NODE_ENV === "production",
-    sameSite: "strict",
-    maxAge:   7 * 24 * 60 * 60 * 1000, // 7 days in ms
+    ...cookieOptions(),
+    maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days in ms
   });
 };
 
 // ── Clear refresh token cookie ────────────────────────────────────────────────
+// Attributes must match the ones it was set with, or the browser treats it as
+// a different cookie and the logout leaves the original in place.
 export const clearRefreshTokenCookie = (res) => {
-  res.clearCookie("refreshToken", {
-    httpOnly: true,
-    secure:   env.NODE_ENV === "production",
-    sameSite: "strict",
-  });
+  res.clearCookie("refreshToken", cookieOptions());
 };

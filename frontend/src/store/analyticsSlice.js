@@ -38,7 +38,11 @@ const PLATFORM_COLORS = {
 };
 
 const EMPTY_SUMMARY = {
+  // totalReviews is scoped to the selected date range; lifetimeReviews counts
+  // every review the feed can show. Keeping both is what stopped the pill from
+  // contradicting the review list — see analytics.service.js summaryStats.
   totalReviews: 0,
+  lifetimeReviews: 0,
   avgRating: 0,
   responseRate: 0,
   sentimentScore: 0,

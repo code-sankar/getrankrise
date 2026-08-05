@@ -18,7 +18,34 @@ import { showUpgradeModal } from "../store/upgradeModalSlice.js";
 // no cycle.
 import store from "../store/store.js";
 
-const API_BASE = import.meta.env.VITE_API_URL || "http://localhost:5000/api/v1";
+// ── API base ─────────────────────────────────────────────────────────────────
+// The localhost default is DEV-ONLY on purpose. It used to apply to every
+// build, so a production bundle with VITE_API_URL unset silently shipped
+// pointing at http://localhost:5000 — every request in the deployed app failed
+// against the user's own machine, and nothing in the build output said so.
+//
+// Two guards, because they catch it at different moments:
+//   * vite.config.js fails `vite build` outright when VITE_API_URL is unset —
+//     that is the one that stops a broken bundle from ever being deployed.
+//   * the throw below is the backstop for anything that reaches this module
+//     without a base URL anyway (a hand-rolled bundler, a test harness). It
+//     surfaces in the browser rather than at deploy time, so it is the weaker
+//     of the two — but a blank page with a precise console error still beats
+//     an app that silently calls the visitor's own machine.
+//
+// VITE_API_URL is inlined at BUILD time, so it must be present when
+// `vite build` runs — setting it on the server afterwards is too late.
+const API_BASE =
+  import.meta.env.VITE_API_URL ||
+  (import.meta.env.DEV ? "http://localhost:5000/api/v1" : null);
+
+if (!API_BASE) {
+  throw new Error(
+    "VITE_API_URL is not set. Production builds have no API URL to fall back to — " +
+      "set it in your hosting provider's build environment (e.g. Vercel → Settings → " +
+      "Environment Variables) and rebuild.",
+  );
+}
 
 // ── Base instance ─────────────────────────────────────────────────────────────
 // 10s suits ordinary CRUD. Two endpoints legitimately exceed it and pass their
@@ -132,20 +159,56 @@ axiosInstance.interceptors.response.use(
     }
 
     // ── 403 Forbidden ─────────────────────────────────────────────────────
+    // Three distinct server conditions arrive as 403, and only two were
+    // handled. QUOTA_EXCEEDED fell through to `getFriendlyError("FORBIDDEN")`,
+    // so a paying customer who had used all 48 of their daily review syncs was
+    // told "Access denied." — indistinguishable from a permissions bug, and
+    // the server's actual sentence ("You've used all 48 review syncs for this
+    // day") was discarded. That applied to all four metered features and to
+    // SMS/WhatsApp credits.
     if (status === 403) {
-      const code = error.response?.data?.code;
+      const data = error.response?.data ?? {};
+      const code = data.code;
 
       if (code === "UPGRADE_REQUIRED" || code === "SUBSCRIPTION_INACTIVE") {
         store.dispatch(
           showUpgradeModal({
-            currentPlan: error.response.data.currentPlan,
-            requiredPlans: error.response.data.requiredPlans,
-            message: error.response.data.message,
+            currentPlan: data.currentPlan,
+            requiredPlans: data.requiredPlans,
+            message: data.message,
+            reason: code,
           }),
         );
         // Don't toast — the modal is the UX
+      } else if (code === "QUOTA_EXCEEDED") {
+        // Running out is not the same as being locked out, and the right UI
+        // depends on whether upgrading would actually help.
+        //
+        // On a lower plan there is a bigger limit to buy, so the modal is
+        // useful. On the TOP plan the server still sends
+        // requiredPlans:["premium"] — a modal whose only offer is the plan they
+        // already own is worse than useless, so they get the server's own
+        // message, which names the limit and when it resets.
+        const upgradable = (data.requiredPlans ?? []).some(
+          (p) => p !== data.currentPlan,
+        );
+
+        if (upgradable) {
+          store.dispatch(
+            showUpgradeModal({
+              currentPlan: data.currentPlan,
+              requiredPlans: data.requiredPlans,
+              message: data.message,
+              reason: code,
+            }),
+          );
+        } else {
+          toast.warning(data.message || "You've reached this plan's limit.");
+        }
       } else {
-        toast.error(getFriendlyError("FORBIDDEN"));
+        // A genuine permissions failure. Prefer the server's explanation when
+        // it wrote one; "Access denied." is the last resort, not the default.
+        toast.error(data.message || getFriendlyError("FORBIDDEN"));
       }
       return Promise.reject(error);
     }

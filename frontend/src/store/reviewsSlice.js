@@ -68,11 +68,29 @@ const reviewsSlice = createSlice({
       state.error = null;
     },
 
-    // payload: the backend envelope { reviews, total, cappedByPlan }
-    // (the hook normalises each review before dispatching)
+    // payload: the backend envelope { reviews, total, cappedByPlan } plus the
+    // hook's { append, offset } (the hook normalises each review first).
+    //
+    // `append` supports "Load more". De-duplication by id is not decoration:
+    // rows are ordered by review_date, so a sync landing between two page
+    // fetches shifts the window and can return a row the previous page already
+    // held. Without the guard that row renders twice and React warns on the
+    // duplicate key.
     fetchReviewsSuccess(state, action) {
-      const { reviews = [], total = 0, cappedByPlan = false } = action.payload || {};
-      state.list = reviews;
+      const {
+        reviews = [],
+        total = 0,
+        cappedByPlan = false,
+        append = false,
+      } = action.payload || {};
+
+      if (append) {
+        const seen = new Set(state.list.map((r) => r.id));
+        state.list = state.list.concat(reviews.filter((r) => !seen.has(r.id)));
+      } else {
+        state.list = reviews;
+      }
+
       state.total = total;
       state.cappedByPlan = Boolean(cappedByPlan);
       state.loading = false;

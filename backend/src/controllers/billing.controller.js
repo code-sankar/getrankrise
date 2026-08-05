@@ -137,28 +137,19 @@ export const handleWebhook = async (req, res) => {
   if (!eventId || !eventType) return res.status(400).send("Malformed event");
 
   try {
-    // INSERT ... ON CONFLICT DO NOTHING. Sequelize's ignoreDuplicates maps to
-    // exactly that; a conflict yields a row with a null primary key, which is
-    // how we detect the duplicate without a second round trip.
-    const [record] = await WebhookEvent.bulkCreate(
-      [
-        {
-          provider: "paddle",
-          eventId,
-          eventType,
-          payload: event,
-        },
-      ],
-      { ignoreDuplicates: true, returning: true }
-    );
+    const claimed = await claimWebhookEvent({ eventId, eventType, event });
 
-    if (!record || record.id === null) {
-      // Already processed — return 200 so Paddle stops retrying
+    if (!claimed) {
+      // Already processed (or another delivery of the same event is in flight
+      // right now) — 200 so Paddle stops retrying.
       return res.status(200).send("Duplicate, ignored");
     }
 
     await processEvent(event);
 
+    // processed_at is what makes the claim above permanent. Until this lands
+    // the row reads as "attempted, outcome unknown", which is precisely the
+    // state a Paddle retry is allowed to re-claim.
     await WebhookEvent.update(
       { processedAt: new Date() },
       { where: { eventId } }
@@ -167,10 +158,76 @@ export const handleWebhook = async (req, res) => {
     return res.status(200).send("OK");
   } catch (err) {
     console.error("[paddle webhook] processing error:", err);
-    // 5xx → Paddle will retry with exponential backoff
+    // 5xx → Paddle will retry with exponential backoff. The row stays with
+    // processed_at NULL, so claimWebhookEvent lets that retry through once the
+    // stale-claim window has elapsed.
     return res.status(500).send("Processing failed");
   }
 };
+
+// How long a claimed-but-unfinished event is treated as still in flight.
+// Below this, a redelivery is assumed to be a concurrent duplicate and is
+// dropped; above it, the previous attempt is assumed dead and the retry is
+// allowed through. Paddle's retry backoff starts in minutes, so this window
+// separates "two deliveries racing" from "the first attempt genuinely failed".
+const WEBHOOK_CLAIM_STALE_MINUTES = 5;
+
+/**
+ * Atomically claims one webhook event for processing.
+ *
+ * ── Why this is raw SQL and not WebhookEvent.bulkCreate ────────────────────
+ * The previous version used bulkCreate({ ignoreDuplicates: true }) and tested
+ * `record.id === null` to detect the duplicate. That test can never be true:
+ * the model declares `defaultValue: DataTypes.UUIDV4`, so Sequelize generates
+ * the id CLIENT-SIDE before the INSERT and hands it back on the instance
+ * whether or not Postgres wrote a row. Two identical calls returned two
+ * different non-null uuids while the table held exactly one row — so the guard
+ * never fired and every Paddle redelivery re-ran processEvent(). For
+ * transaction.completed that re-zeroed sms_credits_used / whatsapp_credits_used,
+ * silently handing back credits the customer had already spent.
+ *
+ * Asking Postgres directly is the only reliable answer: RETURNING yields a row
+ * only when this statement actually inserted or re-claimed one.
+ *
+ * ── The three cases, and why a bare DO NOTHING is not enough ───────────────
+ *   no row yet                         → INSERT           → claim (1 row)
+ *   row exists, processed_at IS NULL,  → DO UPDATE fires  → re-claim (1 row)
+ *     received_at older than the window
+ *   row exists, processed_at set       → WHERE blocks it  → skip (0 rows)
+ *   row exists, claimed just now       → WHERE blocks it  → skip (0 rows)
+ *
+ * The middle case is load-bearing. The row is committed BEFORE processEvent
+ * runs, so with a plain `ON CONFLICT DO NOTHING` guard an event whose handler
+ * threw would be recorded forever and its 500-triggered Paddle retry would be
+ * rejected as a duplicate — the failure would become permanent and silent.
+ * Gating the re-claim on processed_at IS NULL keeps genuine retries working,
+ * and the received_at window stops two simultaneous deliveries from both
+ * claiming while the first is still mid-flight.
+ *
+ * @returns {Promise<boolean>} true when the caller owns this event
+ */
+async function claimWebhookEvent({ eventId, eventType, event }) {
+  const rows = await sequelize.query(
+    `INSERT INTO webhook_events (id, provider, event_id, event_type, payload, received_at)
+     VALUES (gen_random_uuid(), 'paddle', $1::text, $2::text, $3::jsonb, NOW())
+     ON CONFLICT (event_id) DO UPDATE
+        SET received_at = NOW()
+      WHERE webhook_events.processed_at IS NULL
+        AND webhook_events.received_at < NOW() - ($4 || ' minutes')::interval
+     RETURNING id`,
+    {
+      bind: [
+        eventId,
+        eventType,
+        JSON.stringify(event),
+        String(WEBHOOK_CLAIM_STALE_MINUTES),
+      ],
+      type: QueryTypes.SELECT,
+    }
+  );
+
+  return rows.length > 0;
+}
 
 // ── Event dispatcher ──────────────────────────────────────────────────────
 async function processEvent(event) {
@@ -242,8 +299,14 @@ async function upsertSubscription(sub) {
          gateway_customer_id     = EXCLUDED.gateway_customer_id,
          gateway_subscription_id = EXCLUDED.gateway_subscription_id,
          gateway_price_id        = EXCLUDED.gateway_price_id,
-         current_period_start    = EXCLUDED.current_period_start,
-         current_period_end      = EXCLUDED.current_period_end,
+         -- COALESCE, not a bare overwrite. Paddle omits current_billing_period
+         -- on trialing subscriptions and on several subscription.updated
+         -- payload shapes; assigning EXCLUDED unconditionally then NULLed a
+         -- period we already knew, and a NULL current_period_start is what
+         -- made reserveCredits refuse every SMS/WhatsApp send for that clinic.
+         -- Never downgrade known billing state to unknown on an update event.
+         current_period_start    = COALESCE(EXCLUDED.current_period_start, subscriptions.current_period_start),
+         current_period_end      = COALESCE(EXCLUDED.current_period_end,   subscriptions.current_period_end),
          canceled_at             = NULL`,
       {
         bind: [

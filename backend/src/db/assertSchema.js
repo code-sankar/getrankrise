@@ -97,7 +97,25 @@ export const REQUIRED_COLUMNS = Object.freeze({
     "throttle_per_minute",
     "last_error",
   ],
-  campaign_recipients: ["campaign_id", "status", "claimed_at"],
+  // services/campaigns/campaignRunner.service.js → requeueStuck (both
+  // branches) and the pre-send stamp. send_started_at is what separates
+  // "safe to retry" from "may already have been delivered"; if it ever goes
+  // missing the sweep silently reverts to at-least-once and starts sending
+  // patients duplicate messages, so fail the boot instead.
+  // attempts (migration 0012) bounds the recovery sweep. Missing, the claim's
+  // `attempts = attempts + 1` throws 42703 on every batch and the runner sends
+  // nothing at all — so it belongs here rather than being discovered in prod.
+  campaign_recipients: [
+    "campaign_id",
+    "status",
+    "claimed_at",
+    "send_started_at",
+    "attempts",
+  ],
+
+  // controllers/request.controller.js → the idempotency claim. Without this
+  // column the claiming INSERT throws on every send.
+  requests: ["clinic_id", "idempotency_key"],
 });
 
 /**

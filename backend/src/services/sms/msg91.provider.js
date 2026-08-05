@@ -58,6 +58,18 @@ const msg91Request = async ({ to, body }) => {
 // ── sendSms ───────────────────────────────────────────────────────────────────
 export const sendSms = async ({ to, body }) => {
   if (!hasCredentials()) {
+    // Reachable only in development: sms/index.js routes to MSG91 exclusively
+    // when all three DLT variables are set, and in production env.js has
+    // already refused to boot a config that could reach a simulated send.
+    // A silent fake success here would report "Sent" for a message no patient
+    // received while still spending the clinic's credit.
+    if (process.env.NODE_ENV === "production") {
+      console.error(
+        `[sms/msg91] REFUSING to simulate SMS to ${to} in production — ` +
+          "MSG91_AUTH_KEY / MSG91_SENDER_ID / MSG91_TEMPLATE_ID is missing."
+      );
+      throw new Error("SMS is not configured on this server — no message was sent.");
+    }
     console.warn(`[sms/msg91] simulated SMS → ${to}: ${body.slice(0, 80)}`);
     return { id: `sim_${Date.now()}`, provider: PROVIDER_NAME, status: "simulated", simulated: true };
   }
