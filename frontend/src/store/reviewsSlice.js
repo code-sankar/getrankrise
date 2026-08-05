@@ -25,7 +25,7 @@
  *      would have rendered "NaN" in three dashboard stat cards.
  */
 
-import { createSlice } from "@reduxjs/toolkit";
+import { createSlice, createSelector } from "@reduxjs/toolkit";
 import { formatRelativeDate } from "../utils/formatRelativeDate.js";
 
 // ── Normalisation ─────────────────────────────────────────────────────────────
@@ -138,27 +138,35 @@ export const {
 } = reviewsSlice.actions;
 
 // ── Selectors ────────────────────────────────────────────────────────────────
+//
+// The two derived selectors below are memoized with createSelector because
+// both build a NEW array/object on every call. Unmemoized, they returned a
+// fresh reference each time useSelector ran, so every component reading them
+// re-rendered on ANY store change — a notification arriving re-rendered the
+// whole review list. React-Redux detects this and logged it on every Dashboard
+// load: "Selector selectFilteredReviews returned a different result when
+// called with the same parameters."
+//
+// The input selectors are the cheap ones (plain property reads). createSelector
+// only re-runs the expensive body when one of those identities actually
+// changes, so filtering 136 rows now happens when the list or the filters
+// change rather than on every dispatch.
 
-export const selectFilteredReviews = (state) => {
-  const { list, filters } = state.reviews;
-  return list.filter((r) => {
-    if (filters.platform !== "All" && r.platform !== filters.platform) return false;
-    if (filters.rating !== "All" && r.rating !== parseInt(filters.rating, 10)) return false;
-    if (filters.status === "Unanswered" && r.replied) return false;
-    if (filters.status === "Answered" && !r.replied) return false;
-    return true;
-  });
-};
+const selectReviewsList = (state) => state.reviews.list;
+const selectReviewFilters = (state) => state.reviews.filters;
 
-/**
- * Dashboard stat pills. Guarded: total === 0 is the normal pre-ingestion state
- * and must render as em-dashes, not NaN.
- *
- *   avg        "4.2" | "—"
- *   coverage   0–100 (% replied)
- *   sentiment  0–100 (% of 4–5★)
- *   total      list length, for "n reviews" captions
- */
+export const selectFilteredReviews = createSelector(
+  [selectReviewsList, selectReviewFilters],
+  (list, filters) =>
+    list.filter((r) => {
+      if (filters.platform !== "All" && r.platform !== filters.platform) return false;
+      if (filters.rating !== "All" && r.rating !== parseInt(filters.rating, 10)) return false;
+      if (filters.status === "Unanswered" && r.replied) return false;
+      if (filters.status === "Answered" && !r.replied) return false;
+      return true;
+    })
+);
+
 /**
  * Dashboard stat pills. Guarded: total === 0 is the normal pre-ingestion state
  * and must render as em-dashes, not NaN.
@@ -171,9 +179,11 @@ export const selectFilteredReviews = (state) => {
  *                 which was five hardcoded percentages until Step 2
  *   newThisMonth  reviews dated in the last 30 days, replacing the literal
  *                 string "14" the New Reviews card used to render
+ *
+ * Memoized: this returns a fresh object every call, so an unmemoized version
+ * re-rendered all four StatCards on every unrelated dispatch.
  */
-export const selectReviewStats = (state) => {
-  const { list } = state.reviews;
+export const selectReviewStats = createSelector([selectReviewsList], (list) => {
   const total = list.length;
 
   if (total === 0) {
@@ -213,7 +223,7 @@ export const selectReviewStats = (state) => {
     newThisMonth,
     empty: false,
   };
-};
+});
 
 /** Distinguishes the three UI states the Dashboard queue must render. */
 export const selectReviewsViewState = (state) => {

@@ -1,25 +1,51 @@
+import { lazy, Suspense } from "react";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { useSelector } from "react-redux";
 import { ThemeProvider } from "./context/ThemeProvider.jsx";
 import AppBootstrap from "./components/AppBootstrap.jsx";
-import LoginPage from "./pages/LoginPage.jsx";
-import Dashboard from "./pages/Dashboard.jsx";
-import SendRequests from "./pages/SendRequests.jsx";
-import Campaigns from "./pages/Campaigns.jsx";
-import Settings from "./pages/Settings.jsx";
-import Analytics from "./pages/Analytics.jsx";
-import Competitors from "./pages/Competitors.jsx";
-import AdminProfile from "./pages/AdminProfile.jsx";
-import TermsAndConditions from "./pages/TermsAndConditions.jsx";
-import PrivacyPolicy from "./pages/PrivacyPolicy.jsx";
-import HelpCenter from "./pages/HelpCenter.jsx";
-import ContactUs from "./pages/ContactUs.jsx";
-import FAQ from "./pages/QandA.jsx";
-import PageNotFound from "./components/PageNotFound.jsx";
-import SignUp from "./pages/SignUp.jsx";
-import Onboarding from "./pages/Onboarding.jsx";
-import LandingPage from "./pages/landingPage/LandingPage.jsx";
 import UpgradeModal from "./components/billing/UpgradeModal.jsx";
+
+// ── Route-level code splitting ──────────────────────────────────────────────
+// Every page used to be a static import, so the build produced ONE 1.08MB
+// chunk that had to be downloaded and parsed before anything appeared. A
+// visitor on the marketing page was paying for the whole authenticated app,
+// the charting library, and 650 lines of privacy policy before they saw a
+// headline.
+//
+// The landing page and login stay EAGER on purpose: they are the first thing
+// most visitors see, and lazy-loading them would trade one big download for a
+// blank screen plus a second round trip on the most latency-sensitive route in
+// the product. Everything behind auth, and the long static legal pages, load on
+// demand.
+import LandingPage from "./pages/landingPage/LandingPage.jsx";
+import LoginPage from "./pages/LoginPage.jsx";
+import SignUp from "./pages/SignUp.jsx";
+import PageNotFound from "./components/PageNotFound.jsx";
+
+const Dashboard          = lazy(() => import("./pages/Dashboard.jsx"));
+const SendRequests       = lazy(() => import("./pages/SendRequests.jsx"));
+const Campaigns          = lazy(() => import("./pages/Campaigns.jsx"));
+const Settings           = lazy(() => import("./pages/Settings.jsx"));
+const Analytics          = lazy(() => import("./pages/Analytics.jsx"));
+const Competitors        = lazy(() => import("./pages/Competitors.jsx"));
+const AdminProfile       = lazy(() => import("./pages/AdminProfile.jsx"));
+const Onboarding         = lazy(() => import("./pages/Onboarding.jsx"));
+const TermsAndConditions = lazy(() => import("./pages/TermsAndConditions.jsx"));
+const PrivacyPolicy      = lazy(() => import("./pages/PrivacyPolicy.jsx"));
+const HelpCenter         = lazy(() => import("./pages/HelpCenter.jsx"));
+const ContactUs          = lazy(() => import("./pages/ContactUs.jsx"));
+const FAQ                = lazy(() => import("./pages/QandA.jsx"));
+
+// Shown while a lazy route's chunk is in flight. Deliberately the same shell
+// AppBootstrap uses for its session probe, so a cold navigation looks like one
+// continuous load rather than two different spinners.
+function RouteFallback() {
+  return (
+    <div className="min-h-screen w-full flex items-center justify-center bg-[#030712]">
+      <div className="w-10 h-10 rounded-full border-2 border-slate-700 border-t-blue-500 animate-spin" />
+    </div>
+  );
+}
 
 
 // Reads isAuthenticated directly from Redux store.
@@ -41,6 +67,10 @@ export default function App() {
       <BrowserRouter>
         <AppBootstrap>
           <UpgradeModal />
+          {/* One Suspense boundary around the whole route table: a navigation
+              swaps the entire page anyway, so a per-route boundary would add
+              nesting without changing what the user sees. */}
+          <Suspense fallback={<RouteFallback />}>
           <Routes>
             {/* Public */}
             <Route path="/" element={<LandingPage />} />
@@ -92,6 +122,7 @@ export default function App() {
             {/* Fallback */}
             <Route path="*" element={<PageNotFound />} />
           </Routes>
+          </Suspense>
         </AppBootstrap>
       </BrowserRouter>
     </ThemeProvider>

@@ -1,3 +1,4 @@
+import { QueryTypes } from "sequelize";
 import { sequelize } from "../config/db.js";
 import { provisionFreeSubscription } from "../services/subscription/provisionSubscription.service.js";
 import { User, Clinic }        from "../models/index.js";
@@ -70,7 +71,23 @@ export const register = async (req, res) => {
         clinicId: createdClinic.id,
         transaction,
       });
- 
+
+      // …and a membership row, because loadClinic resolves the tenant through
+      // clinic_members (migration 0015), not through clinics.user_id. Without
+      // this the account would register successfully and then 404 on every
+      // authenticated route. Inside the same transaction as the other three
+      // writes, so a partial signup is impossible.
+      await sequelize.query(
+        `INSERT INTO clinic_members (clinic_id, user_id, role)
+         VALUES ($1::uuid, $2::uuid, 'owner'::clinic_role_enum)
+         ON CONFLICT ON CONSTRAINT uniq_clinic_member DO NOTHING`,
+        {
+          bind: [createdClinic.id, createdUser.id],
+          type: QueryTypes.INSERT,
+          transaction,
+        }
+      );
+
       return { user: createdUser, clinic: createdClinic };
     });
  
@@ -284,9 +301,18 @@ export const refreshToken = async (req, res) => {
 // Returns current logged in user + clinic
 export const getMe = async (req, res) => {
   try {
-    const clinic = await Clinic.findOne({
-      where: { userId: req.user.id },
-    });
+    // Resolved through clinic_members, not clinics.user_id. This route mounts
+    // `protect` without `loadClinic`, so it does its own lookup — and if that
+    // lookup stayed on the ownership pointer, a staff member would get
+    // clinic:null here while every other route resolved their clinic fine.
+    const [membership] = await sequelize.query(
+      `SELECT clinic_id, role FROM clinic_members WHERE user_id = $1::uuid LIMIT 1`,
+      { bind: [req.user.id], type: QueryTypes.SELECT }
+    );
+
+    const clinic = membership
+      ? await Clinic.findByPk(membership.clinic_id)
+      : null;
 
     return successResponse(res, {
       message: "User fetched",
@@ -295,9 +321,13 @@ export const getMe = async (req, res) => {
           id:    req.user.id,
           name:  req.user.name,
           email: req.user.email,
-          role:  req.user.role,
+          role:  req.user.role,          // platform role — see models/User.js
         },
         clinic: clinic || null,
+        // What this person may do INSIDE the clinic. The frontend uses it to
+        // hide owner-only actions; the server enforces it independently via
+        // restrictTo(), so hiding is presentation, not security.
+        clinicRole: membership?.role ?? null,
       },
     });
 

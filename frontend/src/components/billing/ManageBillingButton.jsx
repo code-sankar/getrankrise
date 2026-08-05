@@ -5,12 +5,19 @@
 // single-use and must not be cached or iframed — we fetch a fresh one per click
 // and open it with window.open.
 import { useState } from "react";
+import { useSelector } from "react-redux";
 import { Settings2 } from "lucide-react";
 import { toast } from "react-toastify";
 import axiosInstance from "../../utils/axios.helper.js";
 
 export default function ManageBillingButton({ className = "", children }) {
   const [loading, setLoading] = useState(false);
+  // Owner-only, same as UpgradeButton — the portal is where a subscription gets
+  // cancelled. Server-enforced by restrictTo("owner"); this just avoids showing
+  // staff a button that can only 403.
+  const clinicRole = useSelector((s) => s.auth.clinicRole);
+
+  if (clinicRole && clinicRole !== "owner") return null;
 
   const handleClick = async () => {
     setLoading(true);

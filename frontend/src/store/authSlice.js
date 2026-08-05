@@ -11,6 +11,7 @@ const authSlice = createSlice({
     token,
     user:            null,   // { id, name, email, role }
     clinicName:      null,
+    clinicRole:      null,   // "owner" | "staff" — set by hydrateSession
     userEmail:       null,
     isAuthenticated: !!token,
     bootstrapped:    false,  // becomes true once AppBootstrap finishes the /auth/me probe
@@ -53,7 +54,7 @@ const authSlice = createSlice({
     // Used by AppBootstrap after /auth/me succeeds
     // payload: { user: {...}, clinic: { clinicName, ... } | null }
     hydrateSession(state, action) {
-      const { user, clinic } = action.payload;
+      const { user, clinic, clinicRole } = action.payload;
       state.user = {
         id:    user.id,
         name:  user.name,
@@ -62,6 +63,11 @@ const authSlice = createSlice({
       };
       state.userEmail       = user.email;
       state.clinicName      = clinic?.clinicName || null;
+      // "owner" | "staff" — what this person may do inside the clinic, as
+      // opposed to user.role which is a platform label nothing authorizes on.
+      // Used only to hide owner-only controls; the server enforces the same
+      // rule with restrictTo(), so this is presentation.
+      state.clinicRole      = clinicRole ?? null;
       state.isAuthenticated = true;
       state.bootstrapped    = true;
     },
@@ -76,6 +82,7 @@ const authSlice = createSlice({
       state.token           = null;
       state.user            = null;
       state.clinicName      = null;
+      state.clinicRole      = null;
       state.userEmail       = null;
       state.isAuthenticated = false;
       state.loading         = false;

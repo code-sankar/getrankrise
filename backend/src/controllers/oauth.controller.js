@@ -111,11 +111,22 @@ export const getGoogleLocations = async (req, res) => {
   try {
     const accounts = await listAccounts(req.clinic.id);
 
-    const result = [];
-    for (const account of accounts) {
-      const locations = await listLocations(req.clinic.id, account.id);
-      result.push({ account, locations });
-    }
+    // Fetched in parallel rather than in a serial for-loop. Each listLocations
+    // is an independent round trip to Google, so the old loop made the picker
+    // take the SUM of every account's latency — an agency with six locations
+    // waited six times as long as it needed to, on a screen that is already the
+    // slowest step of onboarding.
+    //
+    // Promise.all rejects on the first failure, which is the behaviour we want:
+    // the catch below maps GBP_NOT_APPROVED and the auth codes to specific,
+    // actionable messages, and a half-populated picker would be worse than an
+    // honest error.
+    const result = await Promise.all(
+      accounts.map(async (account) => ({
+        account,
+        locations: await listLocations(req.clinic.id, account.id),
+      }))
+    );
 
     return successResponse(res, {
       message: "Locations fetched",

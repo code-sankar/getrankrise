@@ -91,6 +91,20 @@ const allowedOrigins = (env.CLIENT_URL || "")
   .map((s) => s.trim())
   .filter(Boolean);
 
+// A disallowed origin is a REJECTION, not a server fault.
+//
+// This used to `callback(new Error("Not allowed by CORS"))`, which propagates
+// to errorHandler and came back as a 500 carrying the message and (in dev) a
+// stack trace naming this file and line. Two things wrong with that: a
+// misconfigured CLIENT_URL looked identical to a crash in error monitoring, and
+// the response disclosed internal paths to precisely the caller we are refusing
+// to talk to.
+//
+// Signalling "not allowed" as `callback(null, false)` makes the cors middleware
+// simply omit the Access-Control-Allow-Origin header. The browser then blocks
+// the request — which is the actual enforcement, and always was; the thrown
+// error never added any protection. The explicit 403 below is for humans
+// debugging with curl, where a silent 200 with no CORS headers is baffling.
 app.use(
   cors({
     origin: (origin, callback) => {
@@ -99,13 +113,27 @@ app.use(
       // Origin header, so they pass through here untouched — by design.
       if (!origin) return callback(null, true);
       if (allowedOrigins.includes(origin)) return callback(null, true);
-      return callback(new Error("Not allowed by CORS"));
+      return callback(null, false);
     },
     credentials: true,
     methods:     ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
     allowedHeaders: ["Content-Type", "Authorization", "Idempotency-Key"],
   })
 );
+
+// Runs after cors(), so a cross-origin request that was NOT allow-listed still
+// has no Access-Control-Allow-Origin header on the response. Answer it plainly
+// instead of letting it reach a route handler.
+app.use((req, res, next) => {
+  const origin = req.headers.origin;
+  if (!origin || allowedOrigins.includes(origin)) return next();
+
+  return res.status(403).json({
+    success: false,
+    code: "ORIGIN_NOT_ALLOWED",
+    message: "This origin is not permitted to call the API.",
+  });
+});
 
 // ── Global rate limit ─────────────────────────────────────────────────────────
 // Catch-all that protects against unauthenticated flooding. Per-route limiters

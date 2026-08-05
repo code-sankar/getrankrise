@@ -229,10 +229,13 @@ export default function SendRequests() {
           </button>
         </header>
 
-        {/* Sticky TopBar */}
+        {/* Sticky TopBar.
+            The title was "Pulse Campaigns", copied from Campaigns.jsx — so this
+            page and /campaigns rendered the same header and the topbar told you
+            nothing about where you actually were. */}
         <div className="sticky top-0 z-50">
           <TopBar
-            title="Pulse Campaigns"
+            title="Send Requests"
             onMenuClick={() => setSidebarOpen(true)}
           />
         </div>

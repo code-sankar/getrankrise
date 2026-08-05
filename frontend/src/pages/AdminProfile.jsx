@@ -12,6 +12,7 @@ import {
   getUserSettings,
   updateUserSettings,
 } from "../hooks/user.hook.js";
+import { getUserReviews } from "../hooks/reviews.hook.js";
 
 // Profile Sub-Components
 import ProfileHero from "../components/Admin/Profile/ProfileHero.jsx";
@@ -69,10 +70,14 @@ export default function AdminProfile() {
     ...notifEdits,
   };
 
-  // ── Load clinic & settings on mount ──────────────────────────────────────
+  // ── Load clinic, settings & reviews on mount ─────────────────────────────
+  // Reviews are needed because the Overview tab's performance bars are now
+  // derived from real review data rather than the hardcoded "85%" and
+  // "4.9/5.0" they used to render.
   useEffect(() => {
     getUserClinic(dispatch).catch(() => {});
     getUserSettings(dispatch).catch(() => {});
+    getUserReviews(dispatch, { offset: 0 }).catch(() => {});
   }, [dispatch]);
 
   // (The two "hydrate the local form whenever Redux updates" effects that used

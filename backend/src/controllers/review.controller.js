@@ -73,7 +73,13 @@ export const listReviews = async (req, res) => {
       if (limit <= 0) {
         return successResponse(res, {
           message: "Free tier limit reached. Upgrade to view more reviews.",
-          data: { reviews: [], total: planCap, cappedByPlan: true },
+          data: {
+            reviews: [],
+            total: planCap,
+            limit: 0,
+            offset,
+            cappedByPlan: true,
+          },
         });
       }
     }
@@ -88,11 +94,23 @@ export const listReviews = async (req, res) => {
       offset,
     });
 
+    // ── `total` must mean ONE thing ─────────────────────────────────────────
+    // It was `planCap` on the capped early-return above but the raw table
+    // `count` here, so a Free clinic with 247 stored reviews saw total:20 or
+    // total:247 depending purely on the offset it happened to ask for. The
+    // Dashboard renders "N of TOTAL Reviews" from this, so the number visibly
+    // changed as the user paged.
+    //
+    // The consistent meaning is "how many rows this plan will let you see",
+    // which for a capped plan is the cap (or fewer, if they genuinely have
+    // fewer) and for an uncapped plan is the real count.
+    const visibleTotal = planCap === null ? count : Math.min(count, planCap);
+
     return successResponse(res, {
       message: "Reviews fetched",
       data: {
         reviews: rows,
-        total: count,
+        total: visibleTotal,
         limit,
         offset,
         cappedByPlan: planCap !== null,

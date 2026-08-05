@@ -42,6 +42,7 @@ export async function resetData() {
       refresh_tokens, webhook_events, usage_counters,
       competitor_snapshots, competitors,
       notifications, requests, reviews,
+      clinic_members,
       platform_connections, subscriptions, clinics, users
     RESTART IDENTITY CASCADE
   `);
@@ -81,6 +82,15 @@ export async function createClinic({
      VALUES ($1::uuid, $2::plan_type_enum, $3::subscription_status_enum,
              $4::timestamptz, $5::timestamptz, 0, 0, NOW())`,
     { bind: [clinic.id, plan, status, periodStart, periodEnd], type: QueryTypes.INSERT }
+  );
+
+  // The owner membership, exactly as registration writes it. loadClinic
+  // resolves the tenant through this table, so a fixture without it would
+  // produce a clinic no request can reach.
+  await sequelize.query(
+    `INSERT INTO clinic_members (clinic_id, user_id, role)
+     VALUES ($1::uuid, $2::uuid, 'owner'::clinic_role_enum)`,
+    { bind: [clinic.id, user.id], type: QueryTypes.INSERT }
   );
 
   return { userId: user.id, clinicId: clinic.id, email };

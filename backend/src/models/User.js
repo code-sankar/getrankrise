@@ -33,9 +33,17 @@ const User = sequelize.define(
         notEmpty: { msg: "Password is required" },
       },
     },
+    // PLATFORM-level role, not a clinic permission. It is carried in the JWT
+    // and rendered as the badge in the UI, but NOTHING authorizes against it.
+    //
+    // Clinic permissions live in clinic_members.role (owner | staff) —
+    // see migration 0015 and restrictTo() in loadClinic.middleware.js. Keep the
+    // two straight: this column would be where an internal GetRankRise-staff
+    // concept goes if one is ever needed; it says nothing about what a user may
+    // do inside a clinic.
     role: {
       type:         DataTypes.ENUM("admin", "user"),
-      defaultValue: "admin", // clinic owners are admins
+      defaultValue: "admin",
     },
     // NOTE: there is no refreshToken column here any more. Sessions live in the
     // `refresh_tokens` table (migrations/0014) — one row per device, each
