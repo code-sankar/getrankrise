@@ -106,13 +106,13 @@ export default function ContactUs() {
                 <ContactInfoCard
                   icon={<Phone className="text-emerald-500" />}
                   title="Call Us"
-                  detail="+1 (888) RANK-RISE"
+                  detail="+91 6002830014"
                   theme={theme}
                 />
                 <ContactInfoCard
                   icon={<MapPin className="text-rose-500" />}
                   title="Visit Us"
-                  detail="123 Growth Ave, NY"
+                  detail="Chabua, Dist.Dibrugarh, ASSAM"
                   theme={theme}
                 />
               </div>
@@ -142,7 +142,7 @@ export default function ContactUs() {
                     <textarea rows="4" placeholder="How can we help?" className={`w-full px-4 py-3 rounded-xl outline-none border resize-none transition-all ${theme.input}`} required />
                   </div>
                   <div className="md:col-span-2 pt-2">
-                    <button type="submit" disabled={isSubmitting} className="w-full md:w-auto px-10 py-4 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-2xl shadow-lg shadow-indigo-600/20 transition-all active:scale-95 flex items-center justify-center gap-3 disabled:opacity-70">
+                    <button type="submit" disabled={isSubmitting} className="w-full md:w-auto px-10 py-4 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-2xl shadow-lg shadow-indigo-600/20 transition-all active:scale-95 flex items-center justify-center gap-3 disabled:opacity-70 cursor-pointer">
                       {isSubmitting ? "Sending..." : <><Send size={18} /> Send Message</>}
                     </button>
                   </div>
