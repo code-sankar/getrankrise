@@ -24,6 +24,7 @@ import FacebookConnect from "../components/onboarding/FacebookConnect.jsx";
 import UpgradeButton from "../components/billing/UpgradeButton.jsx";
 // ── Step 2: team management, usage meters, verification nudge ────────────────
 import TeamTab from "../components/settings/TeamTab.jsx";
+import DangerZone from "../components/settings/DangerZone.jsx";
 import UsageMeters from "../components/settings/UsageMeters.jsx";
 import VerifyEmailBanner from "../components/account/VerifyEmailBanner.jsx";
 // ── Paddle-hosted customer portal (update payment / cancel) ───────────────────
@@ -437,6 +438,12 @@ export default function Settings() {
 
                 <div className={`border border-red-900/20 rounded-2xl p-6 sm:p-8 ${dark ? "bg-red-500/5" : "bg-red-50/50 shadow-sm"}`}>
                   <SectionHeader dark={dark} title="Danger Zone" description="Permanent actions for your account" />
+                  {/* The "Delete Account" button that used to sit here toasted
+                      "handled by support@getrankrise.com" — a support queue
+                      standing in for a right the Privacy Policy already
+                      promised. It is now a real flow, in its own section below,
+                      because deletion and export belong together and neither
+                      belongs next to Sign Out. */}
                   <div className="flex flex-wrap gap-3">
                     <button
                       type="button"
@@ -445,14 +452,16 @@ export default function Settings() {
                     >
                       Sign Out
                     </button>
-                    <button
-                      type="button"
-                      onClick={() => toast.info("Account deletion requests are handled by support@getrankrise.com")}
-                      className="px-4 py-2 border border-red-200 text-red-600 hover:bg-red-600 hover:text-white text-sm font-bold rounded-lg transition-all"
-                    >
-                      Delete Account
-                    </button>
                   </div>
+                </div>
+
+                <div className={`border rounded-2xl p-6 sm:p-8 ${cardBg}`}>
+                  <SectionHeader
+                    dark={dark}
+                    title="Your data"
+                    description="Take a copy, or close the account for good"
+                  />
+                  <DangerZone dark={dark} />
                 </div>
               </div>
             )}

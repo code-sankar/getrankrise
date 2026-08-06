@@ -299,14 +299,22 @@ const SECTIONS = [
             Settings page.
           </li>
           <li>
-            <strong>Right to Erasure</strong> — Request deletion of your account
-            and all associated data. Note that some billing records must be
-            retained for legal compliance.
+            <strong>Right to Erasure</strong> — Delete your account and all
+            associated data yourself, at any time, from Settings &rarr; Account.
+            Deletion is immediate and permanent: there is no recovery window.
+            If you are the clinic owner it removes the clinic and every team
+            account with it, and cancels any active subscription. Invoices held
+            by our payment provider (Paddle, our Merchant of Record) are
+            retained by them for tax and accounting purposes.
           </li>
           <li>
-            <strong>Right to Portability</strong> — Request an export of your
-            review data and clinic information in CSV format from the Admin
-            Profile page.
+            <strong>Right to Portability</strong> — Download a complete copy of
+            your data from Settings &rarr; Account, as a single JSON file. It
+            includes your clinic profile, reviews and replies, review requests,
+            campaigns, competitors and team. Passwords and the credentials for
+            any connected Google, Yelp or Facebook account are deliberately
+            excluded. Analytics can also be exported as CSV from the Analytics
+            page.
           </li>
           <li>
             <strong>Right to Object</strong> — Object to specific processing

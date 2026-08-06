@@ -144,6 +144,56 @@ export function verifyWebhookSignature(rawBody, sigHeader, secret) {
 }
 
 /** Maps a Paddle price ID back to our internal plan_type. */
+/**
+ * Cancels a subscription immediately.
+ *
+ * ── Why "immediately" and not at period end ────────────────────────────────
+ * The one caller is account deletion. Everywhere ELSE in the product, cancelling
+ * means "stop renewing, keep what I paid for" — that flow goes through the
+ * customer portal (createPortalSession) and Paddle schedules it for period end,
+ * which is correct because the customer keeps using the product.
+ *
+ * Deletion is the opposite situation: the data is about to be destroyed and the
+ * account will not exist. Leaving a subscription to run to period end would
+ * mean a customer who deleted their account watching one more charge land, with
+ * no account to log into and nothing to cancel it from. That is the single
+ * worst outcome available, so this one is immediate.
+ *
+ * ── Failure is the caller's decision, not this function's ──────────────────
+ * Throws on any non-2xx. deleteAccount treats that as fatal and refuses to
+ * delete — see the comment there. Silently swallowing it would destroy the only
+ * record of who is being charged while the charging continues.
+ *
+ * @param {string} subscriptionId  Paddle's sub_… id
+ * @returns {Promise<{ id: string, status: string }>}
+ */
+export async function cancelSubscription(subscriptionId) {
+  if (!subscriptionId) throw new Error("cancelSubscription: no subscription id");
+
+  const res = await fetch(`${API_BASE}/subscriptions/${subscriptionId}/cancel`, {
+    method: "POST",
+    headers: headers(),
+    body: JSON.stringify({ effective_at: "immediately" }),
+    signal: AbortSignal.timeout(15_000),
+  });
+
+  // 404 means Paddle has no such subscription — already cancelled, already
+  // gone, or a stale id we stored. Either way there is nothing left to stop, so
+  // this is a success for the caller's purposes rather than a reason to block a
+  // deletion the user asked for.
+  if (res.status === 404) return { id: subscriptionId, status: "not_found" };
+
+  if (!res.ok) {
+    const errText = await res.text().catch(() => "");
+    const err = new Error(`Paddle cancel ${res.status}: ${errText.slice(0, 300)}`);
+    err.code = "PADDLE_CANCEL_FAILED";
+    throw err;
+  }
+
+  const { data } = await res.json();
+  return { id: data.id, status: data.status };
+}
+
 export function priceIdToPlan(priceId) {
   if (priceId === env.PADDLE_PRICE_ID_STARTER) return "starter";
   if (priceId === env.PADDLE_PRICE_ID_PREMIUM) return "premium";

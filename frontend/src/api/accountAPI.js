@@ -70,6 +70,59 @@ export const accountAPI = {
     const { data } = await axiosInstance.post("/auth/accept-invite", body);
     return data?.data ?? null;
   },
+
+  // ── GDPR: portability and erasure ────────────────────────────────────────
+
+  /**
+   * What deletion would actually destroy. Fetched BEFORE the confirmation
+   * dialog opens, so the dialog can name real numbers instead of a generic
+   * warning — a destructive confirm that cannot say what it destroys is one
+   * people click through without reading.
+   */
+  deletionPreview: async () => {
+    const { data } = await axiosInstance.get("/account/deletion-preview");
+    return data?.data ?? null;
+  },
+
+  /**
+   * Downloads the full export.
+   *
+   * responseType "blob" and a synthetic anchor click, rather than pointing the
+   * browser at the URL: the endpoint needs the Authorization header, and a
+   * plain navigation cannot carry one. The object URL is revoked immediately —
+   * it holds the whole document in memory until it is.
+   */
+  downloadExport: async () => {
+    const res = await axiosInstance.get("/account/export", {
+      responseType: "blob",
+      // A large clinic's export is a multi-table read; the 10s default is for
+      // ordinary CRUD.
+      timeout: 60000,
+    });
+
+    // The server names the file; fall back only if the header is missing.
+    const disposition = res.headers?.["content-disposition"] ?? "";
+    const named = /filename="([^"]+)"/.exec(disposition)?.[1];
+
+    const url = URL.createObjectURL(res.data);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = named || "getrankrise-export.json";
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
+
+    return { filename: a.download };
+  },
+
+  /** Irreversible. The caller is responsible for having confirmed. */
+  deleteAccount: async ({ password, confirm }) => {
+    const { data } = await axiosInstance.delete("/account", {
+      data: { password, confirm },
+    });
+    return data;
+  },
 };
 
 export default accountAPI;
