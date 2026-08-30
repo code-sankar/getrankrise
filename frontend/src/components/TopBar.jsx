@@ -11,7 +11,7 @@ export default function TopBar({ title }) {
       ? "bg-slate-900/80 border-slate-800"
       : "bg-white/80 border-slate-200",
     text: dark ? "text-slate-100" : "text-slate-900",
-    muted: "text-slate-500 dark:text-slate-400",
+    muted: "text-slate-600 dark:text-slate-400",
     btn: dark
       ? "bg-slate-800/40 border-slate-700 hover:bg-slate-700/60"
       : "bg-white border-slate-200 hover:bg-slate-50 hover:shadow-sm",

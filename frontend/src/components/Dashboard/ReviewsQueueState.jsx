@@ -60,10 +60,10 @@ function SkeletonRows({ dark }) {
 function ErrorCard({ dark, onRetry }) {
   return (
     <div className="p-10 text-center">
-      <p className={`text-sm font-medium ${dark ? "text-slate-300" : "text-slate-600"}`}>
+      <p className={`text-sm font-medium ${dark ? "text-slate-700 dark:text-slate-300" : "text-slate-600 dark:text-slate-400"}`}>
         We couldn't load your reviews.
       </p>
-      <p className={`text-xs mt-1 text-slate-500 dark:text-slate-400`}>
+      <p className={`text-xs mt-1 text-slate-600 dark:text-slate-400`}>
         Check your connection and try again.
       </p>
       {onRetry && (
@@ -104,7 +104,7 @@ function NoReviewsYet({ dark }) {
       <h3 className={`font-bold text-base ${dark ? "text-white" : "text-slate-900"}`}>
         No reviews yet
       </h3>
-      <p className={`text-sm mt-1 max-w-sm mx-auto text-slate-500 dark:text-slate-400`}>
+      <p className={`text-sm mt-1 max-w-sm mx-auto text-slate-600 dark:text-slate-400`}>
         Once your Google Business Profile is connected and synced, your customer
         reviews will appear here automatically.
       </p>

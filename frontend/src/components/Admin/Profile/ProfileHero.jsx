@@ -50,8 +50,8 @@ export default function ProfileHero({
                   onClick={() => setEditMode(false)}
                   className={`px-4 py-2 rounded-xl border text-sm font-medium transition-all ${
                     dark
-                      ? "border-slate-700 text-slate-300 hover:bg-slate-800"
-                      : "border-slate-200 text-slate-600 hover:bg-slate-50"
+                      ? "border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-800"
+                      : "border-slate-200 text-slate-600 dark:text-slate-400 hover:bg-slate-50"
                   }`}
                 >
                   <X size={16} className="inline mr-2" /> Cancel
@@ -88,7 +88,7 @@ export default function ProfileHero({
             {profile.name}
           </h1>
           <p
-            className={`text-sm text-slate-500 dark:text-slate-400`}
+            className={`text-sm text-slate-600 dark:text-slate-400`}
           >
             {profile.role} • {profile.clinicName}
           </p>

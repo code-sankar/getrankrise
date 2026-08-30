@@ -92,7 +92,10 @@ function GrowthAreaChart() {
       <circle cx={coords[coords.length - 1].x} cy={coords[coords.length - 1].y} r="3" fill="#3b82f6" />
       <circle cx={coords[coords.length - 1].x} cy={coords[coords.length - 1].y} r="6" fill="#3b82f6" fillOpacity="0.18" />
 
-      {/* X labels — minimal, every other month */}
+      {/* X labels — minimal, every other month.
+          fill was #4b5563, which measures 2.56:1 on this card; #94a3b8 is the
+          same neutral family at 7.54:1. 8px was also below the size at which a
+          label is worth drawing, so these are 9px. */}
       {labels.map((l, i) =>
         i % 2 === 0 ? (
           <text
@@ -100,8 +103,8 @@ function GrowthAreaChart() {
             x={padX + (i / (labels.length - 1)) * innerW}
             y={h - 2}
             textAnchor="middle"
-            fontSize="8"
-            fill="#4b5563"
+            fontSize="9"
+            fill="#94a3b8"
             fontFamily="inherit"
           >
             {l}
@@ -117,10 +120,10 @@ function GrowthAreaChart() {
    ────────────────────────────────────────────────────────────────────────── */
 function ReviewItem({ name, platform, text, rating, time, platformColor }) {
   return (
-    <div className="px-3 py-2.5 rounded-md hover:bg-[#0d1118] transition-colors cursor-default border border-transparent hover:border-gray-900/60">
+    <div className="px-3 py-2.5 rounded-md hover:bg-[#0d1118] transition-colors cursor-default border border-transparent hover:border-slate-900/60">
       <div className="flex items-center justify-between mb-1">
         <div className="flex items-center gap-1.5">
-          <span className="text-[10px] font-semibold text-gray-200">{name}</span>
+          <span className="text-[10px] font-semibold text-slate-200">{name}</span>
           <span
             className="text-[8px] font-bold tracking-wider uppercase px-1 py-px rounded"
             style={{ color: platformColor, background: `${platformColor}15` }}
@@ -128,14 +131,14 @@ function ReviewItem({ name, platform, text, rating, time, platformColor }) {
             {platform}
           </span>
         </div>
-        <span className="text-[8px] text-gray-600">{time}</span>
+        <span className="text-[8px] text-slate-400">{time}</span>
       </div>
       <div className="flex gap-0.5 text-amber-400 mb-1">
         {[...Array(rating)].map((_, i) => (
           <Star key={i} size={7} fill="currentColor" stroke="none" />
         ))}
       </div>
-      <p className="text-[9px] leading-[1.45] text-gray-500 line-clamp-2">
+      <p className="text-[9px] leading-[1.45] text-slate-400 line-clamp-2">
         {text}
       </p>
     </div>
@@ -152,7 +155,7 @@ export default function DashboardPreview() {
     <div
       className="
         relative w-full max-w-6xl lg:max-w-7xl mx-auto
-        rounded-xl bg-[#06080c] border border-gray-900/60
+        rounded-xl bg-[#06080c] border border-slate-900/60
         p-4 sm:p-6 text-left select-none
         shadow-[0_30px_120px_-30px_rgba(59,130,246,0.25),0_20px_60px_-20px_rgba(0,0,0,0.8),0_0_0_1px_rgba(255,255,255,0.02)]
       "
@@ -161,13 +164,13 @@ export default function DashboardPreview() {
       <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/8 to-transparent pointer-events-none" />
 
       {/* Browser chrome */}
-      <div className="flex items-center justify-between pb-4 border-b border-gray-900/40 mb-6 px-1">
+      <div className="flex items-center justify-between pb-4 border-b border-slate-900/40 mb-6 px-1">
         <div className="flex items-center gap-1.5">
-          <div className="w-2.5 h-2.5 rounded-full bg-gray-800/80" />
-          <div className="w-2.5 h-2.5 rounded-full bg-gray-800/80" />
-          <div className="w-2.5 h-2.5 rounded-full bg-gray-800/80" />
+          <div className="w-2.5 h-2.5 rounded-full bg-slate-800/80" />
+          <div className="w-2.5 h-2.5 rounded-full bg-slate-800/80" />
+          <div className="w-2.5 h-2.5 rounded-full bg-slate-800/80" />
         </div>
-        <div className="bg-[#0b0e14] border border-gray-900/80 text-[10px] text-gray-500 px-7 py-1 rounded-md tracking-normal flex items-center gap-2">
+        <div className="bg-[#0b0e14] border border-slate-900/80 text-[10px] text-slate-400 px-7 py-1 rounded-md tracking-normal flex items-center gap-2">
           <svg width="9" height="9" viewBox="0 0 9 9" fill="none">
             <path d="M3 4V2.5a1.5 1.5 0 113 0V4M2 4h5v3.5a.5.5 0 01-.5.5h-4a.5.5 0 01-.5-.5V4z" stroke="#4b5563" strokeWidth="0.7" />
           </svg>
@@ -187,12 +190,12 @@ export default function DashboardPreview() {
         {/* ──────────── Sidebar ──────────── */}
         <div className="w-full lg:w-52 flex-shrink-0 space-y-0.5">
           <div className="flex items-center gap-2 px-2.5 py-2 mb-4">
-            <div className="w-5 h-5 bg-gradient-to-br from-white to-gray-300 text-black font-black text-[10px] flex items-center justify-center rounded-md tracking-tighter shadow-md">
+            <div className="w-5 h-5 bg-gradient-to-br from-white to-slate-300 text-black font-black text-[10px] flex items-center justify-center rounded-md tracking-tighter shadow-md">
               B
             </div>
             <div className="flex-1 min-w-0">
               <div className="text-xs font-bold text-white tracking-tight truncate">Bright Smile Dental</div>
-              <div className="text-[8px] text-gray-500 font-medium">Mumbai · 3 locations</div>
+              <div className="text-[8px] text-slate-400 font-medium">Mumbai · 3 locations</div>
             </div>
           </div>
 
@@ -205,7 +208,7 @@ export default function DashboardPreview() {
           {['Reviews', 'Campaigns', 'Competitors', 'Local SEO', 'Workflows'].map((item) => (
             <button
               key={item}
-              className="w-full text-left px-2.5 py-1.5 text-[11px] rounded text-gray-500 hover:text-gray-300 font-medium transition-colors flex items-center justify-between group"
+              className="w-full text-left px-2.5 py-1.5 text-[11px] rounded text-slate-400 hover:text-slate-300 font-medium transition-colors flex items-center justify-between group"
             >
               <span>{item}</span>
               {item === 'Reviews' && (
@@ -221,13 +224,13 @@ export default function DashboardPreview() {
           {/* Header row */}
           <div className="flex items-center justify-between">
             <div>
-              <span className="text-[9px] text-gray-500 uppercase tracking-wider font-semibold">Overview</span>
+              <span className="text-[9px] text-slate-400 uppercase tracking-wider font-semibold">Overview</span>
               <h3 className="text-xl font-bold text-white tracking-tight mt-0.5">This week</h3>
             </div>
-            <div className="flex bg-[#0b0e14] border border-gray-900 rounded-md p-0.5 text-[10px]">
+            <div className="flex bg-[#0b0e14] border border-slate-900 rounded-md p-0.5 text-[10px]">
               <span className="bg-[#161b26] text-white px-3 py-0.5 rounded font-medium">7d</span>
-              <span className="text-gray-500 px-3 py-0.5 font-medium hover:text-gray-300 cursor-pointer">30d</span>
-              <span className="text-gray-500 px-3 py-0.5 font-medium hover:text-gray-300 cursor-pointer">90d</span>
+              <span className="text-slate-400 px-3 py-0.5 font-medium hover:text-slate-300 cursor-pointer">30d</span>
+              <span className="text-slate-400 px-3 py-0.5 font-medium hover:text-slate-300 cursor-pointer">90d</span>
             </div>
           </div>
 
@@ -269,10 +272,10 @@ export default function DashboardPreview() {
             ].map((m, i) => (
               <div
                 key={i}
-                className="bg-[#0b0e14] border border-gray-900/60 rounded-lg p-4 hover:border-gray-800/80 transition-colors group"
+                className="bg-[#0b0e14] border border-slate-900/60 rounded-lg p-4 hover:border-slate-800/80 transition-colors group"
               >
                 <div className="flex items-center justify-between mb-1.5">
-                  <span className="text-[10px] text-gray-500 font-medium">{m.label}</span>
+                  <span className="text-[10px] text-slate-400 font-medium">{m.label}</span>
                   {m.icon}
                 </div>
                 <div className="flex items-end justify-between gap-2">
@@ -292,14 +295,14 @@ export default function DashboardPreview() {
           <div className="grid grid-cols-1 lg:grid-cols-5 gap-4">
 
             {/* Growth chart card */}
-            <div className="lg:col-span-3 bg-[#0b0e14] border border-gray-900/60 rounded-lg p-4">
+            <div className="lg:col-span-3 bg-[#0b0e14] border border-slate-900/60 rounded-lg p-4">
               <div className="flex items-center justify-between mb-3">
                 <div>
-                  <div className="text-[9px] text-gray-500 uppercase tracking-wider font-semibold">Review Growth</div>
+                  <div className="text-[9px] text-slate-400 uppercase tracking-wider font-semibold">Review Growth</div>
                   <div className="text-xs font-bold text-white mt-0.5">Last 12 months</div>
                 </div>
                 <div className="flex items-center gap-3 text-[9px]">
-                  <span className="flex items-center gap-1.5 text-gray-400">
+                  <span className="flex items-center gap-1.5 text-slate-400">
                     <span className="w-1.5 h-1.5 rounded-full bg-[#3b82f6]" />
                     Reviews
                   </span>
@@ -309,10 +312,10 @@ export default function DashboardPreview() {
             </div>
 
             {/* Review feed */}
-            <div className="lg:col-span-2 bg-[#0b0e14] border border-gray-900/60 rounded-lg p-3">
+            <div className="lg:col-span-2 bg-[#0b0e14] border border-slate-900/60 rounded-lg p-3">
               <div className="flex items-center justify-between px-2 pt-1 pb-3">
                 <div>
-                  <div className="text-[9px] text-gray-500 uppercase tracking-wider font-semibold">Latest reviews</div>
+                  <div className="text-[9px] text-slate-400 uppercase tracking-wider font-semibold">Latest reviews</div>
                   <div className="text-xs font-bold text-white mt-0.5">Across all platforms</div>
                 </div>
                 <span className="text-[9px] font-bold text-[#60a5fa] bg-[#3b82f6]/10 border border-[#3b82f6]/20 px-1.5 py-px rounded">
@@ -323,7 +326,7 @@ export default function DashboardPreview() {
                 <ReviewItem
                   name="Priya M."
                   platform="Google"
-                  platformColor="#4285f4"
+                  platformColor="#7aa8f8"
                   rating={5}
                   time="2m ago"
                   text="Dr. Shah is amazing — painless cleaning and the team was so warm."
@@ -331,7 +334,7 @@ export default function DashboardPreview() {
                 <ReviewItem
                   name="Arjun K."
                   platform="Yelp"
-                  platformColor="#d32323"
+                  platformColor="#f26d6d"
                   rating={5}
                   time="18m ago"
                   text="Best dental experience I've had in years. Genuinely recommend."
@@ -339,7 +342,7 @@ export default function DashboardPreview() {
                 <ReviewItem
                   name="Neha R."
                   platform="Facebook"
-                  platformColor="#1877f2"
+                  platformColor="#5b9bf8"
                   rating={4}
                   time="1h ago"
                   text="Great care and modern setup. Wait time was a bit longer than expected."

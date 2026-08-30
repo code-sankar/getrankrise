@@ -71,14 +71,14 @@ export default function ForgotPassword() {
           account exists for it. The link expires in 60 minutes and can only be
           used once.
         </AuthNotice>
-        <p className="text-xs text-slate-500 text-center leading-relaxed">
+        <p className="text-xs text-slate-400 text-center leading-relaxed">
           Nothing after a few minutes? Check your spam folder, and make sure you
           typed the address you signed up with.
         </p>
         <button
           type="button"
           onClick={() => setSent(false)}
-          className="w-full mt-6 text-sm text-slate-500 dark:text-slate-400 hover:text-slate-200 font-medium transition-colors"
+          className="w-full mt-6 text-sm text-slate-400 hover:text-slate-200 font-medium transition-colors"
         >
           Use a different email
         </button>

@@ -33,7 +33,7 @@ function NotificationBell() {
 
   const theme = {
     text: dark ? "text-slate-100" : "text-slate-900",
-    muted: "text-slate-500 dark:text-slate-400",
+    muted: "text-slate-600 dark:text-slate-400",
     btn: dark
       ? "bg-slate-800/40 border-slate-700 hover:bg-slate-700/60"
       : "bg-white border-slate-200 hover:bg-slate-50 hover:shadow-sm",
@@ -90,7 +90,7 @@ function NotificationBell() {
           />
         </svg>
         {unreadCount > 0 && (
-          <span className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 rounded-full text-white text-[9px] font-black flex items-center justify-center ring-2 ring-white dark:ring-slate-950">
+          <span className="absolute -top-1 -right-1 w-4 h-4 bg-red-600 rounded-full text-white text-[9px] font-black flex items-center justify-center ring-2 ring-white dark:ring-slate-950">
             {unreadCount}
           </span>
         )}

@@ -50,7 +50,7 @@ export default function HelpCenter() {
     card: dark
       ? "bg-slate-900 border-slate-800 hover:border-cyan-500/50"
       : "bg-white border-slate-200 shadow-sm hover:border-cyan-500/50",
-    textMain: dark ? "text-slate-500 dark:text-slate-400" : "text-slate-600",
+    textMain: dark ? "text-slate-600 dark:text-slate-400" : "text-slate-600 dark:text-slate-400",
     textHeader: dark ? "text-white" : "text-slate-900",
     searchBg: dark
       ? "bg-slate-900 border-slate-800"
@@ -93,7 +93,7 @@ export default function HelpCenter() {
             className={`p-2 rounded-xl transition-colors duration-200 active:scale-95 ${
               dark
                 ? "bg-slate-800 text-slate-100 hover:bg-slate-700"
-                : "bg-slate-100 text-slate-700 hover:bg-slate-200"
+                : "bg-slate-100 text-slate-700 dark:text-slate-300 hover:bg-slate-200"
             }`}
           >
             <svg
@@ -125,7 +125,7 @@ export default function HelpCenter() {
                   className={`absolute inset-y-0 left-4 flex items-center pointer-events-none`}
                 >
                   <svg
-                    className="w-5 h-5 text-slate-500 dark:text-slate-400"
+                    className="w-5 h-5 text-slate-600 dark:text-slate-400"
                     fill="none"
                     stroke="currentColor"
                     viewBox="0 0 24 24"

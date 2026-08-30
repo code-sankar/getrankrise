@@ -136,7 +136,7 @@ export default function AcceptInvite() {
     return (
       <AuthShell title="Invitation not valid" subtitle="It may have been used, revoked, or expired.">
         <AuthNotice tone="error">{loadError || "This invitation is no longer valid."}</AuthNotice>
-        <p className="text-xs text-slate-500 text-center leading-relaxed mb-6">
+        <p className="text-xs text-slate-400 text-center leading-relaxed mb-6">
           Ask the clinic owner to send you a new invitation.
         </p>
         <Link
@@ -240,7 +240,7 @@ export default function AcceptInvite() {
         )}
 
         {invite.hasAccount && (
-          <p className="text-sm text-slate-500 dark:text-slate-400 leading-relaxed">
+          <p className="text-sm text-slate-400 leading-relaxed">
             You already have a Kirtify account for this address. Accepting
             adds {invite.clinicName} to it — you'll keep your existing password.
           </p>

@@ -25,7 +25,7 @@ export default function AnalyticsCard({ title, subtitle, badge, children, dark }
               {title}
             </h3>
             {subtitle && (
-              <p className={`text-xs mt-0.5 text-slate-500 dark:text-slate-400`}>
+              <p className={`text-xs mt-0.5 text-slate-600 dark:text-slate-400`}>
                 {subtitle}
               </p>
             )}

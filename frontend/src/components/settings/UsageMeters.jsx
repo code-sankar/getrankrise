@@ -55,7 +55,7 @@ function Meter({ metric, data, dark }) {
         <span className={`text-sm font-semibold ${dark ? "text-slate-200" : "text-slate-800"}`}>
           {meta.label}
         </span>
-        <span className={`text-xs font-medium tabular-nums text-slate-500 dark:text-slate-400`}>
+        <span className={`text-xs font-medium tabular-nums text-slate-600 dark:text-slate-400`}>
           {unlimited
             ? `${used.toLocaleString()} used · unlimited`
             : notIncluded
@@ -111,7 +111,7 @@ export default function UsageMeters({ dark }) {
       <h3 className={`text-sm font-bold ${dark ? "text-white" : "text-slate-900"}`}>
         This period's usage
       </h3>
-      <p className="text-xs text-slate-500 mt-0.5">
+      <p className="text-xs text-slate-600 dark:text-slate-400 mt-0.5">
         Monthly meters reset on the 1st; daily meters reset at midnight UTC.
       </p>
     </div>
@@ -151,7 +151,7 @@ export default function UsageMeters({ dark }) {
     return (
       <div>
         {heading}
-        <p className="text-sm text-slate-500 mt-3">No metered features on your plan yet.</p>
+        <p className="text-sm text-slate-600 dark:text-slate-400 mt-3">No metered features on your plan yet.</p>
       </div>
     );
   }

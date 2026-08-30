@@ -38,7 +38,7 @@ export default function AddCompetitorModal({ open, onClose, onSubmit, submitting
   const panel = dark
     ? "bg-slate-900 border-slate-800"
     : "bg-white border-slate-200";
-  const label = dark ? "text-slate-300" : "text-slate-600";
+  const label = dark ? "text-slate-700 dark:text-slate-300" : "text-slate-600 dark:text-slate-400";
   const input = dark
     ? "bg-slate-800 border-slate-700 text-white placeholder-slate-500 focus:border-cyan-500"
     : "bg-slate-50 border-slate-200 text-slate-900 placeholder-slate-400 focus:border-cyan-500";
@@ -62,7 +62,7 @@ export default function AddCompetitorModal({ open, onClose, onSubmit, submitting
           <button
             onClick={onClose}
             disabled={submitting}
-            className={`p-1.5 rounded-lg transition-colors ${dark ? "hover:bg-slate-800 text-slate-500 dark:text-slate-400" : "hover:bg-slate-100 text-slate-500"} disabled:opacity-40`}
+            className={`p-1.5 rounded-lg transition-colors ${dark ? "hover:bg-slate-800 text-slate-600 dark:text-slate-400" : "hover:bg-slate-100 text-slate-600 dark:text-slate-400"} disabled:opacity-40`}
           >
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -96,8 +96,8 @@ export default function AddCompetitorModal({ open, onClose, onSubmit, submitting
                     form.platform === p
                       ? "bg-cyan-700 hover:bg-cyan-600 border-cyan-500 text-white"
                       : dark
-                        ? "bg-slate-800 border-slate-700 text-slate-300 hover:border-slate-600"
-                        : "bg-slate-50 border-slate-200 text-slate-600 hover:border-slate-300"
+                        ? "bg-slate-800 border-slate-700 text-slate-700 dark:text-slate-300 hover:border-slate-600"
+                        : "bg-slate-50 border-slate-200 text-slate-600 dark:text-slate-400 hover:border-slate-300"
                   }`}
                 >
                   {p}
@@ -128,7 +128,7 @@ export default function AddCompetitorModal({ open, onClose, onSubmit, submitting
             />
           </div>
 
-          <p className={`text-[11px] leading-relaxed text-slate-500 dark:text-slate-400`}>
+          <p className={`text-[11px] leading-relaxed text-slate-600 dark:text-slate-400`}>
             We'll pull this competitor's public rating, review volume, response
             rate and sentiment, then refresh on your plan's sync schedule.
           </p>
@@ -139,7 +139,7 @@ export default function AddCompetitorModal({ open, onClose, onSubmit, submitting
             onClick={onClose}
             disabled={submitting}
             className={`flex-1 py-2.5 rounded-xl text-sm font-bold transition-colors disabled:opacity-40 ${
-              dark ? "bg-slate-800 text-slate-300 hover:bg-slate-700" : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+              dark ? "bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-700" : "bg-slate-100 text-slate-600 dark:text-slate-400 hover:bg-slate-200"
             }`}
           >
             Cancel

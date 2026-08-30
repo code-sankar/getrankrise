@@ -91,7 +91,7 @@ function SignUp() {
           <h2 className="text-2xl sm:text-3xl font-extrabold tracking-tight bg-gradient-to-r from-white via-slate-100 to-slate-400 bg-clip-text text-transparent">
             Create your account
           </h2>
-          <p className="text-sm text-slate-500 dark:text-slate-400 font-medium">
+          <p className="text-sm text-slate-400 font-medium">
             Start your 14-day free trial — no card required.
           </p>
         </div>
@@ -245,11 +245,11 @@ function SignUp() {
 
         <div className="relative flex items-center my-6">
           <div className="flex-grow border-t border-white/[0.04]"></div>
-          <span className="flex-shrink mx-4 text-xs font-semibold text-slate-500 dark:text-slate-400 tracking-widest uppercase">OR</span>
+          <span className="flex-shrink mx-4 text-xs font-semibold text-slate-400 tracking-widest uppercase">OR</span>
           <div className="flex-grow border-t border-white/[0.04]"></div>
         </div>
 
-        <p className="text-center text-sm text-slate-500 dark:text-slate-400">
+        <p className="text-center text-sm text-slate-400">
           Already have an account?{" "}
           <Link
             to="/login"

@@ -26,8 +26,8 @@ export default function ReviewCard({ review }) {
       ? "bg-slate-950/50 border-slate-800"
       : "bg-slate-50 border-slate-200",
     text: dark ? "text-slate-100" : "text-slate-900",
-    muted: "text-slate-500 dark:text-slate-400",
-    body: dark ? "text-slate-300" : "text-slate-600",
+    muted: "text-slate-600 dark:text-slate-400",
+    body: dark ? "text-slate-700 dark:text-slate-300" : "text-slate-600 dark:text-slate-400",
     textarea: dark
       ? "bg-slate-900 border-slate-800 text-slate-200 focus:border-cyan-500"
       : "bg-white border-slate-300 text-slate-800 focus:border-cyan-500",
@@ -166,7 +166,7 @@ export default function ReviewCard({ review }) {
               {review.date}
             </span>
             {isUrgent && !review.replied && (
-              <span className="animate-pulse text-[10px] bg-red-500 text-white px-2 py-0.5 rounded-md font-black uppercase">
+              <span className="animate-pulse text-[10px] bg-red-600 text-white px-2 py-0.5 rounded-md font-black uppercase">
                 Action Required
               </span>
             )}
@@ -212,8 +212,8 @@ export default function ReviewCard({ review }) {
                 <div
                   className={`hidden sm:flex items-center gap-2 px-3 py-2 rounded-xl border text-[11px] font-bold ${
                     dark
-                      ? "border-slate-800 text-slate-500"
-                      : "border-slate-100 text-slate-500 dark:text-slate-400"
+                      ? "border-slate-800 text-slate-600 dark:text-slate-400"
+                      : "border-slate-100 text-slate-600 dark:text-slate-400"
                   }`}
                 >
                   <span className="text-cyan-700 dark:text-cyan-400">✦</span> AI READY
@@ -236,7 +236,7 @@ export default function ReviewCard({ review }) {
                 AI Assistant Draft
               </span>
             </div>
-            <span className="text-[10px] font-bold text-slate-500 uppercase">
+            <span className="text-[10px] font-bold text-slate-600 dark:text-slate-400 uppercase">
               Context-aware reply
             </span>
           </div>
@@ -253,8 +253,8 @@ export default function ReviewCard({ review }) {
                   tone === t
                     ? "bg-cyan-700 hover:bg-cyan-600 text-white"
                     : dark
-                      ? "bg-slate-800 text-slate-500 dark:text-slate-400 hover:text-slate-200"
-                      : "bg-slate-100 text-slate-500 hover:text-slate-700"
+                      ? "bg-slate-800 text-slate-600 dark:text-slate-400 hover:text-slate-200"
+                      : "bg-slate-100 text-slate-600 dark:text-slate-400 hover:text-slate-700"
                 }`}
               >
                 {t}
@@ -298,8 +298,8 @@ export default function ReviewCard({ review }) {
               disabled={generating || submitting}
               className={`px-4 py-2.5 border text-xs font-bold rounded-xl transition-all disabled:opacity-50 ${
                 dark
-                  ? "border-slate-700 hover:bg-slate-800 text-slate-300"
-                  : "border-slate-200 hover:bg-white text-slate-600"
+                  ? "border-slate-700 hover:bg-slate-800 text-slate-700 dark:text-slate-300"
+                  : "border-slate-200 hover:bg-white text-slate-600 dark:text-slate-400"
               }`}
             >
               Regenerate

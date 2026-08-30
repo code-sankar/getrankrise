@@ -74,7 +74,7 @@ export default class ErrorBoundary extends Component {
           </div>
 
           <h1 className="text-xl font-bold mb-2">This screen ran into a problem</h1>
-          <p className="text-sm text-slate-500 dark:text-slate-400 leading-relaxed mb-6">
+          <p className="text-sm text-slate-400 leading-relaxed mb-6">
             Something went wrong while rendering this page. Your data is safe —
             nothing was lost.
           </p>

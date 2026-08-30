@@ -106,7 +106,7 @@ export default function DangerZone({ dark }) {
         <h3 className={`text-sm font-bold mb-1 ${dark ? "text-white" : "text-slate-900"}`}>
           Export your data
         </h3>
-        <p className="text-xs text-slate-500 mb-4 leading-relaxed max-w-prose">
+        <p className="text-xs text-slate-600 dark:text-slate-400 mb-4 leading-relaxed max-w-prose">
           A complete copy of everything we hold for your clinic — reviews,
           replies, review requests, campaigns, competitors and team — as a
           single JSON file. Passwords and connected-account credentials are
@@ -122,13 +122,13 @@ export default function DangerZone({ dark }) {
             className={`px-5 py-2.5 rounded-xl text-sm font-bold border transition-colors disabled:opacity-50 ${
               dark
                 ? "border-slate-700 text-white hover:bg-slate-800"
-                : "border-slate-300 text-slate-700 hover:bg-slate-100"
+                : "border-slate-300 text-slate-700 dark:text-slate-300 hover:bg-slate-100"
             }`}
           >
             {exporting ? "Preparing…" : "Download my data"}
           </button>
         ) : (
-          <p className="text-xs text-slate-500">
+          <p className="text-xs text-slate-600 dark:text-slate-400">
             Only the clinic owner can export the clinic's data.
           </p>
         )}
@@ -145,12 +145,12 @@ export default function DangerZone({ dark }) {
         </h3>
 
         {loadError ? (
-          <p className="text-xs text-slate-500">{loadError}</p>
+          <p className="text-xs text-slate-600 dark:text-slate-400">{loadError}</p>
         ) : !preview ? (
           <div className={`h-4 w-64 rounded animate-pulse ${dark ? "bg-slate-800" : "bg-slate-200"}`} />
         ) : (
           <>
-            <p className="text-xs text-slate-500 mb-4 leading-relaxed max-w-prose">
+            <p className="text-xs text-slate-600 dark:text-slate-400 mb-4 leading-relaxed max-w-prose">
               {isOwner ? (
                 <>
                   Permanently deletes <strong>{preview.clinicName}</strong> and
@@ -167,10 +167,10 @@ export default function DangerZone({ dark }) {
             </p>
 
             {hasCounts && (
-              <ul className="text-xs text-slate-500 mb-4 space-y-0.5">
+              <ul className="text-xs text-slate-600 dark:text-slate-400 mb-4 space-y-0.5">
                 {COUNT_LABELS.filter(([k]) => (counts[k] ?? 0) > 0).map(([k, label]) => (
                   <li key={k}>
-                    • <strong className={dark ? "text-slate-300" : "text-slate-700"}>
+                    • <strong className={dark ? "text-slate-700 dark:text-slate-300" : "text-slate-700 dark:text-slate-300"}>
                       {counts[k].toLocaleString()}
                     </strong>{" "}
                     {label}
@@ -194,7 +194,7 @@ export default function DangerZone({ dark }) {
               <button
                 type="button"
                 onClick={() => setOpen(true)}
-                className="px-5 py-2.5 rounded-xl text-sm font-bold bg-red-600 hover:bg-red-500 text-white transition-colors"
+                className="px-5 py-2.5 rounded-xl text-sm font-bold bg-red-600 hover:bg-red-700 text-white transition-colors"
               >
                 {isOwner ? "Delete clinic and all data" : "Delete my account"}
               </button>
@@ -207,7 +207,7 @@ export default function DangerZone({ dark }) {
                 )}
 
                 <div>
-                  <label htmlFor="dz-password" className="block text-xs font-semibold mb-1 text-slate-500 dark:text-slate-400">
+                  <label htmlFor="dz-password" className="block text-xs font-semibold mb-1 text-slate-600 dark:text-slate-400">
                     Your password
                   </label>
                   <input
@@ -223,8 +223,8 @@ export default function DangerZone({ dark }) {
                 </div>
 
                 <div>
-                  <label htmlFor="dz-confirm" className="block text-xs font-semibold mb-1 text-slate-500 dark:text-slate-400">
-                    Type <span className="font-mono text-slate-300">{expectedConfirm}</span> to confirm
+                  <label htmlFor="dz-confirm" className="block text-xs font-semibold mb-1 text-slate-600 dark:text-slate-400">
+                    Type <span className="font-mono text-slate-700 dark:text-slate-300">{expectedConfirm}</span> to confirm
                   </label>
                   <input
                     id="dz-confirm"
@@ -242,7 +242,7 @@ export default function DangerZone({ dark }) {
                   <button
                     type="submit"
                     disabled={deleting || !password || !confirm}
-                    className="px-5 py-2.5 rounded-xl text-sm font-bold bg-red-600 hover:bg-red-500 text-white transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="px-5 py-2.5 rounded-xl text-sm font-bold bg-red-600 hover:bg-red-700 text-white transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     {deleting ? "Deleting…" : "Permanently delete"}
                   </button>
@@ -257,8 +257,8 @@ export default function DangerZone({ dark }) {
                     disabled={deleting}
                     className={`px-5 py-2.5 rounded-xl text-sm font-bold border transition-colors disabled:opacity-50 ${
                       dark
-                        ? "border-slate-700 text-slate-300 hover:bg-slate-800"
-                        : "border-slate-300 text-slate-600 hover:bg-slate-100"
+                        ? "border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-800"
+                        : "border-slate-300 text-slate-600 dark:text-slate-400 hover:bg-slate-100"
                     }`}
                   >
                     Cancel
@@ -266,7 +266,7 @@ export default function DangerZone({ dark }) {
                 </div>
 
                 {isOwner && (
-                  <p className="text-xs text-slate-500">
+                  <p className="text-xs text-slate-600 dark:text-slate-400">
                     Want a copy first? Download your data using the button
                     above — it won't be available afterwards.
                   </p>

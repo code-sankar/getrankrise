@@ -30,7 +30,7 @@ function CustomTooltip({ active, payload, dark }) {
       <p className={`font-bold ${dark ? "text-white" : "text-slate-900"}`}>
         {d.value} reviews
       </p>
-      <p className={"text-slate-500 dark:text-slate-400"}>{d.payload.percentage}%</p>
+      <p className={"text-slate-600 dark:text-slate-400"}>{d.payload.percentage}%</p>
     </div>
   );
 }
@@ -103,7 +103,7 @@ export default function RatingDistribution({ ratingData, total, dark }) {
             <p className={`text-xs font-black mt-0.5 ${dark ? "text-white" : "text-slate-900"}`}>
               {r.count}
             </p>
-            <p className={`text-[9px] font-bold text-slate-500 dark:text-slate-400`}>
+            <p className={`text-[9px] font-bold text-slate-600 dark:text-slate-400`}>
               {r.percentage}%
             </p>
           </div>

@@ -12,7 +12,7 @@ export default function FAQ() {
   const theme = {
     card: dark ? "bg-slate-900 border-slate-800" : "bg-white border-slate-200 shadow-sm",
     textHeader: dark ? "text-white" : "text-slate-900",
-    textMuted: "text-slate-500 dark:text-slate-400",
+    textMuted: "text-slate-600 dark:text-slate-400",
     input: dark ? "bg-slate-950 border-slate-800 text-white" : "bg-slate-50 border-slate-200 text-slate-900",
     accent: "text-cyan-700 dark:text-cyan-400",
   };
@@ -86,7 +86,7 @@ export default function FAQ() {
         {/* Mobile Header */}
         <header className={`lg:hidden flex items-center justify-between p-4 border-b flex-shrink-0 ${dark ? "bg-slate-900 border-slate-800" : "bg-white border-slate-100"}`}>
           <span className="font-black tracking-tight text-cyan-700 dark:text-cyan-400 text-lg">Kirtify</span>
-          <button onClick={() => setSidebarOpen(true)} className={`p-2 rounded-xl ${dark ? "bg-slate-800 text-slate-100" : "bg-slate-100 text-slate-700"}`}>
+          <button onClick={() => setSidebarOpen(true)} className={`p-2 rounded-xl ${dark ? "bg-slate-800 text-slate-100" : "bg-slate-100 text-slate-700 dark:text-slate-300"}`}>
             <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" /></svg>
           </button>
         </header>
@@ -102,7 +102,7 @@ export default function FAQ() {
             <div className="text-center mb-12">
               <h1 className={`text-3xl md:text-4xl font-black mb-4 ${theme.textHeader}`}>Frequently Asked Questions</h1>
               <div className="relative max-w-xl mx-auto">
-                <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500" size={18} />
+                <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-600 dark:text-slate-400" size={18} />
                 <input 
                   type="text" 
                   placeholder="Search your query..." 
@@ -119,7 +119,7 @@ export default function FAQ() {
                 <div key={idx}>
                   <div className="flex items-center gap-2 mb-4 px-2">
                     {group.icon}
-                    <h2 className="text-xs font-black uppercase tracking-widest text-slate-500">{group.category}</h2>
+                    <h2 className="text-xs font-black uppercase tracking-widest text-slate-600 dark:text-slate-400">{group.category}</h2>
                   </div>
                   <div className="space-y-3">
                     {group.questions.filter(item => item.q.toLowerCase().includes(searchQuery.toLowerCase())).map((item, qIdx) => (
@@ -158,7 +158,7 @@ function FAQItem({ question, answer, theme }) {
         className="w-full flex items-center justify-between p-5 text-left outline-none"
       >
         <span className={`text-sm md:text-base font-bold ${theme.textHeader}`}>{question}</span>
-        <ChevronDown size={20} className={`text-slate-500 transition-transform duration-300 ${isOpen ? 'rotate-180' : ''}`} />
+        <ChevronDown size={20} className={`text-slate-600 dark:text-slate-400 transition-transform duration-300 ${isOpen ? 'rotate-180' : ''}`} />
       </button>
       <div className={`overflow-hidden transition-all duration-300 ${isOpen ? 'max-h-96' : 'max-h-0'}`}>
         <div className={`p-5 pt-0 text-sm leading-relaxed ${theme.textMuted} border-t border-slate-100 dark:border-slate-800/50 mt-2`}>

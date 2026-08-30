@@ -21,7 +21,7 @@ import { getUserCredits }                    from "../hooks/credits.hook.js";
 const SEND_VIA_OPTIONS = ["SMS", "WhatsApp", "Email", "Both"];
 
 const statusStyles = {
-  Sent:     "bg-slate-800 text-slate-500 dark:text-slate-400 border border-slate-700",
+  Sent:     "bg-slate-800 text-slate-600 dark:text-slate-400 border border-slate-700",
   Opened:   "bg-amber-950 text-amber-700 dark:text-amber-500 border border-amber-900",
   Reviewed: "bg-emerald-950 text-emerald-700 dark:text-emerald-400 border border-emerald-900",
   Failed:   "bg-red-950 text-red-600 dark:text-red-400 border border-red-900",
@@ -210,7 +210,7 @@ export default function SendRequests() {
             className={`p-2 rounded-xl transition-colors duration-200 active:scale-95 ${
               dark
                 ? "bg-slate-800 text-slate-100 hover:bg-slate-700"
-                : "bg-slate-100 text-slate-700 hover:bg-slate-200"
+                : "bg-slate-100 text-slate-700 dark:text-slate-300 hover:bg-slate-200"
             }`}
           >
             <svg
@@ -251,7 +251,7 @@ export default function SendRequests() {
               >
                 Send Review Requests
               </h1>
-              <p className="text-slate-500 text-sm mt-1">
+              <p className="text-slate-600 dark:text-slate-400 text-sm mt-1">
                 Send a personalised message asking customers to leave a Google
                 review.
               </p>
@@ -281,7 +281,7 @@ export default function SendRequests() {
               <form onSubmit={handleSubmit} className="space-y-5">
                 {/* Patient Name */}
                 <div>
-                  <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-2">
+                  <label className="block text-[10px] font-bold text-slate-600 dark:text-slate-400 uppercase tracking-widest mb-2">
                     Customer Name
                   </label>
                   <input
@@ -303,7 +303,7 @@ export default function SendRequests() {
 
                 {/* Send Via */}
                 <div>
-                  <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-2">
+                  <label className="block text-[10px] font-bold text-slate-600 dark:text-slate-400 uppercase tracking-widest mb-2">
                     Send Via
                   </label>
                   <div className={`flex rounded-xl p-1 gap-1 ${toggleBg}`}>
@@ -328,8 +328,8 @@ export default function SendRequests() {
                                 ? "bg-slate-800 text-cyan-700 dark:text-cyan-400"
                                 : "bg-white text-cyan-700 dark:text-cyan-400 shadow-sm"
                               : disabledByPlan
-                              ? "text-slate-700 cursor-not-allowed"
-                              : "text-slate-500 hover:text-slate-300"
+                              ? "text-slate-700 dark:text-slate-300 cursor-not-allowed"
+                              : "text-slate-600 dark:text-slate-400 hover:text-slate-300"
                           }`}
                         >
                           {opt}
@@ -347,7 +347,7 @@ export default function SendRequests() {
                 {/* Phone */}
                 {["SMS", "WhatsApp", "Both"].includes(form.sendVia) && (
                   <div>
-                    <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-2">
+                    <label className="block text-[10px] font-bold text-slate-600 dark:text-slate-400 uppercase tracking-widest mb-2">
                       Phone Number
                     </label>
                     <input
@@ -371,7 +371,7 @@ export default function SendRequests() {
                 {/* Email */}
                 {["Email", "Both"].includes(form.sendVia) && (
                   <div>
-                    <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-2">
+                    <label className="block text-[10px] font-bold text-slate-600 dark:text-slate-400 uppercase tracking-widest mb-2">
                       Email Address
                     </label>
                     <input
@@ -400,12 +400,12 @@ export default function SendRequests() {
                       : "bg-slate-50 border-slate-200"
                   }`}
                 >
-                  <p className="text-[10px] font-bold text-slate-500 uppercase mb-2">
+                  <p className="text-[10px] font-bold text-slate-600 dark:text-slate-400 uppercase mb-2">
                     Message Preview
                   </p>
                   <p
                     className={`text-sm leading-relaxed ${
-                      dark ? "text-slate-500 dark:text-slate-400" : "text-slate-600"
+                      dark ? "text-slate-600 dark:text-slate-400" : "text-slate-600 dark:text-slate-400"
                     }`}
                   >
                     Hi{" "}
@@ -427,7 +427,7 @@ export default function SendRequests() {
 
                 {/* Out-of-credits banner */}
                 {blocked && (
-                  <div className="px-4 py-3 bg-red-950/40 border border-red-900/60 rounded-xl text-red-300 text-xs leading-relaxed">
+                  <div className="px-4 py-3 bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-900/60 rounded-xl text-red-800 dark:text-red-300 text-xs leading-relaxed">
                     You've used all{" "}
                     <span className="font-bold">{planLimit}</span>{" "}
                     {channelForForm.toUpperCase()} credits for this billing
@@ -442,7 +442,13 @@ export default function SendRequests() {
                   disabled={loading || blocked}
                   className={`w-full py-4 rounded-xl font-bold text-sm transition-all active:scale-[0.98] ${
                     blocked
-                      ? "bg-slate-800 text-slate-500 cursor-not-allowed border border-slate-800"
+                      // Was an unconditional bg-slate-800 with light-mode ink:
+                      // a dark grey button sitting on a light card, at 1.93:1.
+                      // WCAG exempts inactive controls, but this one is the
+                      // only thing telling you WHY you cannot send and what to
+                      // do about it — "Out of SMS credits — Upgrade" has to be
+                      // readable to do its job.
+                      ? "bg-slate-200 text-slate-700 dark:bg-slate-800 dark:text-slate-400 cursor-not-allowed border border-slate-300 dark:border-slate-800"
                       : loading
                       ? "bg-cyan-600/70 text-white cursor-wait"
                       : "bg-gradient-to-r from-cyan-500 to-blue-600 text-white hover:shadow-lg hover:shadow-cyan-500/30"
@@ -468,10 +474,10 @@ export default function SendRequests() {
               </h2>
 
               {recentRequests.length === 0 ? (
-                <div className="text-center py-16 text-slate-500">
+                <div className="text-center py-16 text-slate-600 dark:text-slate-400">
                   <p className="text-3xl mb-2">✉</p>
                   <p className="text-sm">No requests sent yet</p>
-                  <p className="text-xs text-slate-600 mt-1">
+                  <p className="text-xs text-slate-600 dark:text-slate-400 mt-1">
                     Sent requests will appear here.
                   </p>
                 </div>
@@ -498,7 +504,7 @@ export default function SendRequests() {
                           >
                             {req.name}
                           </p>
-                          <p className="text-[10px] text-slate-500">
+                          <p className="text-[10px] text-slate-600 dark:text-slate-400">
                             {req.contact}
                           </p>
                         </div>
@@ -511,7 +517,7 @@ export default function SendRequests() {
                         >
                           {req.status}
                         </span>
-                        <p className="text-[10px] text-slate-600 mt-1">
+                        <p className="text-[10px] text-slate-600 dark:text-slate-400 mt-1">
                           {req.sentAt}
                         </p>
                       </div>

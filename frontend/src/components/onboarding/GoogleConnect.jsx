@@ -45,7 +45,7 @@ export default function GoogleConnect({ onConnected, dark = true }) {
   // ── Theme tokens (matches the obsidian design system) ──────────────────────
   const card = dark ? "bg-slate-900 border-slate-800" : "bg-white border-slate-200 shadow-sm";
   const textPrimary = dark ? "text-white" : "text-slate-900";
-  const textMuted = "text-slate-500 dark:text-slate-400";
+  const textMuted = "text-slate-600 dark:text-slate-400";
   const rowHover = dark ? "hover:bg-slate-800/60" : "hover:bg-slate-50";
   const rowSelected = dark
     ? "bg-cyan-500/10 border-cyan-500/40"
@@ -311,7 +311,7 @@ export default function GoogleConnect({ onConnected, dark = true }) {
             onClick={handleDisconnect}
             disabled={busy}
             className={`text-xs font-bold transition-colors ${
-              dark ? "text-slate-500 hover:text-red-400" : "text-slate-500 dark:text-slate-400 hover:text-red-500"
+              dark ? "text-slate-600 dark:text-slate-400 hover:text-red-400" : "text-slate-600 dark:text-slate-400 hover:text-red-500"
             }`}
           >
             {busy ? "Disconnecting…" : "Disconnect Google"}

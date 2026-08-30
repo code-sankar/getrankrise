@@ -50,13 +50,13 @@ export default function Pricing() {
   ];
 
   return (
-    <section id="pricing" className="bg-[#030712] py-24 border-t border-gray-900 text-white">
+    <section id="pricing" className="bg-[#030712] py-24 border-t border-slate-900 text-white">
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-        <span className="text-[13px] text-gray-500 uppercase tracking-widest font-semibold">Pricing</span>
+        <span className="text-[13px] text-slate-400 uppercase tracking-widest font-semibold">Pricing</span>
         <h2 className="text-3xl sm:text-4xl font-bold tracking-tight mt-2 mb-3">
           Simple pricing. Outsized returns.
         </h2>
-        <p className="text-xs sm:text-sm text-gray-500 font-medium mb-16">
+        <p className="text-xs sm:text-sm text-slate-400 font-medium mb-16">
           14-day free trial. No card required. Cancel anytime.
         </p>
 
@@ -66,35 +66,35 @@ export default function Pricing() {
               key={idx}
               className={`group bg-[#080c14] border rounded-2xl p-6 sm:p-8 flex flex-col justify-between relative min-h-[520px] hover:-translate-y-2 transition-all duration-500 ${
                 p.popular
-                  ? 'border-gray-700 ring-1 ring-gray-700 hover:border-cyan-500/50 hover:ring-cyan-500/50 hover:shadow-[0_0_40px_rgba(59,130,246,0.15)]'
-                  : 'border-gray-900 hover:border-gray-700 hover:bg-[#0b101a] hover:shadow-2xl'
+                  ? 'border-slate-700 ring-1 ring-slate-700 hover:border-cyan-500/50 hover:ring-cyan-500/50 hover:shadow-[0_0_40px_rgba(59,130,246,0.15)]'
+                  : 'border-slate-900 hover:border-slate-700 hover:bg-[#0b101a] hover:shadow-2xl'
               }`}
             >
               {p.popular && (
-                <span className="absolute -top-2.5 left-6 bg-[#111827] border border-gray-800 text-[9px] font-bold text-gray-300 uppercase tracking-widest px-2 py-0.5 rounded-full">
+                <span className="absolute -top-2.5 left-6 bg-[#111827] border border-slate-800 text-[9px] font-bold text-slate-300 uppercase tracking-widest px-2 py-0.5 rounded-full">
                   Most Popular
                 </span>
               )}
 
               <div>
-                <span className="text-xs font-semibold text-gray-400 block mb-2 group-hover:text-gray-300 transition-colors duration-300">
+                <span className="text-xs font-semibold text-slate-400 block mb-2 group-hover:text-slate-300 transition-colors duration-300">
                   {p.name}
                 </span>
                 <div className="flex items-baseline gap-1 mb-3">
                   <span className="text-3xl sm:text-4xl font-bold tracking-tight group-hover:text-white transition-colors duration-300">
                     {p.price}
                   </span>
-                  {p.price !== 'Custom' && <span className="text-xs text-gray-600">/mo</span>}
+                  {p.price !== 'Custom' && <span className="text-xs text-slate-400">/mo</span>}
                 </div>
-                <p className="text-xs text-gray-400 leading-relaxed mb-6 h-10 group-hover:text-gray-300 transition-colors duration-300">
+                <p className="text-xs text-slate-400 leading-relaxed mb-6 h-10 group-hover:text-slate-300 transition-colors duration-300">
                   {p.desc}
                 </p>
                 <Link
                   to={p.ctaLink}
                   className={`block w-full text-center text-xs font-bold py-2.5 rounded-lg mb-8 hover:scale-105 active:scale-95 transition-all duration-300 ${
                     p.popular
-                      ? 'bg-white text-black hover:bg-gray-200 hover:shadow-md'
-                      : 'bg-[#030712] border border-gray-800 text-white hover:bg-gray-800'
+                      ? 'bg-white text-black hover:bg-slate-200 hover:shadow-md'
+                      : 'bg-[#030712] border border-slate-800 text-white hover:bg-slate-800'
                   }`}
                 >
                   {p.cta}
@@ -104,7 +104,7 @@ export default function Pricing() {
                   {p.features.map((f, fIdx) => (
                     <li
                       key={fIdx}
-                      className="flex items-start gap-2.5 text-xs text-gray-300 font-medium group-hover:text-gray-200 transition-colors duration-300"
+                      className="flex items-start gap-2.5 text-xs text-slate-300 font-medium group-hover:text-slate-200 transition-colors duration-300"
                     >
                       <Check size={12} className="text-cyan-500 mt-0.5 flex-shrink-0 group-hover:scale-125 transition-transform duration-300" />
                       <span>{f}</span>
@@ -117,7 +117,7 @@ export default function Pricing() {
         </div>
 
         {/* Footnote nudge */}
-        <p className="text-[11px] text-gray-600 mt-10">
+        <p className="text-[11px] text-slate-400 mt-10">
           Need 10+ locations or custom integrations? <a href="#contact" className="text-cyan-400 hover:text-cyan-300 font-semibold">Talk to sales →</a>
         </p>
       </div>

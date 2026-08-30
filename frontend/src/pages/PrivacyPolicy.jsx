@@ -416,7 +416,7 @@ function PolicySection({ section, dark, index }) {
   const cardBg = dark
     ? "bg-slate-900 border-slate-800"
     : "bg-white border-slate-200";
-  const textMain = dark ? "text-slate-300" : "text-slate-600";
+  const textMain = dark ? "text-slate-700 dark:text-slate-300" : "text-slate-600 dark:text-slate-400";
   const textHead = dark ? "text-white" : "text-slate-900";
   const highlight = dark
     ? "bg-slate-800/50 border-slate-700"
@@ -436,14 +436,14 @@ function PolicySection({ section, dark, index }) {
             className={`w-1.5 h-6 rounded-full flex-shrink-0 ${section.color}`}
           />
           <span
-            className={`text-[10px] font-black uppercase tracking-widest mr-2 text-slate-500 dark:text-slate-400`}
+            className={`text-[10px] font-black uppercase tracking-widest mr-2 text-slate-600 dark:text-slate-400`}
           >
             {String(index + 1).padStart(2, "0")}
           </span>
           <h2 className={`text-base font-bold ${textHead}`}>{section.title}</h2>
         </div>
         <svg
-          className={`w-4 h-4 transition-transform duration-200 flex-shrink-0 text-slate-500 dark:text-slate-400 ${open ? "rotate-180" : ""}`}
+          className={`w-4 h-4 transition-transform duration-200 flex-shrink-0 text-slate-600 dark:text-slate-400 ${open ? "rotate-180" : ""}`}
           fill="none"
           stroke="currentColor"
           viewBox="0 0 24 24"
@@ -487,8 +487,8 @@ export default function PrivacyPolicy() {
     ? "bg-slate-900 border-slate-800"
     : "bg-white border-slate-100";
   const pillBg = dark
-    ? "bg-slate-800 text-slate-500 dark:text-slate-400"
-    : "bg-slate-100 text-slate-500";
+    ? "bg-slate-800 text-slate-600 dark:text-slate-400"
+    : "bg-slate-100 text-slate-600 dark:text-slate-400";
 
   return (
     <div
@@ -523,7 +523,7 @@ export default function PrivacyPolicy() {
           </span>
           <button
             onClick={() => setSidebarOpen(true)}
-            className={`p-2 rounded-xl ${dark ? "bg-slate-800 text-slate-100" : "bg-slate-100 text-slate-700"}`}
+            className={`p-2 rounded-xl ${dark ? "bg-slate-800 text-slate-100" : "bg-slate-100 text-slate-700 dark:text-slate-300"}`}
           >
             <svg
               className="w-6 h-6"
@@ -572,7 +572,7 @@ export default function PrivacyPolicy() {
                   >
                     Privacy Policy
                   </h1>
-                  <p className="text-slate-500 text-xs">
+                  <p className="text-slate-600 dark:text-slate-400 text-xs">
                     Effective Date: May 15, 2026 · Version 1.0
                   </p>
                 </div>
@@ -622,7 +622,7 @@ export default function PrivacyPolicy() {
               className={`mt-10 p-6 rounded-2xl border text-center space-y-3 ${dark ? "bg-slate-900 border-slate-800" : "bg-white border-slate-200"}`}
             >
               <p
-                className={`text-xs font-semibold text-slate-500 dark:text-slate-400`}
+                className={`text-xs font-semibold text-slate-600 dark:text-slate-400`}
               >
                 Questions about this policy?
               </p>
@@ -646,13 +646,13 @@ export default function PrivacyPolicy() {
                   </svg>
                   privacy@kirtify.com
                 </a>
-                <span className={dark ? "text-slate-700" : "text-slate-300"}>·</span>
-                <span className={"text-slate-500 dark:text-slate-400"}>
+                <span className={dark ? "text-slate-700 dark:text-slate-300" : "text-slate-700 dark:text-slate-300"}>·</span>
+                <span className={"text-slate-600 dark:text-slate-400"}>
                   We respond within 30 days
                 </span>
               </div>
               <p
-                className={`text-[10px] text-slate-500 dark:text-slate-400`}
+                className={`text-[10px] text-slate-600 dark:text-slate-400`}
               >
                 © {new Date().getFullYear()} Kirtify. All rights reserved.
               </p>

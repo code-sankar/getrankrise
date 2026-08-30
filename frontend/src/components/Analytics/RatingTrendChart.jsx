@@ -21,7 +21,7 @@ function CustomTooltip({ active, payload, label, dark }) {
   if (!active || !payload?.length) return null;
   return (
     <div className={`p-3 rounded-xl border shadow-xl text-xs ${dark ? "bg-slate-900 border-slate-700" : "bg-white border-slate-200"}`}>
-      <p className={`font-bold mb-1 text-[10px] uppercase tracking-wider text-slate-500 dark:text-slate-400`}>
+      <p className={`font-bold mb-1 text-[10px] uppercase tracking-wider text-slate-600 dark:text-slate-400`}>
         {label}
       </p>
       <p className="font-bold text-amber-700 dark:text-amber-500">
@@ -49,7 +49,7 @@ export default function RatingTrendChart({ growthData, avgRating, dark }) {
   const trendLabel = diff > 0 ? `↑ +${diff} since ${growthData[0]?.month}`
     : diff < 0 ? `↓ ${diff} since ${growthData[0]?.month}`
     : "Stable";
-  const trendColor = diff > 0 ? "text-emerald-700 dark:text-emerald-400" : diff < 0 ? "text-red-600 dark:text-red-400" : "text-slate-500";
+  const trendColor = diff > 0 ? "text-emerald-700 dark:text-emerald-400" : diff < 0 ? "text-red-600 dark:text-red-400" : "text-slate-600 dark:text-slate-400";
 
   return (
     <AnalyticsCard
@@ -115,7 +115,7 @@ export default function RatingTrendChart({ growthData, avgRating, dark }) {
       <div className={`flex items-center justify-between mt-3 pt-3 border-t text-xs ${
         dark ? "border-slate-800" : "border-slate-100"
       }`}>
-        <span className={"text-slate-500 dark:text-slate-400"}>
+        <span className={"text-slate-600 dark:text-slate-400"}>
           {growthData[0]?.month} → {growthData[growthData.length - 1]?.month}
         </span>
         <span className={`font-bold ${trendColor}`}>{trendLabel}</span>

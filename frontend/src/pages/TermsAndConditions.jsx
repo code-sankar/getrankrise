@@ -210,7 +210,7 @@ function TermsSection({ section, dark, index }) {
 
   const cardBg   = dark ? "bg-slate-900 border-slate-800"    : "bg-white border-slate-200";
   const hlBg     = dark ? "bg-slate-800/50 border-slate-700" : "bg-slate-50 border-slate-200";
-  const textMain = dark ? "text-slate-300"                    : "text-slate-600";
+  const textMain = dark ? "text-slate-700 dark:text-slate-300"                    : "text-slate-600 dark:text-slate-400";
   const textHead = dark ? "text-white"                        : "text-slate-900";
   const strongCol = dark ? "text-slate-200"                   : "text-slate-800";
 
@@ -228,13 +228,13 @@ function TermsSection({ section, dark, index }) {
       >
         <div className="flex items-center gap-3 min-w-0">
           <span className={`w-1.5 h-6 rounded-full flex-shrink-0 ${section.color}`} />
-          <span className={`text-[10px] font-black uppercase tracking-widest flex-shrink-0 text-slate-500 dark:text-slate-400`}>
+          <span className={`text-[10px] font-black uppercase tracking-widest flex-shrink-0 text-slate-600 dark:text-slate-400`}>
             {String(index + 1).padStart(2, "0")}
           </span>
           <h2 className={`text-sm font-bold truncate ${textHead}`}>{section.title}</h2>
         </div>
         <svg
-          className={`w-4 h-4 flex-shrink-0 transition-transform duration-200 text-slate-500 dark:text-slate-400 ${open ? "rotate-180" : ""}`}
+          className={`w-4 h-4 flex-shrink-0 transition-transform duration-200 text-slate-600 dark:text-slate-400 ${open ? "rotate-180" : ""}`}
           fill="none" stroke="currentColor" viewBox="0 0 24 24"
         >
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
@@ -269,7 +269,7 @@ export default function TermsAndConditions() {
   const pageBg  = dark ? "bg-slate-950 text-slate-100" : "bg-slate-50 text-slate-900";
   const headBg  = dark ? "bg-slate-900 border-slate-800" : "bg-white border-slate-100";
   const navBg   = dark ? "bg-slate-900 border-slate-800" : "bg-white border-slate-200";
-  const textMut = "text-slate-500 dark:text-slate-400";
+  const textMut = "text-slate-600 dark:text-slate-400";
 
   return (
     <div className={`flex h-screen w-full overflow-hidden transition-colors duration-300 ${pageBg}`}>
@@ -300,7 +300,7 @@ export default function TermsAndConditions() {
           <span className="font-black tracking-tight text-cyan-700 dark:text-cyan-400 text-lg">Kirtify</span>
           <button
             onClick={() => setSidebarOpen(true)}
-            className={`p-2 rounded-xl ${dark ? "bg-slate-800 text-slate-100" : "bg-slate-100 text-slate-700"}`}
+            className={`p-2 rounded-xl ${dark ? "bg-slate-800 text-slate-100" : "bg-slate-100 text-slate-700 dark:text-slate-300"}`}
           >
             <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
@@ -364,7 +364,7 @@ export default function TermsAndConditions() {
                   </svg>
                   legal@kirtify.com
                 </a>
-                <span className={dark ? "text-slate-700" : "text-slate-300"}>·</span>
+                <span className={dark ? "text-slate-700 dark:text-slate-300" : "text-slate-700 dark:text-slate-300"}>·</span>
                 <span className={textMut}>We respond within 5 business days</span>
               </div>
               <p className={`text-[10px] ${textMut}`}>

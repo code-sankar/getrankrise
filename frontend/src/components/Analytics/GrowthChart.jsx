@@ -22,7 +22,7 @@ function CustomTooltip({ active, payload, label, dark }) {
   if (!active || !payload?.length) return null;
   return (
     <div className={`p-3 rounded-xl border shadow-xl text-xs ${dark ? "bg-slate-900 border-slate-700" : "bg-white border-slate-200"}`}>
-      <p className={`font-bold uppercase tracking-wider mb-2 text-[10px] text-slate-500 dark:text-slate-400`}>
+      <p className={`font-bold uppercase tracking-wider mb-2 text-[10px] text-slate-600 dark:text-slate-400`}>
         {label}
       </p>
       {payload.map((entry, i) => (
@@ -31,7 +31,7 @@ function CustomTooltip({ active, payload, label, dark }) {
           {/* The swatch carries the series identity; the text stays in ink.
               Painting the number itself in the series colour made "responses"
               read as green-for-good rather than as a count. */}
-          <span className={`font-medium ${dark ? "text-slate-300" : "text-slate-700"}`}>
+          <span className={`font-medium ${dark ? "text-slate-700 dark:text-slate-300" : "text-slate-700 dark:text-slate-300"}`}>
             {entry.name}:{" "}
             <span className={`font-bold ${dark ? "text-white" : "text-slate-900"}`}>
               {entry.value}
@@ -48,6 +48,8 @@ export default function GrowthChart({ growthData, summary, trend, dark }) {
   const gridColor = CHART.grid[mode];
   const axisColor = CHART.axis[mode];
   const [PRIMARY, SECONDARY] = CHART.series[mode];
+  // Legend text is ink, not series colour — see the Legend comment below.
+  const labelColor = dark ? "#cbd5e1" : "#334155";
 
   return (
     <AnalyticsCard
@@ -103,14 +105,23 @@ export default function GrowthChart({ growthData, summary, trend, dark }) {
               tick={{ fill: axisColor, fontSize: 11 }}
             />
             <Tooltip content={<CustomTooltip dark={dark} />} />
-            {/* Two series, so identity can never rest on colour alone. */}
+            {/* Two series, so identity can never rest on colour alone.
+
+                `formatter` is not styling for its own sake: Recharts paints
+                each legend LABEL in that series' colour by default, which put
+                11px text on the card at 3.68:1 and made the label a second
+                copy of the swatch. The dot carries the colour; the words stay
+                in ink and stay readable. */}
             <Legend
               verticalAlign="top"
               align="right"
               height={28}
               iconType="circle"
               iconSize={8}
-              wrapperStyle={{ fontSize: 11, color: axisColor }}
+              wrapperStyle={{ fontSize: 11 }}
+              formatter={(value) => (
+                <span style={{ color: labelColor }}>{value}</span>
+              )}
             />
 
             {/* ── type="linear", NOT "monotone" ─────────────────────────────
@@ -153,19 +164,19 @@ export default function GrowthChart({ growthData, summary, trend, dark }) {
           than estimate it off an axis. It is labelled as such, and it scrolls
           on its own rather than crushing 30 columns into 300px. */}
       <div className={`mt-4 pt-4 border-t ${dark ? "border-slate-800" : "border-slate-100"}`}>
-        <p className={`text-[10px] font-bold uppercase tracking-wider mb-2 text-slate-500 dark:text-slate-400`}>
+        <p className={`text-[10px] font-bold uppercase tracking-wider mb-2 text-slate-600 dark:text-slate-400`}>
           Reviews · responses per period
         </p>
         <div className="flex gap-4 overflow-x-auto pb-1">
           {growthData.map((m) => (
             <div key={m.month} className="text-center shrink-0 min-w-[44px]">
-              <p className={`text-[10px] font-bold text-slate-500 dark:text-slate-400`}>
+              <p className={`text-[10px] font-bold text-slate-600 dark:text-slate-400`}>
                 {m.month}
               </p>
               <p className={`text-xs font-black mt-0.5 ${dark ? "text-white" : "text-slate-900"}`}>
                 {m.reviews}
               </p>
-              <p className={`text-[9px] font-bold text-slate-500 dark:text-slate-400`}>
+              <p className={`text-[9px] font-bold text-slate-600 dark:text-slate-400`}>
                 {m.responses} replied
               </p>
             </div>

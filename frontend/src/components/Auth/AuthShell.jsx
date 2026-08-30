@@ -45,14 +45,14 @@ export default function AuthShell({ title, subtitle, children, footer, wide = fa
             {title}
           </h1>
           {subtitle && (
-            <p className="text-sm text-slate-500 dark:text-slate-400 font-medium">{subtitle}</p>
+            <p className="text-sm text-slate-400 font-medium">{subtitle}</p>
           )}
         </div>
 
         {children}
 
         {footer && (
-          <p className="text-center text-sm text-slate-500 mt-6">{footer}</p>
+          <p className="text-center text-sm text-slate-400 mt-6">{footer}</p>
         )}
       </div>
     </div>

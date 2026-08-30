@@ -24,10 +24,10 @@ const RoleBadge = ({ role, dark }) => (
       role === "owner"
         ? dark
           ? "bg-cyan-500/15 text-cyan-300"
-          : "bg-cyan-50 text-cyan-700"
+          : "bg-cyan-50 text-cyan-700 dark:text-cyan-400"
         : dark
-          ? "bg-slate-700/50 text-slate-300"
-          : "bg-slate-100 text-slate-600"
+          ? "bg-slate-700/50 text-slate-700 dark:text-slate-300"
+          : "bg-slate-100 text-slate-600 dark:text-slate-400"
     }`}
   >
     {role}
@@ -187,7 +187,7 @@ export default function TeamTab({ dark }) {
         <h3 className={`text-sm font-bold mb-1 ${dark ? "text-white" : "text-slate-900"}`}>
           People with access
         </h3>
-        <p className="text-xs text-slate-500 mb-4">
+        <p className="text-xs text-slate-600 dark:text-slate-400 mb-4">
           Owners can manage billing and the team. Team members can do everything
           else — reviews, replies, requests and campaigns.
         </p>
@@ -204,14 +204,14 @@ export default function TeamTab({ dark }) {
                       {m.name}
                     </span>
                     <RoleBadge role={m.role} dark={dark} />
-                    {isMe && <span className="text-[10px] text-slate-500 font-medium">(you)</span>}
+                    {isMe && <span className="text-[10px] text-slate-600 dark:text-slate-400 font-medium">(you)</span>}
                     {!m.emailVerified && (
                       <span className="text-[10px] text-amber-700 dark:text-amber-500 font-semibold">
                         email unconfirmed
                       </span>
                     )}
                   </div>
-                  <p className="text-xs text-slate-500 mt-0.5">{m.email}</p>
+                  <p className="text-xs text-slate-600 dark:text-slate-400 mt-0.5">{m.email}</p>
                 </div>
 
                 {/* Owner-only, and never on your own row — the server refuses
@@ -260,7 +260,7 @@ export default function TeamTab({ dark }) {
                     </span>
                     <RoleBadge role={inv.role} dark={dark} />
                   </div>
-                  <p className="text-xs text-slate-500 mt-0.5">
+                  <p className="text-xs text-slate-600 dark:text-slate-400 mt-0.5">
                     Invited{inv.invitedByName ? ` by ${inv.invitedByName}` : ""} · expires{" "}
                     {new Date(inv.expiresAt).toLocaleDateString()}
                   </p>
@@ -287,7 +287,7 @@ export default function TeamTab({ dark }) {
           <h3 className={`text-sm font-bold mb-1 ${dark ? "text-white" : "text-slate-900"}`}>
             Invite someone
           </h3>
-          <p className="text-xs text-slate-500 mb-4">
+          <p className="text-xs text-slate-600 dark:text-slate-400 mb-4">
             They'll get an email with a link to join. It expires in 14 days.
           </p>
 
@@ -339,7 +339,7 @@ export default function TeamTab({ dark }) {
       )}
 
       {!isOwner && (
-        <p className="text-xs text-slate-500">
+        <p className="text-xs text-slate-600 dark:text-slate-400">
           Only the clinic owner can invite or remove people. Ask them if you need
           someone added.
         </p>

@@ -38,7 +38,7 @@ export default function SEOInsightBanner({ urgentCount, dark }) {
           <h3 className={`font-bold text-sm ${dark ? "text-white" : "text-cyan-900"}`}>
             {urgentCount} urgent review{urgentCount > 1 ? "s" : ""} need{urgentCount === 1 ? "s" : ""} a reply
           </h3>
-          <p className={`text-xs mt-0.5 max-w-md ${dark ? "text-cyan-200/60" : "text-cyan-700/60"}`}>
+          <p className={`text-xs mt-0.5 max-w-md ${dark ? "text-cyan-200/60" : "text-cyan-700 dark:text-cyan-400/60"}`}>
             Responding to negative reviews within 24 hours can lift your local
             search ranking by up to 15%. Don't let these slip.
           </p>

@@ -85,7 +85,7 @@ export default function TabOverview({
           className={`p-6 rounded-3xl border ${dark ? "bg-slate-900 border-slate-800" : "bg-white border-slate-200"}`}
         >
           <h3
-            className={`text-sm font-bold uppercase tracking-wider mb-6 text-slate-500 dark:text-slate-400`}
+            className={`text-sm font-bold uppercase tracking-wider mb-6 text-slate-600 dark:text-slate-400`}
           >
             Performance
           </h3>
@@ -106,13 +106,13 @@ export default function TabOverview({
                 colorClass="bg-cyan-500"
               />
               <p
-                className={`text-xs text-slate-500 dark:text-slate-400`}
+                className={`text-xs text-slate-600 dark:text-slate-400`}
               >
                 Across {stats.total} loaded review{stats.total === 1 ? "" : "s"}.
               </p>
             </div>
           ) : (
-            <p className={`text-sm text-slate-500 dark:text-slate-400`}>
+            <p className={`text-sm text-slate-600 dark:text-slate-400`}>
               {viewState === "loading"
                 ? "Loading your review data…"
                 : "No reviews yet — connect a platform and sync to see your numbers here."}

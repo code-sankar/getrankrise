@@ -22,7 +22,7 @@ export default function CreditsPill({ channel = "sms" }) {
     return (
       <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-slate-900/60 border border-slate-800">
         <div className="w-3 h-3 rounded-full border border-slate-700 border-t-cyan-400 animate-spin" />
-        <span className="text-[10px] text-slate-500 tracking-widest uppercase">Loading</span>
+        <span className="text-[10px] text-slate-600 dark:text-slate-400 tracking-widest uppercase">Loading</span>
       </div>
     );
   }
@@ -42,6 +42,12 @@ export default function CreditsPill({ channel = "sms" }) {
   }));
 
   // ── Visual states ─────────────────────────────────────────────────────
+  // This pill was authored for a dark bar and used `text-white`,
+  // `text-slate-700 dark:text-slate-300` and `bg-slate-800` unconditionally. It renders on
+  // Send Requests, which is theme-aware — so in light mode the credit count
+  // was white on a near-white pill at 1.13:1, i.e. invisible. Every colour
+  // here now names both modes.
+  // ── (original) ─────────────────────────────────────────────────────
   const ring = isOut
     ? "border-red-500/40 bg-red-500/5"
     : isLow
@@ -64,18 +70,18 @@ export default function CreditsPill({ channel = "sms" }) {
         <span className={`relative w-2 h-2 rounded-full ${dotColor}`} />
       </span>
 
-      <Icon size={13} className="text-slate-300" />
+      <Icon size={13} className="text-slate-500 dark:text-slate-300" />
 
       <div className="flex items-baseline gap-1.5">
-        <span className="text-xs font-bold text-white tabular-nums">{c.remaining}</span>
-        <span className="text-[10px] text-slate-500 tabular-nums">/ {c.limit}</span>
-        <span className="text-[10px] text-slate-500 ml-1 tracking-wider uppercase font-semibold">
+        <span className="text-xs font-bold text-slate-900 dark:text-white tabular-nums">{c.remaining}</span>
+        <span className="text-[10px] text-slate-600 dark:text-slate-400 tabular-nums">/ {c.limit}</span>
+        <span className="text-[10px] text-slate-600 dark:text-slate-400 ml-1 tracking-wider uppercase font-semibold">
           {channel === "whatsapp" ? "WA" : "SMS"}
         </span>
       </div>
 
       {/* mini progress bar */}
-      <div className="w-16 h-1 rounded-full bg-slate-800 overflow-hidden">
+      <div className="w-16 h-1 rounded-full bg-slate-200 dark:bg-slate-800 overflow-hidden">
         <div
           className={`h-full rounded-full transition-all ${
             isOut ? "bg-red-400" : isLow ? "bg-amber-400" : "bg-cyan-400"
@@ -85,7 +91,7 @@ export default function CreditsPill({ channel = "sms" }) {
       </div>
 
       {isOut && (
-        <span className="text-[10px] font-bold text-red-300 tracking-wider uppercase">Upgrade →</span>
+        <span className="text-[10px] font-bold text-red-700 dark:text-red-300 tracking-wider uppercase">Upgrade →</span>
       )}
     </button>
   );

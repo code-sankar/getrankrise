@@ -42,7 +42,7 @@ export default function PlatformBreakdown({ platforms, total, dark }) {
           percentage as that share — it is the response rate. Naming the
           columns is the whole fix. */}
       <div className={`flex items-center justify-between px-3 pb-2 text-[10px] font-bold uppercase tracking-wider ${
-        "text-slate-500 dark:text-slate-400"
+        "text-slate-600 dark:text-slate-400"
       }`}>
         <span>Platform</span>
         <div className="flex items-center gap-3 text-right">
@@ -66,7 +66,7 @@ export default function PlatformBreakdown({ platforms, total, dark }) {
                     className="w-2.5 h-2.5 rounded-full flex-shrink-0"
                     style={{ background: p.color }}
                   />
-                  <span className={`text-xs font-semibold truncate ${dark ? "text-slate-300" : "text-slate-700"}`}>
+                  <span className={`text-xs font-semibold truncate ${dark ? "text-slate-700 dark:text-slate-300" : "text-slate-700 dark:text-slate-300"}`}>
                     {p.name}
                   </span>
                 </div>
@@ -74,13 +74,13 @@ export default function PlatformBreakdown({ platforms, total, dark }) {
                 <div className="flex items-center gap-3 text-[11px] font-bold shrink-0 text-right">
                   <span className={`w-14 ${dark ? "text-white" : "text-slate-900"}`}>
                     {p.value}
-                    <span className={`ml-1 font-medium text-slate-500 dark:text-slate-400`}>
+                    <span className={`ml-1 font-medium text-slate-600 dark:text-slate-400`}>
                       {share}%
                     </span>
                   </span>
                   {/* Ink, not the series colour — a rating painted Facebook
                       blue reads as a brand mark rather than a number. */}
-                  <span className={`w-10 ${dark ? "text-slate-300" : "text-slate-600"}`}>
+                  <span className={`w-10 ${dark ? "text-slate-700 dark:text-slate-300" : "text-slate-600 dark:text-slate-400"}`}>
                     ★ {p.avgRating}
                   </span>
                   {/* Response rate IS a status — it is good or it needs work —
@@ -109,7 +109,7 @@ export default function PlatformBreakdown({ platforms, total, dark }) {
 
         {/* Total row */}
         <div className={`flex justify-between px-3 pt-2 border-t text-xs font-bold ${
-          dark ? "border-slate-800 text-slate-500 dark:text-slate-400" : "border-slate-100 text-slate-500"
+          dark ? "border-slate-800 text-slate-600 dark:text-slate-400" : "border-slate-100 text-slate-600 dark:text-slate-400"
         }`}>
           <span>Total</span>
           <span className={dark ? "text-white" : "text-slate-900"}>{total} reviews</span>

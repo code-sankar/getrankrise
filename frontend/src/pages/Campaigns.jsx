@@ -91,7 +91,7 @@ export default function Campaigns() {
   // ── Theme tokens ───────────────────────────────────────────────────────────
   const pageBg = dark ? "bg-slate-950" : "bg-slate-50";
   const title = dark ? "text-white" : "text-slate-900";
-  const muted = "text-slate-500 dark:text-slate-400";
+  const muted = "text-slate-600 dark:text-slate-400";
 
   return (
     <div className={`h-screen overflow-hidden flex transition-colors duration-300 ${pageBg}`}>
@@ -125,7 +125,7 @@ export default function Campaigns() {
           <button
             onClick={() => setSidebarOpen(true)}
             className={`p-2 rounded-xl transition-colors active:scale-95 ${
-              dark ? "bg-slate-800 text-slate-100 hover:bg-slate-700" : "bg-slate-100 text-slate-700 hover:bg-slate-200"
+              dark ? "bg-slate-800 text-slate-100 hover:bg-slate-700" : "bg-slate-100 text-slate-700 dark:text-slate-300 hover:bg-slate-200"
             }`}
           >
             <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">

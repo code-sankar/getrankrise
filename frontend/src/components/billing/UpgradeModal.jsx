@@ -98,7 +98,7 @@ export default function UpgradeModal() {
         {/* close */}
         <button
           onClick={close}
-          className="absolute top-4 right-4 p-2 rounded-lg text-slate-500 hover:text-slate-100 hover:bg-slate-800/80 transition"
+          className="absolute top-4 right-4 p-2 rounded-lg text-slate-600 dark:text-slate-400 hover:text-slate-100 hover:bg-slate-800/80 transition"
           aria-label="Close"
         >
           <X size={20} />
@@ -113,7 +113,7 @@ export default function UpgradeModal() {
           <h2 className="text-3xl sm:text-4xl font-bold text-white tracking-tight mb-3">
             {copy.heading(featureName)}
           </h2>
-          <p className="text-sm text-slate-500 dark:text-slate-400 max-w-xl mx-auto leading-relaxed">
+          <p className="text-sm text-slate-600 dark:text-slate-400 max-w-xl mx-auto leading-relaxed">
             {message || `You're on the ${currentPlan} plan. Pick a plan below to keep moving — most teams break even within their first reclaimed review.`}
           </p>
         </div>
@@ -136,16 +136,16 @@ export default function UpgradeModal() {
               )}
 
               <h3 className="text-xl font-bold text-white">{plan.name}</h3>
-              <p className="text-xs text-slate-500 mt-1 mb-6">{plan.tagline}</p>
+              <p className="text-xs text-slate-600 dark:text-slate-400 mt-1 mb-6">{plan.tagline}</p>
 
               <div className="mb-6 flex items-baseline gap-1">
                 <span className="text-4xl font-bold text-white">${plan.price}</span>
-                <span className="text-sm text-slate-500">/ month</span>
+                <span className="text-sm text-slate-600 dark:text-slate-400">/ month</span>
               </div>
 
               <ul className="space-y-3 mb-8 flex-grow">
                 {plan.features.map((f, i) => (
-                  <li key={i} className="flex items-start gap-2 text-sm text-slate-300">
+                  <li key={i} className="flex items-start gap-2 text-sm text-slate-700 dark:text-slate-300">
                     <Check size={16} className="text-cyan-700 dark:text-cyan-400 flex-shrink-0 mt-0.5" />
                     <span>{f}</span>
                   </li>
@@ -168,7 +168,7 @@ export default function UpgradeModal() {
 
         {/* footer */}
         <div className="px-8 pb-8 text-center border-t border-slate-800/50 pt-6">
-          <p className="text-[10px] text-slate-600 tracking-[0.2em] uppercase font-semibold">
+          <p className="text-[10px] text-slate-600 dark:text-slate-400 tracking-[0.2em] uppercase font-semibold">
             14-day money-back guarantee · Cancel anytime · Taxes handled by Paddle
           </p>
         </div>

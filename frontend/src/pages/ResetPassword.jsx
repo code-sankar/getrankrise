@@ -143,7 +143,7 @@ export default function ResetPassword() {
           )}
         </div>
 
-        <p className="text-xs text-slate-500 leading-relaxed">
+        <p className="text-xs text-slate-400 leading-relaxed">
           Setting a new password signs you out everywhere else, on every device.
         </p>
 

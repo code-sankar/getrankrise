@@ -17,7 +17,7 @@ export default function ContactUs() {
       ? "bg-slate-950 border-slate-800 text-white focus:border-cyan-500"
       : "bg-slate-50 border-slate-200 text-slate-900 focus:border-cyan-500",
     textHeader: dark ? "text-white" : "text-slate-900",
-    textMuted: "text-slate-500 dark:text-slate-400",
+    textMuted: "text-slate-600 dark:text-slate-400",
   };
 
   const handleSubmit = (e) => {
@@ -67,7 +67,7 @@ export default function ContactUs() {
             className={`p-2 rounded-xl transition-colors duration-200 active:scale-95 ${
               dark
                 ? "bg-slate-800 text-slate-100 hover:bg-slate-700"
-                : "bg-slate-100 text-slate-700 hover:bg-slate-200"
+                : "bg-slate-100 text-slate-700 dark:text-slate-300 hover:bg-slate-200"
             }`}
           >
             <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -121,15 +121,15 @@ export default function ContactUs() {
               <div className={`lg:col-span-2 p-6 md:p-10 rounded-[2rem] md:rounded-[2.5rem] border ${theme.card}`}>
                 <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-5 md:gap-6">
                   <div className="space-y-2">
-                    <label className="text-[10px] font-bold uppercase tracking-widest text-slate-500">Full Name</label>
+                    <label className="text-[10px] font-bold uppercase tracking-widest text-slate-600 dark:text-slate-400">Full Name</label>
                     <input type="text" placeholder="John Doe" className={`w-full px-4 py-3 rounded-xl outline-none border transition-all ${theme.input}`} required />
                   </div>
                   <div className="space-y-2">
-                    <label className="text-[10px] font-bold uppercase tracking-widest text-slate-500">Email Address</label>
+                    <label className="text-[10px] font-bold uppercase tracking-widest text-slate-600 dark:text-slate-400">Email Address</label>
                     <input type="email" placeholder="john@clinic.com" className={`w-full px-4 py-3 rounded-xl outline-none border transition-all ${theme.input}`} required />
                   </div>
                   <div className="md:col-span-2 space-y-2">
-                    <label className="text-[10px] font-bold uppercase tracking-widest text-slate-500">Subject</label>
+                    <label className="text-[10px] font-bold uppercase tracking-widest text-slate-600 dark:text-slate-400">Subject</label>
                     <select className={`w-full px-4 py-3 rounded-xl outline-none border transition-all ${theme.input}`}>
                       <option>General Inquiry</option>
                       <option>Technical Support</option>
@@ -138,7 +138,7 @@ export default function ContactUs() {
                     </select>
                   </div>
                   <div className="md:col-span-2 space-y-2">
-                    <label className="text-[10px] font-bold uppercase tracking-widest text-slate-500">Message</label>
+                    <label className="text-[10px] font-bold uppercase tracking-widest text-slate-600 dark:text-slate-400">Message</label>
                     <textarea rows="4" placeholder="How can we help?" className={`w-full px-4 py-3 rounded-xl outline-none border resize-none transition-all ${theme.input}`} required />
                   </div>
                   <div className="md:col-span-2 pt-2">
@@ -163,7 +163,7 @@ function ContactInfoCard({ icon, title, detail, theme }) {
         {React.cloneElement(icon, { size: 20 })}
       </div>
       <div className="min-w-0">
-        <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-0.5">{title}</p>
+        <p className="text-[10px] font-bold text-slate-600 dark:text-slate-400 uppercase tracking-widest mb-0.5">{title}</p>
         <p className={`text-sm font-semibold truncate ${theme.textHeader}`}>{detail}</p>
       </div>
     </div>

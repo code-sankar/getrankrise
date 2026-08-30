@@ -75,7 +75,7 @@ function ClinicProfile() {
           >
             {clinicName}
           </span>
-          <span className="text-[10px] text-cyan-700 font-bold uppercase tracking-wide">
+          <span className="text-[10px] text-cyan-700 dark:text-cyan-400 font-bold uppercase tracking-wide">
             Admin
           </span>
         </div>
@@ -97,12 +97,12 @@ function ClinicProfile() {
               <p className={`text-lg font-bold truncate ${theme.text}`}>
                 {clinicName}
               </p>
-              <p className="text-[13px] text-slate-500 truncate">{userEmail}</p>
+              <p className="text-[13px] text-slate-600 dark:text-slate-400 truncate">{userEmail}</p>
             </div>
           </div>
           <div className={`space-y-3 pt-3 border-t ${theme.divider}`}>
             <div className="flex justify-between items-center">
-              <span className="text-[13px] text-slate-500 dark:text-slate-400 font-medium">
+              <span className="text-[13px] text-slate-600 dark:text-slate-400 font-medium">
                 Unread Alerts
               </span>
               <span
@@ -112,10 +112,10 @@ function ClinicProfile() {
               </span>
             </div>
             <div className="flex justify-between items-center">
-              <span className="text-[13px] text-slate-500 dark:text-slate-400 font-medium">
+              <span className="text-[13px] text-slate-600 dark:text-slate-400 font-medium">
                 Plan
               </span>
-              <span className="text-[13px] font-bold text-cyan-700 uppercase">
+              <span className="text-[13px] font-bold text-cyan-700 dark:text-cyan-400 uppercase">
                 Premium
               </span>
             </div>
@@ -125,8 +125,8 @@ function ClinicProfile() {
               to="/settings"
               className={`block w-full text-center py-2 rounded-lg text-[11px] font-bold transition-colors ${
                 dark
-                  ? "bg-slate-800 hover:bg-cyan-600 hover:text-white text-slate-300"
-                  : "bg-slate-100 hover:bg-cyan-600 hover:text-white text-slate-700"
+                  ? "bg-slate-800 hover:bg-cyan-600 hover:text-white text-slate-700 dark:text-slate-300"
+                  : "bg-slate-100 hover:bg-cyan-600 hover:text-white text-slate-700 dark:text-slate-300"
               }`}
             >
               Manage Account

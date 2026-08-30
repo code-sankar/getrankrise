@@ -14,18 +14,18 @@ function SignatureAICard() {
         hidden lg:flex absolute -right-6 xl:-right-12 top-[18%]
         w-[320px] xl:w-[360px] z-20
         flex-col gap-3
-        rounded-2xl border border-gray-800/80 bg-[#0b0e14]/90 backdrop-blur-xl
+        rounded-2xl border border-slate-800/80 bg-[#0b0e14]/90 backdrop-blur-xl
         p-4 shadow-[0_20px_80px_-20px_rgba(59,130,246,0.35),0_0_0_1px_rgba(59,130,246,0.08)]
       "
       aria-hidden="true"
     >
       {/* Header strip */}
-      <div className="flex items-center justify-between pb-3 border-b border-gray-900/70">
+      <div className="flex items-center justify-between pb-3 border-b border-slate-900/70">
         <div className="flex items-center gap-2">
           <div className="w-6 h-6 rounded-md bg-[#3b82f6]/15 border border-[#3b82f6]/30 flex items-center justify-center">
             <Sparkles size={12} className="text-[#60a5fa]" />
           </div>
-          <span className="text-[11px] font-semibold text-gray-300 tracking-tight">
+          <span className="text-[11px] font-semibold text-slate-300 tracking-tight">
             AI Response Draft
           </span>
         </div>
@@ -41,16 +41,16 @@ function SignatureAICard() {
       </div>
 
       {/* The inbound review (compressed) */}
-      <div className="rounded-lg bg-[#06080c] border border-gray-900/80 p-3">
+      <div className="rounded-lg bg-[#06080c] border border-slate-900/80 p-3">
         <div className="flex items-center justify-between mb-1.5">
-          <span className="text-[10px] font-semibold text-gray-300">Priya M.</span>
+          <span className="text-[10px] font-semibold text-slate-300">Priya M.</span>
           <div className="flex gap-0.5 text-amber-400">
             {[...Array(5)].map((_, i) => (
               <Star key={i} size={9} fill="currentColor" stroke="none" />
             ))}
           </div>
         </div>
-        <p className="text-[10px] leading-[1.45] text-gray-500">
+        <p className="text-[10px] leading-[1.45] text-slate-400">
           "Dr. Shah is amazing — painless cleaning and the front desk team
           was so warm. Highly recommend."
         </p>
@@ -59,12 +59,12 @@ function SignatureAICard() {
       {/* AI-drafted reply */}
       <div>
         <div className="flex items-center justify-between mb-1.5">
-          <span className="text-[9px] font-bold tracking-[0.12em] text-gray-500 uppercase">
+          <span className="text-[9px] font-bold tracking-[0.12em] text-slate-400 uppercase">
             Suggested reply
           </span>
-          <span className="text-[9px] text-gray-600">2.3s</span>
+          <span className="text-[9px] text-slate-400">2.3s</span>
         </div>
-        <p className="text-[11px] leading-[1.5] text-gray-300">
+        <p className="text-[11px] leading-[1.5] text-slate-300">
           Thank you, Priya — we're delighted the team made you comfortable.
           We'll pass the kind words along to Dr. Shah.
         </p>
@@ -76,7 +76,7 @@ function SignatureAICard() {
           <Check size={11} />
           Send reply
         </button>
-        <button className="text-[10px] font-medium text-gray-400 hover:text-gray-200 bg-[#121620] border border-gray-900 rounded-md px-2.5 py-1.5 transition-colors">
+        <button className="text-[10px] font-medium text-slate-400 hover:text-slate-200 bg-[#121620] border border-slate-900 rounded-md px-2.5 py-1.5 transition-colors">
           Regenerate
         </button>
       </div>
@@ -94,7 +94,7 @@ function MapsRankPill() {
       className="
         hidden lg:flex absolute -left-4 xl:-left-10 top-[55%]
         z-20 items-center gap-2.5
-        rounded-xl border border-gray-800/80 bg-[#0b0e14]/90 backdrop-blur-xl
+        rounded-xl border border-slate-800/80 bg-[#0b0e14]/90 backdrop-blur-xl
         px-3.5 py-2.5
         shadow-[0_20px_60px_-20px_rgba(0,0,0,0.8),0_0_0_1px_rgba(255,255,255,0.02)]
       "
@@ -106,7 +106,7 @@ function MapsRankPill() {
         </svg>
       </div>
       <div className="text-left">
-        <div className="text-[9px] font-bold tracking-[0.1em] text-gray-500 uppercase leading-none mb-1">
+        <div className="text-[9px] font-bold tracking-[0.1em] text-slate-400 uppercase leading-none mb-1">
           Maps Rank
         </div>
         <div className="text-xs font-semibold text-white tracking-tight leading-none">
@@ -145,14 +145,14 @@ export default function Hero() {
       <div className="relative z-10 w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col items-center text-center">
 
         {/* Eyebrow badge */}
-        {/* <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#111622]/60 border border-gray-800/80 text-[11px] text-gray-400 mb-9 hover:border-gray-700/80 transition-colors cursor-pointer tracking-wide backdrop-blur-sm">
+        {/* <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#111622]/60 border border-slate-800/80 text-[11px] text-slate-400 mb-9 hover:border-slate-700/80 transition-colors cursor-pointer tracking-wide backdrop-blur-sm">
           <span className="relative flex w-1.5 h-1.5">
             <span className="motion-safe:animate-ping absolute inline-flex h-full w-full rounded-full bg-[#3b82f6] opacity-60" />
             <span className="relative inline-flex w-1.5 h-1.5 rounded-full bg-[#3b82f6]" />
           </span>
           <span>New — AI Review Responder v2</span>
           <span>Just shipped: AI Responder v2 is here!</span>
-          <ArrowRight size={11} className="text-gray-500" />
+          <ArrowRight size={11} className="text-slate-400" />
         </div> */}
 
         {/* Headline */}
@@ -174,7 +174,7 @@ export default function Hero() {
             className="
               w-full sm:w-auto bg-white text-black font-semibold text-[13px]
               px-5 py-3 rounded-xl flex items-center justify-center gap-1.5
-              hover:bg-gray-100 transition-all group
+              hover:bg-slate-100 transition-all group
               shadow-[0_8px_30px_-8px_rgba(255,255,255,0.3)]
             "
           >
@@ -184,9 +184,9 @@ export default function Hero() {
           <a
             href="#demo"
             className="
-              w-full sm:w-auto bg-[#121620]/40 border border-gray-800/80
-              text-gray-300 font-semibold text-[13px] px-5 py-3 rounded-xl
-              hover:bg-[#121620]/80 hover:border-gray-700 transition-all text-center
+              w-full sm:w-auto bg-[#121620]/40 border border-slate-800/80
+              text-slate-300 font-semibold text-[13px] px-5 py-3 rounded-xl
+              hover:bg-[#121620]/80 hover:border-slate-700 transition-all text-center
               backdrop-blur-sm
             "
           >
@@ -195,7 +195,7 @@ export default function Hero() {
         </div>
 
         {/* Trust strip */}
-        <div className="w-full max-w-4xl flex flex-col sm:flex-row items-center justify-center gap-4 sm:gap-0 text-[11px] text-[#626770] tracking-wide font-medium mb-16">
+        <div className="w-full max-w-4xl flex flex-col sm:flex-row items-center justify-center gap-4 sm:gap-0 text-[11px] text-[#8a8f98] tracking-wide font-medium mb-16">
           <div className="flex items-center justify-center gap-2 sm:pr-8">
             <div className="flex text-white gap-0.5">
               {[...Array(5)].map((_, i) => (
@@ -204,9 +204,9 @@ export default function Hero() {
             </div>
             <span>4.9 on G2 · 1,200+ reviews</span>
           </div>
-          <div className="hidden sm:block h-3.5 w-[1px] bg-gray-800/60" />
+          <div className="hidden sm:block h-3.5 w-[1px] bg-slate-800/60" />
           <div className="sm:px-8">TRUSTED BY 8,400+ LOCAL BUSINESSES</div>
-          <div className="hidden sm:block h-3.5 w-[1px] bg-gray-800/60" />
+          <div className="hidden sm:block h-3.5 w-[1px] bg-slate-800/60" />
           <div className="sm:pl-8">SOC 2 TYPE II</div>
         </div>
 

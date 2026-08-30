@@ -74,7 +74,7 @@ export default function YelpConnect({ onConnected, dark = true, defaultLocation 
   // ── Theme tokens (obsidian design system, cyan accent) ──────────────────────
   const card = dark ? "bg-slate-900 border-slate-800" : "bg-white border-slate-200 shadow-sm";
   const textPrimary = dark ? "text-white" : "text-slate-900";
-  const textMuted = "text-slate-500 dark:text-slate-400";
+  const textMuted = "text-slate-600 dark:text-slate-400";
   const inputBg = dark
     ? "bg-slate-800 border-slate-700 text-white placeholder-slate-500"
     : "bg-white border-slate-300 text-slate-900 placeholder-slate-400";
@@ -260,8 +260,8 @@ export default function YelpConnect({ onConnected, dark = true, defaultLocation 
               mode === value
                 ? "bg-cyan-700 hover:bg-cyan-600 text-white"
                 : dark
-                  ? "text-slate-500 dark:text-slate-400 hover:text-slate-200"
-                  : "text-slate-500 hover:text-slate-700"
+                  ? "text-slate-600 dark:text-slate-400 hover:text-slate-200"
+                  : "text-slate-600 dark:text-slate-400 hover:text-slate-700"
             }`}
           >
             {label}

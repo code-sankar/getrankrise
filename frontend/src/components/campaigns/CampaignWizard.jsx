@@ -60,7 +60,7 @@ export default function CampaignWizard({ dark, credits, onClose, onCreated }) {
   // ── Theme tokens ───────────────────────────────────────────────────────────
   const panel = dark ? "bg-slate-900 border-slate-800" : "bg-white border-slate-200";
   const title = dark ? "text-white" : "text-slate-900";
-  const muted = "text-slate-500 dark:text-slate-400";
+  const muted = "text-slate-600 dark:text-slate-400";
   const inputBase = dark
     ? "bg-slate-950 border-slate-800 text-white placeholder-slate-600 focus:border-cyan-500"
     : "bg-white border-slate-200 text-slate-900 placeholder-slate-400 focus:border-cyan-500";
@@ -199,7 +199,7 @@ export default function CampaignWizard({ dark, credits, onClose, onCreated }) {
             <h2 className={`text-lg font-bold ${title}`}>New Pulse Campaign</h2>
             <button
               onClick={onClose}
-              className={`p-2 rounded-lg transition ${dark ? "text-slate-500 hover:text-slate-100 hover:bg-slate-800" : "text-slate-500 dark:text-slate-400 hover:text-slate-900 hover:bg-slate-100"}`}
+              className={`p-2 rounded-lg transition ${dark ? "text-slate-600 dark:text-slate-400 hover:text-slate-100 hover:bg-slate-800" : "text-slate-600 dark:text-slate-400 hover:text-slate-900 hover:bg-slate-100"}`}
             >
               <X size={18} />
             </button>
@@ -209,7 +209,7 @@ export default function CampaignWizard({ dark, credits, onClose, onCreated }) {
               <div key={t} className="flex items-center gap-2 flex-1">
                 <div
                   className={`flex items-center gap-2 text-xs font-bold ${
-                    i === step ? "text-cyan-700 dark:text-cyan-400" : i < step ? (dark ? "text-slate-300" : "text-slate-600") : muted
+                    i === step ? "text-cyan-700 dark:text-cyan-400" : i < step ? (dark ? "text-slate-700 dark:text-slate-300" : "text-slate-600 dark:text-slate-400") : muted
                   }`}
                 >
                   <span
@@ -219,8 +219,8 @@ export default function CampaignWizard({ dark, credits, onClose, onCreated }) {
                         : i === step
                         ? "border-cyan-500 text-cyan-700 dark:text-cyan-400"
                         : dark
-                        ? "border-slate-700 text-slate-500"
-                        : "border-slate-300 text-slate-500 dark:text-slate-400"
+                        ? "border-slate-700 text-slate-600 dark:text-slate-400"
+                        : "border-slate-300 text-slate-600 dark:text-slate-400"
                     }`}
                   >
                     {i < step ? <Check size={11} /> : i + 1}
@@ -337,7 +337,7 @@ export default function CampaignWizard({ dark, credits, onClose, onCreated }) {
                 </label>
                 <div
                   className={`p-4 rounded-xl border text-sm leading-relaxed ${
-                    dark ? "bg-slate-950 border-slate-800 text-slate-300" : "bg-slate-50 border-slate-200 text-slate-700"
+                    dark ? "bg-slate-950 border-slate-800 text-slate-700 dark:text-slate-300" : "bg-slate-50 border-slate-200 text-slate-700 dark:text-slate-300"
                   }`}
                 >
                   {preview}
@@ -436,7 +436,7 @@ export default function CampaignWizard({ dark, credits, onClose, onCreated }) {
           <button
             onClick={step === 0 ? onClose : () => setStep((s) => s - 1)}
             className={`px-4 py-2.5 rounded-xl text-sm font-bold transition ${
-              dark ? "text-slate-500 dark:text-slate-400 hover:text-white hover:bg-slate-800" : "text-slate-500 hover:text-slate-900 hover:bg-slate-100"
+              dark ? "text-slate-600 dark:text-slate-400 hover:text-white hover:bg-slate-800" : "text-slate-600 dark:text-slate-400 hover:text-slate-900 hover:bg-slate-100"
             }`}
           >
             {step === 0 ? "Cancel" : "Back"}

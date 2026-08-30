@@ -103,13 +103,13 @@ export default function Footer() {
             <div className="flex flex-col sm:flex-row items-center justify-center gap-3 w-full sm:w-auto">
               <Link
                 to="/signup"
-                className="w-full sm:w-auto bg-white text-black font-semibold text-[13px] px-5 py-2.5 rounded-lg hover:bg-gray-200 active:scale-[0.98] transition-all duration-200 text-center"
+                className="w-full sm:w-auto bg-white text-black font-semibold text-[13px] px-5 py-2.5 rounded-lg hover:bg-slate-200 active:scale-[0.98] transition-all duration-200 text-center"
               >
                 Start 14-day free trial
               </Link>
               <a
                 href="#demo"
-                className="w-full sm:w-auto border border-white/[0.09] text-gray-300 font-semibold text-[13px] px-5 py-2.5 rounded-lg hover:bg-white/[0.04] hover:text-white active:scale-[0.98] transition-all duration-200 text-center"
+                className="w-full sm:w-auto border border-white/[0.09] text-slate-300 font-semibold text-[13px] px-5 py-2.5 rounded-lg hover:bg-white/[0.04] hover:text-white active:scale-[0.98] transition-all duration-200 text-center"
               >
                 Book a demo
               </a>
@@ -148,20 +148,20 @@ export default function Footer() {
           <div className="col-span-2 lg:col-span-1 border-l border-white/[0.09] pl-5">
             <p className="font-serif italic text-[13px] leading-[1.65] text-[#8a8f98]">
               Reviews are aggregated from{" "}
-              <span className="not-italic font-medium text-gray-300">Google Business Profile</span>,{" "}
-              <span className="not-italic font-medium text-gray-300">Yelp</span>, and{" "}
-              <span className="not-italic font-medium text-gray-300">Facebook</span>. Sync frequency
+              <span className="not-italic font-medium text-slate-300">Google Business Profile</span>,{" "}
+              <span className="not-italic font-medium text-slate-300">Yelp</span>, and{" "}
+              <span className="not-italic font-medium text-slate-300">Facebook</span>. Sync frequency
               depends on your plan.
             </p>
             <div className="mt-5 flex items-center gap-2">
               <span className="h-1.5 w-1.5 rounded-full bg-cyan-400" />
-              <span className="text-[11px] text-gray-500">All systems operational</span>
+              <span className="text-[11px] text-slate-400">All systems operational</span>
             </div>
           </div>
         </div>
 
         {/* ── Legal row ─────────────────────────────────────────── */}
-        <div className="pt-7 border-t border-white/[0.06] text-[12px] text-gray-600 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+        <div className="pt-7 border-t border-white/[0.06] text-[12px] text-slate-400 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
           <span>&copy; {new Date().getFullYear()} Kirtify Inc. All rights reserved.</span>
           <div className="flex gap-5">
             <Link to="/privacy" className="hover:text-white transition-colors duration-200">

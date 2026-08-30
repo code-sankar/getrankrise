@@ -48,7 +48,7 @@ const DATE_RANGES = [
 const getTrend = v =>
   v > 0 ? { label: `↑ ${v}%`,           color: "text-emerald-700 dark:text-emerald-400" }
   : v < 0 ? { label: `↓ ${Math.abs(v)}%`, color: "text-red-600 dark:text-red-400"    }
-  :         { label: "Stable",            color: "text-slate-500"  };
+  :         { label: "Stable",            color: "text-slate-600 dark:text-slate-400"  };
 
 const getSentimentLabel = s =>
   s >= 85 ? { label: "Excellent",  color: "text-emerald-700 dark:text-emerald-400" }
@@ -162,7 +162,7 @@ export default function Analytics() {
             className={`p-2 rounded-xl transition-colors duration-200 active:scale-95 ${
               dark
                 ? "bg-slate-800 text-slate-100 hover:bg-slate-700"
-                : "bg-slate-100 text-slate-700 hover:bg-slate-200"
+                : "bg-slate-100 text-slate-700 dark:text-slate-300 hover:bg-slate-200"
             }`}
           >
             <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -184,7 +184,7 @@ export default function Analytics() {
               <h2 className={`text-lg font-bold ${dark ? "text-white" : "text-slate-900"}`}>
                 Analytics Overview
               </h2>
-              <p className={`text-xs mt-0.5 text-slate-500 dark:text-slate-400`}>
+              <p className={`text-xs mt-0.5 text-slate-600 dark:text-slate-400`}>
                 {/* Was "All data calculated from {totalReviews} real reviews",
                     which named a range-scoped count as if it were the whole
                     dataset — the line read "1 real reviews" for a clinic with
@@ -202,7 +202,7 @@ export default function Analytics() {
                   className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
                     dateRange === r.value
                       ? "bg-cyan-700 hover:bg-cyan-600 text-white"
-                      : dark ? "text-slate-500 dark:text-slate-400 hover:text-white" : "text-slate-500 hover:text-slate-900"
+                      : dark ? "text-slate-600 dark:text-slate-400 hover:text-white" : "text-slate-600 dark:text-slate-400 hover:text-slate-900"
                   }`}
                 >
                   {r.label}

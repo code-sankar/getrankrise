@@ -42,7 +42,7 @@ const toRatingChart = (distribution = []) => {
 const FilterGroup = ({ label, options, active, onChange, dark }) => (
   <div className="flex items-center gap-3 overflow-x-auto pb-1 no-scrollbar">
     <span
-      className={`text-[10px] font-bold uppercase tracking-widest min-w-[75px] text-slate-500 dark:text-slate-400`}
+      className={`text-[10px] font-bold uppercase tracking-widest min-w-[75px] text-slate-600 dark:text-slate-400`}
     >
       {label}
     </span>
@@ -55,8 +55,8 @@ const FilterGroup = ({ label, options, active, onChange, dark }) => (
             active === opt
               ? "bg-cyan-700 hover:bg-cyan-600 border-cyan-700 text-white shadow-md shadow-cyan-500/20"
               : dark
-                ? "border-slate-700 text-slate-500 dark:text-slate-400 hover:border-slate-500 bg-slate-800/40"
-                : "border-slate-200 text-slate-600 hover:border-slate-300 bg-white"
+                ? "border-slate-700 text-slate-600 dark:text-slate-400 hover:border-slate-500 bg-slate-800/40"
+                : "border-slate-200 text-slate-600 dark:text-slate-400 hover:border-slate-300 bg-white"
           }`}
         >
           {opt}
@@ -78,7 +78,7 @@ const EmptyState = ({ dark, onClear }) => (
     >
       Inbox Zero!
     </h3>
-    <p className={`text-sm text-slate-500 dark:text-slate-400`}>
+    <p className={`text-sm text-slate-600 dark:text-slate-400`}>
       No reviews match your current filters.
     </p>
     <button
@@ -179,7 +179,7 @@ export default function Dashboard() {
             className={`p-2 rounded-xl transition-colors duration-200 active:scale-95 ${
               dark
                 ? "bg-slate-800 text-slate-100 hover:bg-slate-700"
-                : "bg-slate-100 text-slate-700 hover:bg-slate-200"
+                : "bg-slate-100 text-slate-700 dark:text-slate-300 hover:bg-slate-200"
             }`}
           >
             <svg
@@ -240,7 +240,7 @@ export default function Dashboard() {
                     Reviews Queue
                   </h2>
                   <p
-                    className={`text-sm text-slate-500 dark:text-slate-400`}
+                    className={`text-sm text-slate-600 dark:text-slate-400`}
                   >
                     Monitor and respond to customer feedback
                   </p>
@@ -317,8 +317,8 @@ export default function Dashboard() {
                   disabled={isFetching}
                   className={`px-6 py-2.5 rounded-full text-sm font-bold border transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed ${
                     dark
-                      ? "border-slate-700 text-slate-300 hover:border-slate-500 bg-slate-800/40"
-                      : "border-slate-200 text-slate-700 hover:border-slate-300 bg-white"
+                      ? "border-slate-700 text-slate-700 dark:text-slate-300 hover:border-slate-500 bg-slate-800/40"
+                      : "border-slate-200 text-slate-700 dark:text-slate-300 hover:border-slate-300 bg-white"
                   }`}
                 >
                   {isFetching
@@ -326,7 +326,7 @@ export default function Dashboard() {
                     : `Load ${Math.min(REVIEWS_PAGE_SIZE, totalReviews - loadedCount)} more`}
                 </button>
                 <p
-                  className={`text-xs text-slate-500 dark:text-slate-400`}
+                  className={`text-xs text-slate-600 dark:text-slate-400`}
                 >
                   Showing {loadedCount} of {totalReviews} · filters apply to
                   loaded reviews

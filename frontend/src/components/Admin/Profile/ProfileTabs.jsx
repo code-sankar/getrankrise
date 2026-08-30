@@ -26,8 +26,8 @@ export default function ProfileTabs({ activeTab, setActiveTab, dark }) {
                   ? "bg-slate-800 shadow-lg shadow-black/20 text-cyan-700 dark:text-cyan-400"
                   : "bg-white shadow-sm text-cyan-700 dark:text-cyan-400"
                 : dark
-                  ? "text-slate-500 hover:text-slate-300 hover:bg-slate-800/50"
-                  : "text-slate-500 hover:text-slate-700 hover:bg-white/50"
+                  ? "text-slate-600 dark:text-slate-400 hover:text-slate-300 hover:bg-slate-800/50"
+                  : "text-slate-600 dark:text-slate-400 hover:text-slate-700 hover:bg-white/50"
             }`}
           >
             {tab.label}

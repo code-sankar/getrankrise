@@ -20,14 +20,14 @@ function StatPill({ label, value, sub, subColor, dark }) {
           : "bg-white border-slate-200 shadow-sm"
       }`}
     >
-      <p className={`text-[10px] font-bold uppercase tracking-widest text-slate-500 dark:text-slate-400`}>
+      <p className={`text-[10px] font-bold uppercase tracking-widest text-slate-600 dark:text-slate-400`}>
         {label}
       </p>
       <p className={`text-xl font-black mt-1 ${dark ? "text-white" : "text-slate-900"}`}>
         {value}
       </p>
       {sub && (
-        <p className={`text-[10px] font-bold mt-1 ${subColor || ("text-slate-500 dark:text-slate-400")}`}>
+        <p className={`text-[10px] font-bold mt-1 ${subColor || ("text-slate-600 dark:text-slate-400")}`}>
           {sub}
         </p>
       )}

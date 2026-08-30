@@ -144,7 +144,7 @@ export default function Onboarding() {
                 ? "bg-cyan-700 hover:bg-cyan-600 text-white"
                 : i < step
                   ? "bg-emerald-500/20 text-emerald-700 dark:text-emerald-400"
-                  : dark ? "bg-slate-800 text-slate-500" : "bg-slate-100 text-slate-500 dark:text-slate-400"
+                  : dark ? "bg-slate-800 text-slate-600 dark:text-slate-400" : "bg-slate-100 text-slate-600 dark:text-slate-400"
             }`}>
               <span>{s.icon}</span>
               <span className="hidden sm:inline">{s.label}</span>
@@ -162,7 +162,7 @@ export default function Onboarding() {
           <h1 className={`text-2xl font-black mb-2 ${dark ? "text-white" : "text-slate-900"}`}>
             Tell us about your clinic
           </h1>
-          <p className={`text-sm mb-8 text-slate-500 dark:text-slate-400`}>
+          <p className={`text-sm mb-8 text-slate-600 dark:text-slate-400`}>
             This info appears in your review request messages.
           </p>
 
@@ -188,7 +188,7 @@ export default function Onboarding() {
           <h1 className={`text-2xl font-black mb-2 ${dark ? "text-white" : "text-slate-900"}`}>
             Connect Google Business
           </h1>
-          <p className={`text-sm mb-2 text-slate-500 dark:text-slate-400`}>
+          <p className={`text-sm mb-2 text-slate-600 dark:text-slate-400`}>
             Paste your Google Business links so we can sync and track your reviews.
           </p>
 
@@ -217,7 +217,7 @@ export default function Onboarding() {
           <div className="flex gap-3 mt-8">
             <button
               onClick={() => setStep(2)}
-              className={`flex-1 py-3.5 rounded-2xl font-bold text-sm border transition-all ${dark ? "border-slate-700 text-slate-500 dark:text-slate-400 hover:bg-slate-800" : "border-slate-200 text-slate-500 hover:bg-slate-50"}`}
+              className={`flex-1 py-3.5 rounded-2xl font-bold text-sm border transition-all ${dark ? "border-slate-700 text-slate-600 dark:text-slate-400 hover:bg-slate-800" : "border-slate-200 text-slate-600 dark:text-slate-400 hover:bg-slate-50"}`}
             >
               Skip for now
             </button>
@@ -241,7 +241,7 @@ export default function Onboarding() {
           <h1 className={`text-2xl font-black mb-3 ${dark ? "text-white" : "text-slate-900"}`}>
             You're all set!
           </h1>
-          <p className={`text-sm mb-8 leading-relaxed max-w-sm mx-auto text-slate-500 dark:text-slate-400`}>
+          <p className={`text-sm mb-8 leading-relaxed max-w-sm mx-auto text-slate-600 dark:text-slate-400`}>
             Your clinic is ready. Head to your dashboard to start collecting reviews and outranking competitors.
           </p>
 
@@ -254,7 +254,7 @@ export default function Onboarding() {
             ].map((f) => (
               <div key={f.label} className={`p-4 rounded-2xl ${dark ? "bg-slate-800" : "bg-slate-50"}`}>
                 <div className="text-2xl mb-2">{f.icon}</div>
-                <p className={`text-xs font-bold ${dark ? "text-slate-300" : "text-slate-700"}`}>{f.label}</p>
+                <p className={`text-xs font-bold ${dark ? "text-slate-700 dark:text-slate-300" : "text-slate-700 dark:text-slate-300"}`}>{f.label}</p>
               </div>
             ))}
           </div>
@@ -276,7 +276,7 @@ export default function Onboarding() {
 function Field({ label, name, value, onChange, placeholder, input }) {
   return (
     <div>
-      <label className="block text-[10px] font-bold uppercase tracking-widest mb-2 text-slate-500 dark:text-slate-400">
+      <label className="block text-[10px] font-bold uppercase tracking-widest mb-2 text-slate-600 dark:text-slate-400">
         {label}
       </label>
       <input

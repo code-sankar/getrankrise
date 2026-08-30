@@ -85,7 +85,7 @@ export default function VerifyEmail() {
       <AuthNotice tone={ok ? "success" : "error"}>{message}</AuthNotice>
 
       {!ok && (
-        <p className="text-xs text-slate-500 text-center leading-relaxed mb-6">
+        <p className="text-xs text-slate-400 text-center leading-relaxed mb-6">
           Confirmation links expire after a few days and can only be used once.
           Sign in and request a fresh one from Settings → Account.
         </p>

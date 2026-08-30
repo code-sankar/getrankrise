@@ -180,7 +180,13 @@ export const status = {
 export const CHART = {
   // Single-series accent, per mode.
   accent: { light: "#0891b2", dark: "#0ea5b7" },
-  axis: { light: "#94a3b8", dark: "#475569" },
+  // Axis labels are text and are held to the same 4.5:1 as any other text.
+  // These two were the wrong way round on arrival — slate-400 on a white card
+  // is 2.56:1 and slate-600 on a dark card is 2.36:1, so the axis failed in
+  // BOTH modes. It reads as the same inversion the app's greys had, and it
+  // hides well because an axis label is the thing nobody looks straight at.
+  // light #475569 = 7.58:1 · dark #94a3b8 = 6.96:1.
+  axis: { light: "#475569", dark: "#94a3b8" },
   // Solid hairline, one shade off the surface. Never dashed — dashing reads as
   // "projection" or "threshold" when it is only a grid.
   grid: { light: "rgba(15,23,42,0.06)", dark: "rgba(255,255,255,0.06)" },

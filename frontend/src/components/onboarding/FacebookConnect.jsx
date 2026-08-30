@@ -91,7 +91,7 @@ export default function FacebookConnect({ onConnected, dark = true }) {
   // ── Theme tokens (obsidian design system) ───────────────────────────────────
   const card = dark ? "bg-slate-900 border-slate-800" : "bg-white border-slate-200 shadow-sm";
   const textPrimary = dark ? "text-white" : "text-slate-900";
-  const textMuted = "text-slate-500 dark:text-slate-400";
+  const textMuted = "text-slate-600 dark:text-slate-400";
   const rowHover = dark ? "hover:bg-slate-800/60" : "hover:bg-slate-50";
   const rowSelected = dark ? "bg-blue-500/10 border-blue-500/40" : "bg-blue-50 border-blue-300";
   const rowBorder = dark ? "border-slate-800" : "border-slate-100";

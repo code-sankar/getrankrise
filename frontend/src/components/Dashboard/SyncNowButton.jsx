@@ -53,8 +53,8 @@ export default function SyncNowButton({ dark, onSynced }) {
       title="Fetch new reviews from your connected platforms"
       className={`inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full text-xs font-bold border transition-all disabled:opacity-50 disabled:cursor-not-allowed active:scale-95 ${
         dark
-          ? "border-slate-700 text-slate-300 hover:border-slate-500 hover:text-white bg-slate-800/40"
-          : "border-slate-200 text-slate-600 hover:border-slate-300 hover:text-slate-900 bg-white"
+          ? "border-slate-700 text-slate-700 dark:text-slate-300 hover:border-slate-500 hover:text-white bg-slate-800/40"
+          : "border-slate-200 text-slate-600 dark:text-slate-400 hover:border-slate-300 hover:text-slate-900 bg-white"
       }`}
     >
       <svg

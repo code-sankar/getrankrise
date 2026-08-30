@@ -70,7 +70,7 @@ function SectionHeader({ title, description, dark }) {
   return (
     <div className="mb-6">
       <h2 className={`text-base font-semibold ${dark ? "text-white" : "text-slate-900"}`}>{title}</h2>
-      <p className="text-slate-500 text-sm mt-0.5">{description}</p>
+      <p className="text-slate-600 dark:text-slate-400 text-sm mt-0.5">{description}</p>
     </div>
   );
 }
@@ -78,7 +78,7 @@ function SectionHeader({ title, description, dark }) {
 function InputField({ label, name, type = "text", value, onChange, placeholder, hint, dark, disabled }) {
   return (
     <div className="w-full">
-      <label className="block text-xs font-semibold text-slate-500 uppercase tracking-widest mb-2">{label}</label>
+      <label className="block text-xs font-semibold text-slate-600 dark:text-slate-400 uppercase tracking-widest mb-2">{label}</label>
       <input
         type={type}
         name={name}
@@ -92,7 +92,7 @@ function InputField({ label, name, type = "text", value, onChange, placeholder, 
             : "bg-slate-50 border-slate-200 text-slate-900 placeholder-slate-400"
         }`}
       />
-      {hint && <p className="text-slate-500 text-xs mt-1">{hint}</p>}
+      {hint && <p className="text-slate-600 dark:text-slate-400 text-xs mt-1">{hint}</p>}
     </div>
   );
 }
@@ -102,7 +102,7 @@ function Toggle({ label, description, enabled, onToggle, dark }) {
     <div className={`flex items-center justify-between gap-4 py-4 border-b last:border-0 ${dark ? "border-slate-800" : "border-slate-100"}`}>
       <div>
         <p className={`text-sm font-medium ${dark ? "text-slate-200" : "text-slate-800"}`}>{label}</p>
-        <p className="text-slate-500 text-xs mt-0.5">{description}</p>
+        <p className="text-slate-600 dark:text-slate-400 text-xs mt-0.5">{description}</p>
       </div>
       <button
         type="button"
@@ -278,7 +278,7 @@ export default function Settings() {
       <div className="flex-1 flex flex-col min-w-0 h-full overflow-y-auto custom-scrollbar">
         <header className={`lg:hidden flex items-center justify-between p-4 border-b flex-shrink-0 ${dark ? "bg-slate-900 border-slate-800" : "bg-white border-slate-100"}`}>
           <span className="font-black tracking-tight text-cyan-700 dark:text-cyan-400 text-lg">Kirtify</span>
-          <button onClick={() => setSidebarOpen(true)} className={`p-2 rounded-xl ${dark ? "bg-slate-800 text-slate-100" : "bg-slate-100 text-slate-700"}`}>
+          <button onClick={() => setSidebarOpen(true)} className={`p-2 rounded-xl ${dark ? "bg-slate-800 text-slate-100" : "bg-slate-100 text-slate-700 dark:text-slate-300"}`}>
             <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
             </svg>
@@ -294,7 +294,7 @@ export default function Settings() {
               saying nothing. The subtitle does carry information, so it stays
               — as a subtitle. */}
           <div className="mb-8">
-            <p className="text-slate-500 text-sm">Manage your business profile, billing, and preferences</p>
+            <p className="text-slate-600 dark:text-slate-400 text-sm">Manage your business profile, billing, and preferences</p>
           </div>
 
           {/* Sending is blocked server-side until the address is confirmed
@@ -312,7 +312,7 @@ export default function Settings() {
                 className={`flex-1 min-w-fit py-2.5 px-4 rounded-lg text-sm font-bold transition-all ${
                   activeTab === tab.id
                     ? dark ? "bg-slate-800 text-white shadow-sm" : "bg-white text-cyan-700 dark:text-cyan-400 shadow-sm"
-                    : "text-slate-500 hover:text-slate-700"
+                    : "text-slate-600 dark:text-slate-400 hover:text-slate-700"
                 }`}
               >
                 {tab.label}
@@ -329,7 +329,7 @@ export default function Settings() {
             <div className="space-y-6">
               <div>
                 <h2 className={`text-base font-semibold ${dark ? "text-white" : "text-slate-900"}`}>Connected Platforms</h2>
-                <p className="text-slate-500 text-sm mt-0.5">
+                <p className="text-slate-600 dark:text-slate-400 text-sm mt-0.5">
                   Link your review sources so Kirtify can sync reviews and publish replies.
                   Connections stay active on your plan's sync schedule.
                 </p>
@@ -351,7 +351,7 @@ export default function Settings() {
                 onConnected={handlePlatformConnected}
               />
 
-              <p className="text-slate-500 text-xs">
+              <p className="text-slate-600 dark:text-slate-400 text-xs">
                 Reviews sync automatically after a platform is connected. Real-time sync is a Premium feature;
                 Starter syncs every 24 hours.
               </p>
@@ -489,10 +489,10 @@ export default function Settings() {
                   <div className={`p-6 rounded-2xl border ${dark ? "bg-slate-950 border-slate-800" : "bg-slate-50 border-slate-200"}`}>
                     <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-4">
                       <div>
-                        <p className="text-2xl font-bold text-cyan-700 dark:text-cyan-400">{currentPlan.price}<span className="text-sm font-medium text-slate-500"> / mo</span></p>
+                        <p className="text-2xl font-bold text-cyan-700 dark:text-cyan-400">{currentPlan.price}<span className="text-sm font-medium text-slate-600 dark:text-slate-400"> / mo</span></p>
                         <ul className="mt-2 space-y-1">
                           {currentPlan.features.map((f) => (
-                            <li key={f} className={`text-xs ${dark ? "text-slate-500 dark:text-slate-400" : "text-slate-600"}`}>• {f}</li>
+                            <li key={f} className={`text-xs ${dark ? "text-slate-600 dark:text-slate-400" : "text-slate-600 dark:text-slate-400"}`}>• {f}</li>
                           ))}
                         </ul>
                       </div>
@@ -512,7 +512,7 @@ export default function Settings() {
                             className={`px-5 py-2.5 rounded-lg text-sm font-bold border ${
                               dark
                                 ? "border-slate-700 text-white hover:bg-slate-800"
-                                : "border-slate-300 text-slate-700 hover:bg-slate-100"
+                                : "border-slate-300 text-slate-700 dark:text-slate-300 hover:bg-slate-100"
                             }`}
                           />
                         )}
@@ -549,10 +549,10 @@ export default function Settings() {
                           }`}
                         >
                           <p className={`text-sm font-bold ${dark ? "text-white" : "text-slate-900"}`}>{p.name}</p>
-                          <p className="text-xl font-bold text-cyan-700 dark:text-cyan-400 mt-1">{p.price}<span className="text-xs text-slate-500"> /mo</span></p>
+                          <p className="text-xl font-bold text-cyan-700 dark:text-cyan-400 mt-1">{p.price}<span className="text-xs text-slate-600 dark:text-slate-400"> /mo</span></p>
                           <ul className="mt-3 space-y-1.5 flex-1">
                             {p.features.map((f) => (
-                              <li key={f} className={`text-[11px] ${dark ? "text-slate-500 dark:text-slate-400" : "text-slate-600"}`}>• {f}</li>
+                              <li key={f} className={`text-[11px] ${dark ? "text-slate-600 dark:text-slate-400" : "text-slate-600 dark:text-slate-400"}`}>• {f}</li>
                             ))}
                           </ul>
                           {isCurrent ? (
@@ -565,7 +565,7 @@ export default function Settings() {
                               Upgrade to {p.name}
                             </UpgradeButton>
                           ) : (
-                            <p className="mt-4 text-[10px] font-medium text-slate-500 uppercase tracking-widest">Contact support to change</p>
+                            <p className="mt-4 text-[10px] font-medium text-slate-600 dark:text-slate-400 uppercase tracking-widest">Contact support to change</p>
                           )}
                         </div>
                       );
@@ -575,7 +575,7 @@ export default function Settings() {
 
                 <div className={`border rounded-2xl p-6 sm:p-8 ${cardBg}`}>
                   <SectionHeader dark={dark} title="Billing History" description="Your invoices appear here once you have an active paid plan" />
-                  <p className="text-sm text-slate-500">No invoices yet.</p>
+                  <p className="text-sm text-slate-600 dark:text-slate-400">No invoices yet.</p>
                 </div>
               </div>
             )}

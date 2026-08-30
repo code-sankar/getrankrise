@@ -103,9 +103,9 @@ export default function Competitors() {
   // ── Theme tokens ──────────────────────────────────────────────────────────
   const cardBg      = dark ? "bg-slate-900 border-slate-800" : "bg-white border-slate-200 shadow-sm";
   const textPrimary = dark ? "text-white" : "text-slate-900";
-  const textMuted   = dark ? "text-slate-300" : "text-slate-500";
+  const textMuted   = dark ? "text-slate-700 dark:text-slate-300" : "text-slate-600 dark:text-slate-400";
   const divider     = dark ? "divide-slate-800" : "divide-slate-100";
-  const tableHead   = dark ? "bg-slate-800/50 text-slate-500 dark:text-slate-400" : "bg-slate-50 text-slate-500";
+  const tableHead   = dark ? "bg-slate-800/50 text-slate-600 dark:text-slate-400" : "bg-slate-50 text-slate-600 dark:text-slate-400";
   const tableRow    = dark ? "hover:bg-slate-800/40 transition-colors" : "hover:bg-slate-50 transition-colors";
 
   // ── Fetch overview ──────────────────────────────────────────────────────────
@@ -222,7 +222,7 @@ export default function Competitors() {
       <div className="flex-1 flex flex-col min-w-0 h-full overflow-y-auto custom-scrollbar">
         <header className={`lg:hidden flex items-center justify-between p-4 border-b flex-shrink-0 ${dark ? "bg-slate-900 border-slate-800" : "bg-white border-slate-100"}`}>
           <span className="font-black tracking-tight text-cyan-700 dark:text-cyan-400 text-lg">Kirtify</span>
-          <button onClick={() => setSidebarOpen(true)} className={`p-2 rounded-xl transition-colors active:scale-95 ${dark ? "bg-slate-800 text-slate-100 hover:bg-slate-700" : "bg-slate-100 text-slate-700 hover:bg-slate-200"}`}>
+          <button onClick={() => setSidebarOpen(true)} className={`p-2 rounded-xl transition-colors active:scale-95 ${dark ? "bg-slate-800 text-slate-100 hover:bg-slate-700" : "bg-slate-100 text-slate-700 dark:text-slate-300 hover:bg-slate-200"}`}>
             <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
             </svg>
@@ -248,7 +248,7 @@ export default function Competitors() {
               onClick={() => (usage.canAdd ? setModalOpen(true) : toast.info("You've reached your plan's competitor limit. Upgrade to track more."))}
               disabled={loading || (error && error.blocked)}
               className={`inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold transition-colors disabled:opacity-40 ${
-                usage.canAdd ? "bg-cyan-700 hover:bg-cyan-600 text-white" : "bg-slate-700 text-slate-300 cursor-not-allowed"
+                usage.canAdd ? "bg-cyan-700 hover:bg-cyan-600 text-white" : "bg-slate-700 text-slate-700 dark:text-slate-300 cursor-not-allowed"
               }`}
             >
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -354,7 +354,7 @@ export default function Competitors() {
                           <td className="px-6 py-4">
                             <div className="flex items-center gap-2 text-sm">
                               <div className="w-2 h-2 rounded-full" style={{ background: colorFor(i) }} />
-                              <span className={dark ? "text-slate-300" : "text-slate-700"}>{c.name}</span>
+                              <span className={dark ? "text-slate-700 dark:text-slate-300" : "text-slate-700 dark:text-slate-300"}>{c.name}</span>
                               {c.syncStatus === "failed" && (
                                 <span className="text-[9px] bg-red-500/20 text-red-600 dark:text-red-400 px-1.5 py-0.5 rounded uppercase font-black" title="Last sync failed">sync error</span>
                               )}
@@ -362,7 +362,7 @@ export default function Competitors() {
                           </td>
                           <td className="px-6 py-4 text-center">
                             <Stars rating={c.rating} />
-                            <p className="text-xs font-bold text-slate-500">{c.rating}</p>
+                            <p className="text-xs font-bold text-slate-600 dark:text-slate-400">{c.rating}</p>
                           </td>
                           <td className="px-6 py-4 text-center text-sm">{c.totalReviews}</td>
                           <td className="px-6 py-4 text-center text-sm">+{c.newThisMonth}</td>
@@ -374,7 +374,7 @@ export default function Competitors() {
                                 onClick={() => handleRefresh(c.id)}
                                 disabled={refreshingId === c.id}
                                 title="Re-sync"
-                                className={`p-1.5 rounded-lg transition-colors ${dark ? "hover:bg-slate-700 text-slate-500 dark:text-slate-400" : "hover:bg-slate-100 text-slate-500"}`}
+                                className={`p-1.5 rounded-lg transition-colors ${dark ? "hover:bg-slate-700 text-slate-600 dark:text-slate-400" : "hover:bg-slate-100 text-slate-600 dark:text-slate-400"}`}
                               >
                                 <svg className={`w-4 h-4 ${refreshingId === c.id ? "animate-spin" : ""}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
@@ -383,7 +383,7 @@ export default function Competitors() {
                               <button
                                 onClick={() => handleDelete(c.id, c.name)}
                                 title="Stop tracking"
-                                className={`p-1.5 rounded-lg transition-colors ${dark ? "hover:bg-red-500/10 text-slate-500 dark:text-slate-400 hover:text-red-400" : "hover:bg-red-50 text-slate-500 hover:text-red-500"}`}
+                                className={`p-1.5 rounded-lg transition-colors ${dark ? "hover:bg-red-500/10 text-slate-600 dark:text-slate-400 hover:text-red-400" : "hover:bg-red-50 text-slate-600 dark:text-slate-400 hover:text-red-500"}`}
                               >
                                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
@@ -443,7 +443,7 @@ export default function Competitors() {
                         className={`px-4 py-2 rounded-xl text-xs font-bold transition-all whitespace-nowrap border ${
                           selectedId === c.id
                             ? "bg-cyan-700 hover:bg-cyan-600 border-cyan-500 text-white"
-                            : dark ? "bg-slate-800 border-slate-700 text-slate-300 hover:border-slate-600" : "bg-slate-50 border-slate-200 text-slate-600 hover:border-slate-300"
+                            : dark ? "bg-slate-800 border-slate-700 text-slate-700 dark:text-slate-300 hover:border-slate-600" : "bg-slate-50 border-slate-200 text-slate-600 dark:text-slate-400 hover:border-slate-300"
                         }`}
                         style={selectedId === c.id ? undefined : { borderLeftColor: colorFor(i), borderLeftWidth: 3 }}
                       >

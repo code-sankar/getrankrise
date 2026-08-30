@@ -40,7 +40,7 @@ function EmptyState({ dark, onCreate }) {
       <h3 className={`text-base font-bold ${dark ? "text-white" : "text-slate-900"}`}>
         No campaigns yet
       </h3>
-      <p className={`text-sm mt-1 mb-6 text-slate-500 dark:text-slate-400`}>
+      <p className={`text-sm mt-1 mb-6 text-slate-600 dark:text-slate-400`}>
         Launch a Pulse Campaign to request reviews from a batch of customers over SMS or WhatsApp.
       </p>
       <button
@@ -60,7 +60,7 @@ function CampaignCard({ campaign, dark, onSelect }) {
 
   const card = dark ? "bg-slate-900 border-slate-800 hover:border-slate-700" : "bg-white border-slate-200 hover:border-slate-300 shadow-sm";
   const title = dark ? "text-white" : "text-slate-900";
-  const muted = "text-slate-500 dark:text-slate-400";
+  const muted = "text-slate-600 dark:text-slate-400";
 
   const scheduledLabel =
     campaign.status === "scheduled" && campaign.scheduledAt
@@ -104,7 +104,7 @@ function CampaignCard({ campaign, dark, onSelect }) {
             <span className={`w-1.5 h-1.5 rounded-full ${meta.dot}`} />
             {meta.label}
           </span>
-          <ChevronRight size={18} className={"text-slate-500 dark:text-slate-400"} />
+          <ChevronRight size={18} className={"text-slate-600 dark:text-slate-400"} />
         </div>
       </div>
 

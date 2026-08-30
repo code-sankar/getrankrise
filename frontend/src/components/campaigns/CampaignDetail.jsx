@@ -40,7 +40,7 @@ export default function CampaignDetail({ campaignId, dark, onClose, onChanged })
 
   const panel = dark ? "bg-slate-900 border-slate-800" : "bg-white border-slate-200";
   const title = dark ? "text-white" : "text-slate-900";
-  const muted = "text-slate-500 dark:text-slate-400";
+  const muted = "text-slate-600 dark:text-slate-400";
 
   // ── Load / refresh ─────────────────────────────────────────────────────────
   const load = useCallback(
@@ -134,7 +134,7 @@ export default function CampaignDetail({ campaignId, dark, onClose, onChanged })
           </div>
           <button
             onClick={onClose}
-            className={`p-2 rounded-lg flex-shrink-0 transition ${dark ? "text-slate-500 hover:text-slate-100 hover:bg-slate-800" : "text-slate-500 dark:text-slate-400 hover:text-slate-900 hover:bg-slate-100"}`}
+            className={`p-2 rounded-lg flex-shrink-0 transition ${dark ? "text-slate-600 dark:text-slate-400 hover:text-slate-100 hover:bg-slate-800" : "text-slate-600 dark:text-slate-400 hover:text-slate-900 hover:bg-slate-100"}`}
           >
             <X size={18} />
           </button>

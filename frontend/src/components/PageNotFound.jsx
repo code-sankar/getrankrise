@@ -21,13 +21,13 @@ function PageNotFound() {
 
             {/* The Funny Stuff */}
             <div className="text-center mt-8 space-y-3">
-                <h2 className="text-6xl font-black tracking-tighter text-transparent bg-clip-text bg-gradient-to-b from-white to-gray-500">
+                <h2 className="text-6xl font-black tracking-tighter text-transparent bg-clip-text bg-gradient-to-b from-white to-slate-500">
                     404
                 </h2>
                 <p className="text-pink-500 font-mono text-lg uppercase tracking-widest">
                     Houston, we have a problem.
                 </p>
-                <p className="text-gray-400 max-w-md mx-auto italic">
+                <p className="text-slate-400 max-w-md mx-auto italic">
                     "I took a wrong turn at Albuquerque and ended up in this dark, 
                     empty void. It's quiet here. Too quiet."
                 </p>

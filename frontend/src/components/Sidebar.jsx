@@ -262,15 +262,15 @@ export default function Sidebar({ onClose }) {
     aside: dark
       ? "bg-[#0d0d12] border-slate-800"
       : "bg-[#f8fafc] border-slate-200",
-    text: dark ? "text-slate-300" : "text-slate-900",
+    text: dark ? "text-slate-700 dark:text-slate-300" : "text-slate-900",
     active: dark
       ? "bg-cyan-100/10 text-cyan-300"
-      : "bg-white shadow-sm border border-slate-200 text-cyan-700",
+      : "bg-white shadow-sm border border-slate-200 text-cyan-700 dark:text-cyan-400",
     hover: dark
       ? "hover:bg-slate-800/50 hover:text-slate-200"
       : "hover:bg-white hover:text-slate-900",
     logo: dark ? "text-white" : "text-slate-900",
-    label: dark ? "text-slate-500 dark:text-slate-400" : "text-slate-700",
+    label: dark ? "text-slate-600 dark:text-slate-400" : "text-slate-700 dark:text-slate-300",
     divider: dark ? "border-slate-800/50" : "border-slate-200",
   };
 

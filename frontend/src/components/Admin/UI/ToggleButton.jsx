@@ -19,7 +19,7 @@ export default function ToggleButton({
         </span>
         {description && (
           <span
-            className={`text-xs text-slate-500 dark:text-slate-400`}
+            className={`text-xs text-slate-600 dark:text-slate-400`}
           >
             {description}
           </span>
