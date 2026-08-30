@@ -286,7 +286,7 @@ export default function Sidebar({ onClose }) {
           </div>
           <div>
             <span className={`font-bold text-lg tracking-tight ${theme.logo}`}>
-              GetRankRise
+              Kirtify
             </span>
             <p className={`text-[15px] truncate max-w-[130px] ${theme.label}`}>
               {clinicName}

@@ -47,7 +47,7 @@
 //
 // It is also the better answer for this product specifically. A bright cyan
 // chip with a near-black label reads as instrument panel — dashboards, sync
-// clocks, usage meters, which is what GetRankRise actually is — where
+// clocks, usage meters, which is what Kirtify actually is — where
 // white-on-mid-cyan is the button every SaaS ships. If you want the old look
 // back it is one line: `bg-cyan-600 hover:bg-cyan-500 text-white` also passes
 // (4.9:1), at the cost of a duller accent.

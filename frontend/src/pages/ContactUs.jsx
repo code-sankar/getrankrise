@@ -60,7 +60,7 @@ export default function ContactUs() {
           }`}
         >
           <span className="font-black tracking-tight text-indigo-600 text-lg">
-            GetRankRise
+            Kirtify
           </span>
           <button
             onClick={() => setSidebarOpen(true)}
@@ -100,7 +100,7 @@ export default function ContactUs() {
                 <ContactInfoCard
                   icon={<Mail className="text-indigo-500" />}
                   title="Email Us"
-                  detail="support@getrankrise.com"
+                  detail="support@kirtify.com"
                   theme={theme}
                 />
                 <ContactInfoCard

@@ -45,7 +45,7 @@ function getProvider() {
 // write them for a clinic owner, not a stack trace reader.
 const MESSAGES = {
   UNSUPPORTED_PLATFORM: (p) =>
-    `Publishing replies to ${p} isn't supported yet — your reply is saved in GetRankRise.`,
+    `Publishing replies to ${p} isn't supported yet — your reply is saved in Kirtify.`,
   LOCAL_ONLY:
     "This review has no Google review ID (it was added manually), so there's nothing on Google to attach the reply to.",
   NO_CONNECTION:

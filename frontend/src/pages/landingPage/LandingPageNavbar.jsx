@@ -13,7 +13,7 @@ export default function Navbar() {
           {/* Logo */}
           <Link to="/" className="flex items-center gap-2">
             <img src={logo} alt="logo" className="w-8 h-8 sm:w-9 sm:h-8" />
-            <span className="text-white font-bold text-lg tracking-tight">GetRankRise</span>
+            <span className="text-white font-bold text-lg tracking-tight">Kirtify</span>
           </Link>
 
           {/* Desktop Nav */}

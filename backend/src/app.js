@@ -203,7 +203,7 @@ if (env.NODE_ENV === "development") {
 const health = (req, res) => {
   res.status(200).json({
     success:     true,
-    message:     "GetRankRise API is running",
+    message:     "Kirtify API is running",
     environment: env.NODE_ENV,
     timestamp:   new Date().toISOString(),
   });

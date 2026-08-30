@@ -4,7 +4,7 @@
 // for third parties and no public reply API, so this provider implements
 // fetchReviewsPage ONLY. Reply publishing for Yelp reviews is already handled
 // by replyPublish.service.js returning UNSUPPORTED_PLATFORM (the reply is
-// saved locally and phrased "saved in GetRankRise").
+// saved locally and phrased "saved in Kirtify").
 //
 // ── AUTH ────────────────────────────────────────────────────────────────────
 // A single account-level API key (YELP_API_KEY), sent as a Bearer token. There

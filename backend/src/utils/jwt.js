@@ -86,7 +86,7 @@ export const generateTokenPair = (user) => {
 // This was hardcoded to "strict", which silently breaks the session on the
 // most likely production topology for this app. The SPA ships to Vercel while
 // the API runs somewhere else; if those are different registrable domains
-// (getrankrise.vercel.app vs an api host on another domain), a "strict" cookie
+// (kirtify.vercel.app vs an api host on another domain), a "strict" cookie
 // is NEVER sent cross-site. POST /auth/refresh-token then 401s every time, and
 // every user is hard-logged-out the moment their 15-minute access token
 // expires — with nothing in the logs but routine 401s.
@@ -96,8 +96,8 @@ export const generateTokenPair = (user) => {
 // is correct for both topologies: it also works when the app and API DO share
 // a parent domain, just with weaker CSRF hardening than "lax"/"strict".
 //
-// If you deploy app + API under one registrable domain (getrankrise.com and
-// api.getrankrise.com), set COOKIE_SAMESITE=lax to get that hardening back.
+// If you deploy app + API under one registrable domain (kirtify.com and
+// api.kirtify.com), set COOKIE_SAMESITE=lax to get that hardening back.
 // CSRF risk is contained regardless: this cookie is only ever exchanged at
 // /auth/refresh-token, every other endpoint authenticates from the
 // Authorization header, and CORS is a strict CLIENT_URL allow-list.

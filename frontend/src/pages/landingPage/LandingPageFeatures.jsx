@@ -249,7 +249,7 @@ export default function Features() {
           </h2>
           <p className="text-[14px] text-gray-500 max-w-lg mx-auto leading-relaxed">
             From the first review request to the last competitor benchmark —
-            GetRankRise replaces a stack of disconnected tools with one calm system.
+            Kirtify replaces a stack of disconnected tools with one calm system.
           </p>
         </div>
 

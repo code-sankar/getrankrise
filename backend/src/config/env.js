@@ -372,7 +372,7 @@ export const env = {
   // API_PUBLIC_URL: the base URL Google can reach for the OAuth callback.
   //   local dev  → http://localhost:5000  (register this exact redirect URI
   //                in Cloud Console: http://localhost:5000/api/v1/oauth/google/callback)
-  //   production → https://api.getrankrise.com
+  //   production → https://api.kirtify.com
   GOOGLE_CLIENT_ID: process.env.GOOGLE_CLIENT_ID || null,
   GOOGLE_CLIENT_SECRET: process.env.GOOGLE_CLIENT_SECRET || null,
   API_PUBLIC_URL: (process.env.API_PUBLIC_URL || "").replace(/\/+$/, "") || null,

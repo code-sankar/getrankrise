@@ -3,7 +3,7 @@
 // Lands from the invitation email: /accept-invite?token=…
 //
 // ── Two audiences, one page ─────────────────────────────────────────────────
-// The invited address may already have a GetRankRise account or may have none
+// The invited address may already have a Kirtify account or may have none
 // at all, and the page cannot know which until it asks. So it previews the
 // invitation first (a public endpoint that returns the clinic name, the role,
 // and `hasAccount`), then renders one of two forms:
@@ -241,7 +241,7 @@ export default function AcceptInvite() {
 
         {invite.hasAccount && (
           <p className="text-sm text-slate-400 leading-relaxed">
-            You already have a GetRankRise account for this address. Accepting
+            You already have a Kirtify account for this address. Accepting
             adds {invite.clinicName} to it — you'll keep your existing password.
           </p>
         )}

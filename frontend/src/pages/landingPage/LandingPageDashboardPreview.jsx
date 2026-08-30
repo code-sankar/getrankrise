@@ -171,7 +171,7 @@ export default function DashboardPreview() {
           <svg width="9" height="9" viewBox="0 0 9 9" fill="none">
             <path d="M3 4V2.5a1.5 1.5 0 113 0V4M2 4h5v3.5a.5.5 0 01-.5.5h-4a.5.5 0 01-.5-.5V4z" stroke="#4b5563" strokeWidth="0.7" />
           </svg>
-          app.getrankrise.com/dashboard
+          app.kirtify.com/dashboard
         </div>
         <div className="flex items-center gap-1.5 text-[9px] font-bold tracking-[0.1em] text-[#60a5fa] uppercase">
           <span className="relative flex w-1.5 h-1.5">

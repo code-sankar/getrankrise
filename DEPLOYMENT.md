@@ -1,4 +1,4 @@
-# Deploying GetRankRise
+# Deploying Kirtify
 
 Everything needed to take this from a repository to a running product, in the
 order it has to happen.
@@ -96,8 +96,8 @@ npm run migrate          # apply
 
 ```bash
 cd backend
-docker build -t getrankrise-api .
-docker run --env-file .env.production -p 5000:5000 getrankrise-api
+docker build -t kirtify-api .
+docker run --env-file .env.production -p 5000:5000 kirtify-api
 ```
 
 The image runs as a non-root user, uses `dumb-init` as PID 1 so `SIGTERM`

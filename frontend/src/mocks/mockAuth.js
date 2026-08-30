@@ -15,7 +15,7 @@
 export const DEMO_AUTH_ENABLED = import.meta.env.DEV;
 
 // Type these on the sign-in page to log in without a backend:
-export const DEMO_EMAIL    = "demo@getrankrise.com";
+export const DEMO_EMAIL    = "demo@kirtify.com";
 export const DEMO_PASSWORD = "demo1234";
 
 // Sentinel token. AppBootstrap treats this value as "this is a demo session,

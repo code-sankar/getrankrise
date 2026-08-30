@@ -221,7 +221,7 @@ export default function Competitors() {
 
       <div className="flex-1 flex flex-col min-w-0 h-full overflow-y-auto custom-scrollbar">
         <header className={`lg:hidden flex items-center justify-between p-4 border-b flex-shrink-0 ${dark ? "bg-slate-900 border-slate-800" : "bg-white border-slate-100"}`}>
-          <span className="font-black tracking-tight text-indigo-600 text-lg">GetRankRise</span>
+          <span className="font-black tracking-tight text-indigo-600 text-lg">Kirtify</span>
           <button onClick={() => setSidebarOpen(true)} className={`p-2 rounded-xl transition-colors active:scale-95 ${dark ? "bg-slate-800 text-slate-100 hover:bg-slate-700" : "bg-slate-100 text-slate-700 hover:bg-slate-200"}`}>
             <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />

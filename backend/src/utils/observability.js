@@ -162,7 +162,7 @@ function shipToSentry(event) {
     headers: {
       "Content-Type": "application/x-sentry-envelope",
       "X-Sentry-Auth":
-        `Sentry sentry_version=7, sentry_client=getrankrise/1.0, sentry_key=${sentry.key}`,
+        `Sentry sentry_version=7, sentry_client=kirtify/1.0, sentry_key=${sentry.key}`,
     },
     body,
     signal: AbortSignal.timeout(5_000),

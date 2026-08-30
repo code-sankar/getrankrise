@@ -16,7 +16,7 @@ function BleedWordmark() {
         className="block w-full h-[64px] sm:h-[120px] lg:h-[200px]"
       >
         <defs>
-          <linearGradient id="grr-wordmark" x1="0" y1="0" x2="0" y2="1">
+          <linearGradient id="kirtify-wordmark" x1="0" y1="0" x2="0" y2="1">
             <stop offset="0%" stopColor="#ffffff" stopOpacity="0.14" />
             <stop offset="55%" stopColor="#ffffff" stopOpacity="0.07" />
             <stop offset="100%" stopColor="#38bdf8" stopOpacity="0.05" />
@@ -27,7 +27,7 @@ function BleedWordmark() {
           y="175"
           textLength="1200"
           lengthAdjust="spacingAndGlyphs"
-          fill="url(#grr-wordmark)"
+          fill="url(#kirtify-wordmark)"
           style={{
             fontFamily: "inherit",
             fontWeight: 700,
@@ -35,7 +35,7 @@ function BleedWordmark() {
             letterSpacing: "-0.04em",
           }}
         >
-          GetRankRise
+          Kirtify
         </text>
       </svg>
     </div>
@@ -97,7 +97,7 @@ export default function Footer() {
               Start ranking. Start growing.
             </h2>
             <p className="text-[14px] text-[#8a8f98] max-w-md mx-auto mb-9">
-              Join 8,400+ local teams already running on GetRankRise.
+              Join 8,400+ local teams already running on Kirtify.
             </p>
 
             <div className="flex flex-col sm:flex-row items-center justify-center gap-3 w-full sm:w-auto">
@@ -123,7 +123,7 @@ export default function Footer() {
           <div className="col-span-2 lg:col-span-1">
             <Link to="/" className="flex items-center gap-2">
               <img src={logo} alt="" className="w-8 h-8" />
-              <span className="font-bold text-[15px] tracking-tight">GetRankRise</span>
+              <span className="font-bold text-[15px] tracking-tight">Kirtify</span>
             </Link>
             <p className="mt-3 text-[13px] text-[#8a8f98] leading-relaxed max-w-[190px]">
               The reputation engine local businesses run on.
@@ -162,7 +162,7 @@ export default function Footer() {
 
         {/* ── Legal row ─────────────────────────────────────────── */}
         <div className="pt-7 border-t border-white/[0.06] text-[12px] text-gray-600 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
-          <span>&copy; {new Date().getFullYear()} GetRankRise Inc. All rights reserved.</span>
+          <span>&copy; {new Date().getFullYear()} Kirtify Inc. All rights reserved.</span>
           <div className="flex gap-5">
             <Link to="/privacy" className="hover:text-white transition-colors duration-200">
               Privacy Policy

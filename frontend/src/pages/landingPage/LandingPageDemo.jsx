@@ -31,7 +31,7 @@ export default function Demo() {
         <span className="text-[13px] text-gray-500 uppercase tracking-widest font-semibold">Live Demo</span>
         <h2 className="text-3xl sm:text-4xl font-bold tracking-tight mt-2 mb-4">Try the AI Responder.</h2>
         <p className="text-gray-400 text-xs sm:text-sm max-w-xl mx-auto mb-12 leading-relaxed">
-          Paste a real review. Watch GetRankRise craft an on-brand reply in seconds — the exact UX your team uses every day.
+          Paste a real review. Watch Kirtify craft an on-brand reply in seconds — the exact UX your team uses every day.
         </p>
 
         {/* Demo Interface Card */}

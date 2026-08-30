@@ -31,7 +31,7 @@ export const exportAnalyticsCsv = async (req, res) => {
     res.setHeader("Content-Type", "text/csv; charset=utf-8");
     res.setHeader(
       "Content-Disposition",
-      `attachment; filename="getrankrise_analytics_${range}.csv"`
+      `attachment; filename="kirtify_analytics_${range}.csv"`
     );
     return res.status(200).send(csv);
   } catch (err) {

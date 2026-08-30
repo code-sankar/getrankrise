@@ -107,7 +107,7 @@ export const accountAPI = {
     const url = URL.createObjectURL(res.data);
     const a = document.createElement("a");
     a.href = url;
-    a.download = named || "getrankrise-export.json";
+    a.download = named || "kirtify-export.json";
     document.body.appendChild(a);
     a.click();
     a.remove();

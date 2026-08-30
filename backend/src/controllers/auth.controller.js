@@ -411,7 +411,7 @@ async function deliverVerificationEmail(user, req) {
 // ── Why the response is identical whether or not the account exists ─────────
 // Answering "no account with that email" turns this endpoint into an account
 // enumeration oracle: anyone can test an address list against it and learn who
-// has a GetRankRise account. For a product whose customers are named,
+// has a Kirtify account. For a product whose customers are named,
 // findable clinics, that is a real disclosure — and the rate limiter does not
 // prevent it, it only slows it down.
 //

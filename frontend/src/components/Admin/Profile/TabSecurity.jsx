@@ -125,10 +125,10 @@ export default function TabSecurity({ dark }) {
           Deleting your account permanently removes all clinic data, reviews and
           campaign history. To request deletion, contact{" "}
           <a
-            href="mailto:support@getrankrise.com?subject=Account%20deletion%20request"
+            href="mailto:support@kirtify.com?subject=Account%20deletion%20request"
             className="font-bold underline"
           >
-            support@getrankrise.com
+            support@kirtify.com
           </a>
           .
         </p>

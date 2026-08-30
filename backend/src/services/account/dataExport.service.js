@@ -189,10 +189,10 @@ export async function buildClinicExport(clinicId) {
     // someone who has never seen this product.
     export: {
       generatedAt: new Date().toISOString(),
-      format: "getrankrise.clinic-export",
+      format: "kirtify.clinic-export",
       formatVersion: 1,
       about:
-        "A complete copy of the data GetRankRise holds for this clinic. " +
+        "A complete copy of the data Kirtify holds for this clinic. " +
         "Password hashes, session tokens and encrypted third-party OAuth " +
         "credentials are deliberately excluded — they are not portable data " +
         "and exporting them would be a security risk.",
@@ -233,5 +233,5 @@ export function exportFilename(clinicName) {
     .replace(/[^a-z0-9]+/g, "-")
     .replace(/^-|-$/g, "")
     .slice(0, 40) || "clinic";
-  return `getrankrise-${slug}-${new Date().toISOString().slice(0, 10)}.json`;
+  return `kirtify-${slug}-${new Date().toISOString().slice(0, 10)}.json`;
 }

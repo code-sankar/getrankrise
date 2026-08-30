@@ -129,9 +129,9 @@ export default function Onboarding() {
 
       {/* Logo */}
       <div className="flex items-center gap-3 mb-10">
-        <img src={logo} alt="GetRankRise" className="w-9 h-9" />
+        <img src={logo} alt="Kirtify" className="w-9 h-9" />
         <span className={`text-xl font-black tracking-tight ${dark ? "text-white" : "text-slate-900"}`}>
-          GetRankRise
+          Kirtify
         </span>
       </div>
 

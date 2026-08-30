@@ -1,6 +1,6 @@
 # syntax=docker/dockerfile:1
 #
-# GetRankRise API.
+# Kirtify API.
 #
 # The repository had no backend deploy artifact at all — only frontend/vercel.json
 # — so the API had no reproducible way to ship.

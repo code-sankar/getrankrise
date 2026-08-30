@@ -1,4 +1,4 @@
-# GetRankRise
+# Kirtify
 
 B2B SaaS reputation management and local SEO for clinics and local businesses.
 Aggregates reviews from Google Business Profile, Yelp and Facebook into one
@@ -18,13 +18,13 @@ request campaigns.
 ## Quick start
 
 ```bash
-git clone <repo> && cd getrankrise
+git clone <repo> && cd kirtify
 
 # Backend
 cd backend
 npm install
 cp .env.example .env          # fill in the REQUIRED block
-createdb getrankrise
+createdb kirtify
 npm run migrate               # see the runbook below before running on an existing DB
 npm run dev
 

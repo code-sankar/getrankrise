@@ -1,6 +1,6 @@
 /**
  * axios.helper.js
- * Central axios instance for all API calls in GetRankRise.
+ * Central axios instance for all API calls in Kirtify.
  *
  * Features:
  *   1. Attaches JWT token to every request automatically

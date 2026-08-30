@@ -33,7 +33,7 @@ export const analyticsAPI = {
     const url = URL.createObjectURL(new Blob([data], { type: "text/csv" }));
     const a = document.createElement("a");
     a.href = url;
-    a.download = `getrankrise_analytics_${range}.csv`;
+    a.download = `kirtify_analytics_${range}.csv`;
     document.body.appendChild(a);
     a.click();
     a.remove();

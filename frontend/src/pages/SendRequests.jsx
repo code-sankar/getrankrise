@@ -203,7 +203,7 @@ export default function SendRequests() {
           }`}
         >
           <span className="font-black tracking-tight text-cyan-500 text-lg">
-            GetRankRise
+            Kirtify
           </span>
           <button
             onClick={() => setSidebarOpen(true)}

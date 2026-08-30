@@ -87,7 +87,7 @@ export default function AppBootstrap({ children }) {
         <div className="flex flex-col items-center gap-4">
           <div className="w-10 h-10 rounded-full border-2 border-slate-700 border-t-blue-500 animate-spin" />
           <p className="text-xs text-slate-500 font-medium tracking-widest uppercase">
-            Loading GetRankRise
+            Loading Kirtify
           </p>
         </div>
       </div>

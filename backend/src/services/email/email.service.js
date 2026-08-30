@@ -143,7 +143,7 @@ export async function sendReviewRequestEmail({ to, patientName, clinicName, revi
       personalizations: [{ to: [{ email: to }] }],
       from: {
         email: process.env.SENDGRID_FROM_EMAIL,
-        name: process.env.SENDGRID_FROM_NAME || clinicName || "GetRankRise",
+        name: process.env.SENDGRID_FROM_NAME || clinicName || "Kirtify",
       },
       subject,
       content: [
@@ -216,7 +216,7 @@ function accountEmail({ heading, intro, buttonLabel, url, footnote, expiryNote }
  *
  * Deliberately NOT reusing sendReviewRequestEmail: that function's `from.name`
  * falls back to the clinic name, which would put a clinic's branding on a
- * GetRankRise password reset. Account mail is always from the platform.
+ * Kirtify password reset. Account mail is always from the platform.
  */
 async function sendAccountEmail({ to, subject, text, html }) {
   if (!to) {
@@ -253,7 +253,7 @@ async function sendAccountEmail({ to, subject, text, html }) {
       from: {
         email: process.env.SENDGRID_FROM_EMAIL,
         // Always the platform — never the clinic. See sendAccountEmail's note.
-        name: process.env.SENDGRID_FROM_NAME || "GetRankRise",
+        name: process.env.SENDGRID_FROM_NAME || "Kirtify",
       },
       subject,
       content: [
@@ -275,7 +275,7 @@ async function sendAccountEmail({ to, subject, text, html }) {
 export async function sendPasswordResetEmail({ to, name, resetUrl, expiryMinutes }) {
   const { text, html } = accountEmail({
     heading: "Reset your password",
-    intro: `Hi ${name || "there"}, we received a request to reset the password for your GetRankRise account. Click below to choose a new one.`,
+    intro: `Hi ${name || "there"}, we received a request to reset the password for your Kirtify account. Click below to choose a new one.`,
     buttonLabel: "Choose a new password",
     url: resetUrl,
     expiryNote: `This link expires in ${expiryMinutes} minutes and can only be used once.`,
@@ -284,21 +284,21 @@ export async function sendPasswordResetEmail({ to, name, resetUrl, expiryMinutes
       "Requesting a new link immediately invalidates this one.",
   });
 
-  return sendAccountEmail({ to, subject: "Reset your GetRankRise password", text, html });
+  return sendAccountEmail({ to, subject: "Reset your Kirtify password", text, html });
 }
 
 /** "Confirm your email" — sent at signup and on demand from Settings. */
 export async function sendEmailVerificationEmail({ to, name, verifyUrl, expiryHours }) {
   const { text, html } = accountEmail({
     heading: "Confirm your email address",
-    intro: `Welcome to GetRankRise, ${name || "there"}. Confirm this address so we can send you urgent review alerts and billing notices — and so you can start sending review requests.`,
+    intro: `Welcome to Kirtify, ${name || "there"}. Confirm this address so we can send you urgent review alerts and billing notices — and so you can start sending review requests.`,
     buttonLabel: "Confirm my email",
     url: verifyUrl,
     expiryNote: `This link expires in ${expiryHours} hours.`,
-    footnote: "If you didn't create a GetRankRise account, you can safely ignore this email.",
+    footnote: "If you didn't create a Kirtify account, you can safely ignore this email.",
   });
 
-  return sendAccountEmail({ to, subject: "Confirm your GetRankRise email", text, html });
+  return sendAccountEmail({ to, subject: "Confirm your Kirtify email", text, html });
 }
 
 /**
@@ -321,8 +321,8 @@ export async function sendClinicInviteEmail({
       : "You'll be able to manage reviews, replies, review requests and campaigns — everything except billing.";
 
   const { text, html } = accountEmail({
-    heading: `Join ${clinic} on GetRankRise`,
-    intro: `${who} invited you to join ${clinic} on GetRankRise as ${role === "owner" ? "an owner" : "a team member"}. ${roleLine}`,
+    heading: `Join ${clinic} on Kirtify`,
+    intro: `${who} invited you to join ${clinic} on Kirtify as ${role === "owner" ? "an owner" : "a team member"}. ${roleLine}`,
     buttonLabel: "Accept invitation",
     url: acceptUrl,
     expiryNote: `This invitation expires in ${expiryDays} days.`,
@@ -332,7 +332,7 @@ export async function sendClinicInviteEmail({
 
   return sendAccountEmail({
     to,
-    subject: `${inviterName || "Someone"} invited you to ${clinic} on GetRankRise`,
+    subject: `${inviterName || "Someone"} invited you to ${clinic} on Kirtify`,
     text,
     html,
   });

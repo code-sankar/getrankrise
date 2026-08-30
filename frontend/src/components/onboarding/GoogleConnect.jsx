@@ -186,7 +186,7 @@ export default function GoogleConnect({ onConnected, dark = true }) {
     <div className={`w-full max-w-lg border rounded-3xl p-8 ${card}`}>
       <h1 className={`text-2xl font-black mb-2 ${textPrimary}`}>Connect Google Business</h1>
       <p className={`text-sm mb-6 ${textMuted}`}>
-        Securely link your Google Business Profile so GetRankRise can sync your reviews
+        Securely link your Google Business Profile so Kirtify can sync your reviews
         and, later, publish your replies. We never see your Google password.
       </p>
 

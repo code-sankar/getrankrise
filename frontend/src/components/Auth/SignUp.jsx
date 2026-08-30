@@ -51,7 +51,7 @@ function SignUp() {
 
       // Auto-login the new user — better UX than redirecting to login
       dispatch(loginSuccess(payload));
-      toast.success("Welcome to GetRankRise! 🎉");
+      toast.success("Welcome to Kirtify! 🎉");
       // Straight to onboarding, not the dashboard: a brand-new clinic has no
       // platform connected, so the dashboard is necessarily empty. Onboarding
       // collects clinic details and walks them through connecting Google.

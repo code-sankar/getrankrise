@@ -12,7 +12,7 @@ const SECTIONS = [
     content: (
       <>
         <p>
-          To provide GetRankRise services, we collect information that
+          To provide Kirtify services, we collect information that
           identifies or relates to your clinic and its operations:
         </p>
         <ul>
@@ -57,7 +57,7 @@ const SECTIONS = [
       <>
         <p>
           We use the information collected solely to operate and improve
-          GetRankRise. Specifically:
+          Kirtify. Specifically:
         </p>
         <ul>
           <li>
@@ -182,7 +182,7 @@ const SECTIONS = [
         <p className="mt-3">
           Despite our best efforts, no system is 100% secure. If you suspect a
           security breach, please contact us immediately at{" "}
-          <strong>security@getrankrise.com</strong>.
+          <strong>security@kirtify.com</strong>.
         </p>
       </>
     ),
@@ -194,7 +194,7 @@ const SECTIONS = [
     content: (
       <>
         <p>
-          GetRankRise integrates with the following third-party services. Each
+          Kirtify integrates with the following third-party services. Each
           has its own privacy policy which governs how they handle data we share
           with them:
         </p>
@@ -240,7 +240,7 @@ const SECTIONS = [
     content: (
       <>
         <p>
-          When a clinic uses GetRankRise to request a review, we send an SMS or
+          When a clinic uses Kirtify to request a review, we send an SMS or
           WhatsApp message to the phone number the clinic provides, on the
           clinic's instruction. We act as a processor for the clinic, which is
           responsible for having consent to contact you.
@@ -259,7 +259,7 @@ const SECTIONS = [
           <li>
             <strong>Platform-Wide Suppression</strong> — When you opt out, we add
             your number to a suppression list that blocks all future review
-            messages sent through GetRankRise — across every business that uses
+            messages sent through Kirtify — across every business that uses
             our platform, not only the one that messaged you.
           </li>
           <li>
@@ -272,7 +272,7 @@ const SECTIONS = [
             <strong>Your Rights</strong> — Laws such as the U.S. TCPA and India's
             TRAI regulations give you the right not to receive unsolicited
             commercial messages. To raise a concern about messages you received,
-            contact us at <strong>privacy@getrankrise.com</strong>.
+            contact us at <strong>privacy@kirtify.com</strong>.
           </li>
         </ul>
       </>
@@ -328,7 +328,7 @@ const SECTIONS = [
         </ul>
         <p className="mt-3">
           To exercise any of these rights, email{" "}
-          <strong>privacy@getrankrise.com</strong> with your request. We respond
+          <strong>privacy@kirtify.com</strong> with your request. We respond
           within 30 days.
         </p>
       </>
@@ -371,7 +371,7 @@ const SECTIONS = [
     color: "bg-teal-500",
     content: (
       <p>
-        GetRankRise is a B2B SaaS platform intended exclusively for use by
+        Kirtify is a B2B SaaS platform intended exclusively for use by
         healthcare businesses and their administrators. We do not knowingly
         collect personal information from individuals under the age of 18. If
         you believe a minor has provided us with personal information, please
@@ -401,7 +401,7 @@ const SECTIONS = [
           </li>
         </ul>
         <p className="mt-3">
-          Your continued use of GetRankRise after changes take effect
+          Your continued use of Kirtify after changes take effect
           constitutes acceptance of the revised policy.
         </p>
       </>
@@ -519,7 +519,7 @@ export default function PrivacyPolicy() {
           className={`lg:hidden flex items-center justify-between p-4 border-b flex-shrink-0 ${headBg}`}
         >
           <span className="font-black tracking-tight text-indigo-600 text-lg">
-            GetRankRise
+            Kirtify
           </span>
           <button
             onClick={() => setSidebarOpen(true)}
@@ -585,7 +585,7 @@ export default function PrivacyPolicy() {
                 <p
                   className={`text-sm leading-relaxed ${dark ? "text-indigo-200/80" : "text-indigo-800/80"}`}
                 >
-                  At <strong>GetRankRise</strong>, we build tools for healthcare
+                  At <strong>Kirtify</strong>, we build tools for healthcare
                   clinics. That means we take privacy seriously — not just as a
                   legal requirement but as a core responsibility. This policy
                   explains exactly what data we collect, why we collect it, how
@@ -628,7 +628,7 @@ export default function PrivacyPolicy() {
               </p>
               <div className="flex flex-col sm:flex-row items-center justify-center gap-3 text-xs">
                 <a
-                  href="mailto:privacy@getrankrise.com"
+                  href="mailto:privacy@kirtify.com"
                   className="flex items-center gap-1.5 text-indigo-500 font-semibold hover:text-indigo-400 transition-colors"
                 >
                   <svg
@@ -644,7 +644,7 @@ export default function PrivacyPolicy() {
                       d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
                     />
                   </svg>
-                  privacy@getrankrise.com
+                  privacy@kirtify.com
                 </a>
                 <span className={dark ? "text-slate-700" : "text-slate-300"}>·</span>
                 <span className={dark ? "text-slate-400" : "text-slate-500"}>
@@ -654,7 +654,7 @@ export default function PrivacyPolicy() {
               <p
                 className={`text-[10px] ${dark ? "text-slate-400" : "text-slate-500"}`}
               >
-                © {new Date().getFullYear()} GetRankRise. All rights reserved.
+                © {new Date().getFullYear()} Kirtify. All rights reserved.
               </p>
             </div>
           </div>

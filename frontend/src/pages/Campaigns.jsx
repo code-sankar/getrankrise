@@ -121,7 +121,7 @@ export default function Campaigns() {
             dark ? "bg-slate-900 border-slate-800" : "bg-white border-slate-100"
           }`}
         >
-          <span className="font-black tracking-tight text-cyan-500 text-lg">GetRankRise</span>
+          <span className="font-black tracking-tight text-cyan-500 text-lg">Kirtify</span>
           <button
             onClick={() => setSidebarOpen(true)}
             className={`p-2 rounded-xl transition-colors active:scale-95 ${

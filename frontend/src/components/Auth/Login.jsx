@@ -105,7 +105,7 @@ function Login() {
             Welcome back
           </h2>
           <p className="text-sm text-slate-400 font-medium">
-            Sign in to your GetRankRise account
+            Sign in to your Kirtify account
           </p>
         </div>
 

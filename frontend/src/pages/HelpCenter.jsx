@@ -86,7 +86,7 @@ export default function HelpCenter() {
           }`}
         >
           <span className="font-black tracking-tight text-indigo-600 text-lg">
-            GetRankRise
+            Kirtify
           </span>
           <button
             onClick={() => setSidebarOpen(true)}

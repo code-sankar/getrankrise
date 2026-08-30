@@ -23,8 +23,8 @@ export default function FAQ() {
       icon: <Zap size={18} className="text-amber-500" />,
       questions: [
         {
-          q: "What exactly is GetRankRise?",
-          a: "GetRankRise is an AI-powered reputation management platform for clinics and local businesses. We help you automate requesting, managing, and responding to reviews across Google, Yelp, and Facebook to boost your local SEO and patient trust."
+          q: "What exactly is Kirtify?",
+          a: "Kirtify is an AI-powered reputation management platform for clinics and local businesses. We help you automate requesting, managing, and responding to reviews across Google, Yelp, and Facebook to boost your local SEO and patient trust."
         },
         {
           q: "How do I connect my clinic's Google Business Profile?",
@@ -85,7 +85,7 @@ export default function FAQ() {
         
         {/* Mobile Header */}
         <header className={`lg:hidden flex items-center justify-between p-4 border-b flex-shrink-0 ${dark ? "bg-slate-900 border-slate-800" : "bg-white border-slate-100"}`}>
-          <span className="font-black tracking-tight text-indigo-600 text-lg">GetRankRise</span>
+          <span className="font-black tracking-tight text-indigo-600 text-lg">Kirtify</span>
           <button onClick={() => setSidebarOpen(true)} className={`p-2 rounded-xl ${dark ? "bg-slate-800 text-slate-100" : "bg-slate-100 text-slate-700"}`}>
             <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" /></svg>
           </button>

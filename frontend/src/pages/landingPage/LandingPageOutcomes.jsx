@@ -31,7 +31,7 @@ export default function Outcomes() {
         {/* Deep rich Blockquote customer proof */}
         <div className="max-w-2xl mx-auto space-y-3 mt-12 group cursor-default">
           <p className="text-base sm:text-lg font-medium text-gray-300 leading-relaxed tracking-tight group-hover:text-gray-200 transition-colors duration-300">
-            “We went from 4.3 to 4.9 stars and jumped to the top of the Maps pack in 90 days. GetRankRise quietly runs in the background — it just works.”
+            “We went from 4.3 to 4.9 stars and jumped to the top of the Maps pack in 90 days. Kirtify quietly runs in the background — it just works.”
           </p>
           <div className="text-[11px] font-semibold text-gray-500 tracking-wide uppercase pt-2 group-hover:text-gray-400 transition-colors duration-300">
             Dr. Elena Park · Owner, Park Family Dental

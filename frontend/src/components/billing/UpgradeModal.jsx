@@ -45,7 +45,7 @@ const COPY = {
   UPGRADE_REQUIRED: {
     eyebrow: "Upgrade Required",
     heading: (feature) =>
-      feature ? `Unlock ${feature}` : "Unlock the full GetRankRise engine",
+      feature ? `Unlock ${feature}` : "Unlock the full Kirtify engine",
   },
   SUBSCRIPTION_INACTIVE: {
     eyebrow: "Subscription Paused",

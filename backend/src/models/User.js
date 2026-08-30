@@ -38,7 +38,7 @@ const User = sequelize.define(
     //
     // Clinic permissions live in clinic_members.role (owner | staff) —
     // see migration 0015 and restrictTo() in loadClinic.middleware.js. Keep the
-    // two straight: this column would be where an internal GetRankRise-staff
+    // two straight: this column would be where an internal Kirtify-staff
     // concept goes if one is ever needed; it says nothing about what a user may
     // do inside a clinic.
     role: {
