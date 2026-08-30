@@ -264,13 +264,13 @@ export default function Sidebar({ onClose }) {
       : "bg-[#f8fafc] border-slate-200",
     text: dark ? "text-slate-300" : "text-slate-900",
     active: dark
-      ? "bg-indigo-100/10 text-indigo-300"
-      : "bg-white shadow-sm border border-slate-200 text-indigo-700",
+      ? "bg-cyan-100/10 text-cyan-300"
+      : "bg-white shadow-sm border border-slate-200 text-cyan-700",
     hover: dark
       ? "hover:bg-slate-800/50 hover:text-slate-200"
       : "hover:bg-white hover:text-slate-900",
     logo: dark ? "text-white" : "text-slate-900",
-    label: dark ? "text-slate-400" : "text-slate-700",
+    label: dark ? "text-slate-500 dark:text-slate-400" : "text-slate-700",
     divider: dark ? "border-slate-800/50" : "border-slate-200",
   };
 
@@ -281,14 +281,23 @@ export default function Sidebar({ onClose }) {
       {/* Logo */}
       <div className="px-6 py-8">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-100 to-indigo-100 flex items-center justify-center text-white font-black text-sm shadow-md">
+          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-cyan-500 to-blue-600 flex items-center justify-center text-white font-black text-sm shadow-md">
             <img src={logo} alt="Logo" className="w-5 h-5" />
           </div>
-          <div>
-            <span className={`font-bold text-lg tracking-tight ${theme.logo}`}>
+          {/* min-w-0 rather than a hard max-w-[130px]. The sidebar is 256px
+              wide and this column actually has ~156px to work with, so the
+              cap was truncating names that fit — "Northside Dental Care"
+              became "Northside Dent…" with 26px to spare. min-w-0 lets
+              truncate measure the real space instead of a guess.
+
+              The clinic name was also text-[15px] against an 18px brand name,
+              so the two read as siblings; it is the secondary line and now
+              looks like it. */}
+          <div className="min-w-0">
+            <span className={`block font-bold text-lg tracking-tight ${theme.logo}`}>
               Kirtify
             </span>
-            <p className={`text-[15px] truncate max-w-[130px] ${theme.label}`}>
+            <p className={`text-xs truncate ${theme.label}`} title={clinicName}>
               {clinicName}
             </p>
           </div>
@@ -314,11 +323,11 @@ export default function Sidebar({ onClose }) {
             {({ isActive }) => (
               <>
                 {isActive && (
-                  <div className="absolute left-[-16px] w-1 h-6 rounded-r-full bg-indigo-500" />
+                  <div className="absolute left-[-16px] w-1 h-6 rounded-r-full bg-cyan-500" />
                 )}
                 <span
                   className={
-                    isActive ? "text-indigo-500" : "group-hover:text-indigo-400"
+                    isActive ? "text-cyan-700 dark:text-cyan-400" : "group-hover:text-cyan-400"
                   }
                 >
                   {item.icon}

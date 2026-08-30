@@ -15,15 +15,16 @@ import {
   CartesianGrid, Tooltip, ResponsiveContainer,
 } from "recharts";
 import AnalyticsCard from "./AnalyticsCard.jsx";
+import { CHART } from "../../theme.js";
 
 function CustomTooltip({ active, payload, label, dark }) {
   if (!active || !payload?.length) return null;
   return (
     <div className={`p-3 rounded-xl border shadow-xl text-xs ${dark ? "bg-slate-900 border-slate-700" : "bg-white border-slate-200"}`}>
-      <p className={`font-bold mb-1 text-[10px] uppercase tracking-wider ${dark ? "text-slate-500" : "text-slate-400"}`}>
+      <p className={`font-bold mb-1 text-[10px] uppercase tracking-wider text-slate-500 dark:text-slate-400`}>
         {label}
       </p>
-      <p className="font-bold text-amber-400">
+      <p className="font-bold text-amber-700 dark:text-amber-500">
         ★ {payload[0].value}
       </p>
     </div>
@@ -31,9 +32,15 @@ function CustomTooltip({ active, payload, label, dark }) {
 }
 
 export default function RatingTrendChart({ growthData, avgRating, dark }) {
-  const gridColor = dark ? "rgba(255,255,255,0.04)" : "rgba(0,0,0,0.04)";
-  const axisColor = dark ? "#475569" : "#94a3b8";
-  const AMBER     = "#f59e0b";
+  const mode = dark ? "dark" : "light";
+  const gridColor = CHART.grid[mode];
+  const axisColor = CHART.axis[mode];
+  // Amber, and deliberately not the chart accent. Amber is normally reserved
+  // as status.warn, but a star is gold everywhere else in this product — the
+  // review cards, the rating pills, the distribution labels — and a rating
+  // line in cyan would be the one gold thing on the page that isn't. Here the
+  // convention is stronger than the reservation.
+  const AMBER = "#f59e0b";
 
   // Determine if rating is trending up, down or flat
   const first = growthData[0]?.avgRating || 0;
@@ -42,7 +49,7 @@ export default function RatingTrendChart({ growthData, avgRating, dark }) {
   const trendLabel = diff > 0 ? `↑ +${diff} since ${growthData[0]?.month}`
     : diff < 0 ? `↓ ${diff} since ${growthData[0]?.month}`
     : "Stable";
-  const trendColor = diff > 0 ? "text-emerald-500" : diff < 0 ? "text-red-400" : "text-slate-500";
+  const trendColor = diff > 0 ? "text-emerald-700 dark:text-emerald-400" : diff < 0 ? "text-red-600 dark:text-red-400" : "text-slate-500";
 
   return (
     <AnalyticsCard
@@ -51,7 +58,7 @@ export default function RatingTrendChart({ growthData, avgRating, dark }) {
       subtitle="Average star rating per month — computed from raw reviews"
       badge={
         <span className={`text-[10px] font-bold px-2 py-1 rounded-full ${
-          dark ? "bg-amber-500/10 text-amber-400" : "bg-amber-50 text-amber-600"
+          dark ? "bg-amber-500/10 text-amber-700 dark:text-amber-500" : "bg-amber-50 text-amber-700 dark:text-amber-500"
         }`}>
           ★ {avgRating} overall
         </span>
@@ -63,7 +70,7 @@ export default function RatingTrendChart({ growthData, avgRating, dark }) {
             data={growthData}
             margin={{ top: 5, right: 5, left: -20, bottom: 0 }}
           >
-            <CartesianGrid strokeDasharray="3 3" vertical={false} stroke={gridColor} />
+            <CartesianGrid vertical={false} stroke={gridColor} />
             <XAxis
               dataKey="month"
               axisLine={false}
@@ -71,16 +78,28 @@ export default function RatingTrendChart({ growthData, avgRating, dark }) {
               tick={{ fill: axisColor, fontSize: 11 }}
               dy={8}
             />
-            {/* Domain starts at 3 so month-to-month changes are visible */}
+            {/* ── The full 1–5 scale, not a zoomed 3–5 window ───────────────
+                The domain used to start at 3 "so month-to-month changes are
+                visible". Two things were wrong with that. It doubled the
+                apparent slope of every change, so a drift from 4.6 to 4.4
+                looked like a collapse. And it clipped: a clinic averaging 2.8
+                — precisely the clinic that most needs to see this chart —
+                had its line disappear off the bottom of the card entirely.
+                A star rating is a 1–5 scale and readers already know its
+                range, so showing the real one costs nothing. */}
             <YAxis
-              domain={[3, 5]}
+              domain={[1, 5]}
+              ticks={[1, 2, 3, 4, 5]}
               axisLine={false}
               tickLine={false}
               tick={{ fill: axisColor, fontSize: 11 }}
             />
             <Tooltip content={<CustomTooltip dark={dark} />} />
+            {/* linear, not monotone: a spline through monthly averages
+                overshoots its endpoints, and an overshoot here draws a rating
+                above 5 — a value that cannot exist. */}
             <Line
-              type="monotone"
+              type="linear"
               dataKey="avgRating"
               stroke={AMBER}
               strokeWidth={2.5}
@@ -96,7 +115,7 @@ export default function RatingTrendChart({ growthData, avgRating, dark }) {
       <div className={`flex items-center justify-between mt-3 pt-3 border-t text-xs ${
         dark ? "border-slate-800" : "border-slate-100"
       }`}>
-        <span className={dark ? "text-slate-500" : "text-slate-400"}>
+        <span className={"text-slate-500 dark:text-slate-400"}>
           {growthData[0]?.month} → {growthData[growthData.length - 1]?.month}
         </span>
         <span className={`font-bold ${trendColor}`}>{trendLabel}</span>

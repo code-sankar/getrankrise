@@ -46,15 +46,15 @@ const DATE_RANGES = [
 
 // ── Business logic helpers ────────────────────────────────────────────────────
 const getTrend = v =>
-  v > 0 ? { label: `↑ ${v}%`,           color: "text-emerald-500" }
-  : v < 0 ? { label: `↓ ${Math.abs(v)}%`, color: "text-red-400"    }
+  v > 0 ? { label: `↑ ${v}%`,           color: "text-emerald-700 dark:text-emerald-400" }
+  : v < 0 ? { label: `↓ ${Math.abs(v)}%`, color: "text-red-600 dark:text-red-400"    }
   :         { label: "Stable",            color: "text-slate-500"  };
 
 const getSentimentLabel = s =>
-  s >= 85 ? { label: "Excellent",  color: "text-emerald-500" }
-  : s >= 70 ? { label: "Good",     color: "text-blue-500"    }
-  : s >= 50 ? { label: "Fair",     color: "text-amber-500"   }
-  :           { label: "Needs Work", color: "text-red-400"   };
+  s >= 85 ? { label: "Excellent",  color: "text-emerald-700 dark:text-emerald-400" }
+  : s >= 70 ? { label: "Good",     color: "text-cyan-700 dark:text-cyan-400"    }
+  : s >= 50 ? { label: "Fair",     color: "text-amber-700 dark:text-amber-500"   }
+  :           { label: "Needs Work", color: "text-red-600 dark:text-red-400"   };
 
 // ── Loading skeleton ──────────────────────────────────────────────────────────
 function LoadingSkeleton({ dark }) {
@@ -154,7 +154,7 @@ export default function Analytics() {
             dark ? "bg-slate-900 border-slate-800" : "bg-white border-slate-100"
           }`}
         >
-          <span className="font-black tracking-tight text-indigo-600 text-lg">
+          <span className="font-black tracking-tight text-cyan-700 dark:text-cyan-400 text-lg">
             Kirtify
           </span>
           <button
@@ -184,7 +184,7 @@ export default function Analytics() {
               <h2 className={`text-lg font-bold ${dark ? "text-white" : "text-slate-900"}`}>
                 Analytics Overview
               </h2>
-              <p className={`text-xs mt-0.5 ${dark ? "text-slate-500" : "text-slate-400"}`}>
+              <p className={`text-xs mt-0.5 text-slate-500 dark:text-slate-400`}>
                 {/* Was "All data calculated from {totalReviews} real reviews",
                     which named a range-scoped count as if it were the whole
                     dataset — the line read "1 real reviews" for a clinic with
@@ -201,8 +201,8 @@ export default function Analytics() {
                   onClick={() => dispatch(setDateRange(r.value))}
                   className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
                     dateRange === r.value
-                      ? "bg-indigo-600 text-white"
-                      : dark ? "text-slate-400 hover:text-white" : "text-slate-500 hover:text-slate-900"
+                      ? "bg-cyan-700 hover:bg-cyan-600 text-white"
+                      : dark ? "text-slate-500 dark:text-slate-400 hover:text-white" : "text-slate-500 hover:text-slate-900"
                   }`}
                 >
                   {r.label}
@@ -213,7 +213,7 @@ export default function Analytics() {
 
           {/* ── Error Banner ────────────────────────────────────────── */}
           {error && (
-            <div className={`flex items-center justify-between gap-4 px-5 py-4 rounded-xl border text-sm ${dark ? "bg-red-950/30 border-red-900 text-red-400" : "bg-red-50 border-red-200 text-red-600"}`}>
+            <div className={`flex items-center justify-between gap-4 px-5 py-4 rounded-xl border text-sm ${dark ? "bg-red-950/30 border-red-900 text-red-600 dark:text-red-400" : "bg-red-50 border-red-200 text-red-600 dark:text-red-400"}`}>
               <span className="font-semibold">⚠ {error}</span>
               <button
                 onClick={() => { dispatch(clearError()); fetchData(); }}

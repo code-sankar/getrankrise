@@ -8,7 +8,7 @@ const SECTIONS = [
   {
     id:    "acceptance",
     title: "Acceptance of Terms",
-    color: "bg-indigo-500",
+    color: "bg-cyan-500",
     content: (
       <>
         <p>By creating an account, accessing, or using the Kirtify platform in any way, you confirm that you have read, understood, and agree to be legally bound by these Terms and Conditions and our Privacy Policy.</p>
@@ -38,7 +38,7 @@ const SECTIONS = [
   {
     id:    "accounts",
     title: "Account Obligations",
-    color: "bg-blue-500",
+    color: "bg-cyan-500",
     highlight: true,
     content: (
       <>
@@ -228,13 +228,13 @@ function TermsSection({ section, dark, index }) {
       >
         <div className="flex items-center gap-3 min-w-0">
           <span className={`w-1.5 h-6 rounded-full flex-shrink-0 ${section.color}`} />
-          <span className={`text-[10px] font-black uppercase tracking-widest flex-shrink-0 ${dark ? "text-slate-600" : "text-slate-400"}`}>
+          <span className={`text-[10px] font-black uppercase tracking-widest flex-shrink-0 text-slate-500 dark:text-slate-400`}>
             {String(index + 1).padStart(2, "0")}
           </span>
           <h2 className={`text-sm font-bold truncate ${textHead}`}>{section.title}</h2>
         </div>
         <svg
-          className={`w-4 h-4 flex-shrink-0 transition-transform duration-200 ${dark ? "text-slate-500" : "text-slate-400"} ${open ? "rotate-180" : ""}`}
+          className={`w-4 h-4 flex-shrink-0 transition-transform duration-200 text-slate-500 dark:text-slate-400 ${open ? "rotate-180" : ""}`}
           fill="none" stroke="currentColor" viewBox="0 0 24 24"
         >
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
@@ -250,7 +250,7 @@ function TermsSection({ section, dark, index }) {
             [&_ul]:list-disc [&_ul]:pl-5 [&_ul]:space-y-2.5 [&_ul]:mt-2
             [&_li]:leading-relaxed
             [&_strong]:font-semibold [&_strong]:${strongCol}
-            [&_ul]:marker:text-indigo-500
+            [&_ul]:marker:text-cyan-500
           `}
         >
           {section.content}
@@ -269,7 +269,7 @@ export default function TermsAndConditions() {
   const pageBg  = dark ? "bg-slate-950 text-slate-100" : "bg-slate-50 text-slate-900";
   const headBg  = dark ? "bg-slate-900 border-slate-800" : "bg-white border-slate-100";
   const navBg   = dark ? "bg-slate-900 border-slate-800" : "bg-white border-slate-200";
-  const textMut = dark ? "text-slate-500" : "text-slate-400";
+  const textMut = "text-slate-500 dark:text-slate-400";
 
   return (
     <div className={`flex h-screen w-full overflow-hidden transition-colors duration-300 ${pageBg}`}>
@@ -297,7 +297,7 @@ export default function TermsAndConditions() {
 
         {/* Mobile Header */}
         <header className={`lg:hidden flex items-center justify-between p-4 border-b flex-shrink-0 ${headBg}`}>
-          <span className="font-black tracking-tight text-indigo-600 text-lg">Kirtify</span>
+          <span className="font-black tracking-tight text-cyan-700 dark:text-cyan-400 text-lg">Kirtify</span>
           <button
             onClick={() => setSidebarOpen(true)}
             className={`p-2 rounded-xl ${dark ? "bg-slate-800 text-slate-100" : "bg-slate-100 text-slate-700"}`}
@@ -319,7 +319,7 @@ export default function TermsAndConditions() {
             {/* Page Header */}
             <div className="mb-8">
               <div className="flex items-center gap-3 mb-3">
-                <div className="w-10 h-10 rounded-xl bg-indigo-600 flex items-center justify-center text-white flex-shrink-0">
+                <div className="w-10 h-10 rounded-xl bg-cyan-700 hover:bg-cyan-600 flex items-center justify-center text-white flex-shrink-0">
                   <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                   </svg>
@@ -336,7 +336,7 @@ export default function TermsAndConditions() {
               <div className={`p-5 rounded-2xl border ${dark ? "bg-amber-950/20 border-amber-900/30" : "bg-amber-50 border-amber-100"}`}>
                 <p className={`text-sm leading-relaxed ${dark ? "text-amber-200/80" : "text-amber-900/80"}`}>
                   <strong>Please read these terms carefully.</strong> By using Kirtify you agree to be bound by them. These terms constitute a legally binding agreement between you and Kirtify. If you have questions, contact us at{" "}
-                  <a href="mailto:legal@kirtify.com" className="text-indigo-500 font-semibold underline">legal@kirtify.com</a>{" "}
+                  <a href="mailto:legal@kirtify.com" className="text-cyan-700 dark:text-cyan-400 font-semibold underline">legal@kirtify.com</a>{" "}
                   before using the platform.
                 </p>
               </div>
@@ -357,7 +357,7 @@ export default function TermsAndConditions() {
               <div className="flex flex-col sm:flex-row items-center justify-center gap-3 text-xs">
                 <a
                   href="mailto:legal@kirtify.com"
-                  className="flex items-center gap-1.5 text-indigo-500 font-semibold hover:text-indigo-400 transition-colors"
+                  className="flex items-center gap-1.5 text-cyan-700 dark:text-cyan-400 font-semibold hover:text-cyan-400 transition-colors"
                 >
                   <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />

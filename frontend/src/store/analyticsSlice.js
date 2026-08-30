@@ -22,20 +22,18 @@
 
 import { createSlice } from "@reduxjs/toolkit";
 
-// ── Presentation constants (the frontend's only contribution to the data) ────
-const RATING_COLORS = {
-  "5 ★": "#6366f1",
-  "4 ★": "#818cf8",
-  "3 ★": "#a5b4fc",
-  "2 ★": "#c7d2fe",
-  "1 ★": "#e0e7ff",
-};
-
-const PLATFORM_COLORS = {
-  Google: "#4285F4",
-  Yelp: "#FF1A1A",
-  Facebook: "#1877F2",
-};
+// ── Presentation constants ───────────────────────────────────────────────────
+// Only the PLATFORM identity lives here now, and it is re-exported from
+// theme.js rather than restated — this file used to carry its own copy with a
+// different Yelp red (#FF1A1A vs #D32323), so the same platform was two
+// colours depending on which component you were looking at.
+//
+// Rating colours are deliberately NOT here any more. A ramp has to be chosen
+// against the surface it is drawn on, and this slice cannot know whether the
+// card is light or dark; the old indigo ramp ended on #e0e7ff, which is
+// invisible on a white card. The component picks the mode's ramp from
+// CHART.ratingRamp instead.
+import { PLATFORM as PLATFORM_COLORS } from "../theme.js";
 
 const EMPTY_SUMMARY = {
   // totalReviews is scoped to the selected date range; lifetimeReviews counts
@@ -86,10 +84,8 @@ const analyticsSlice = createSlice({
 
       state.summaryStats = summaryStats;
       state.growthData = growthData;
-      state.ratingBreakdown = ratingBreakdown.map((r) => ({
-        ...r,
-        color: RATING_COLORS[r.star] || "#94a3b8",
-      }));
+      // No `color` here — RatingDistribution reads the mode's ramp by index.
+      state.ratingBreakdown = ratingBreakdown;
       state.platformData = platformData.map((p) => ({
         ...p,
         color: PLATFORM_COLORS[p.name] || "#94a3b8",

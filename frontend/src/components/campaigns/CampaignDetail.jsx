@@ -26,10 +26,10 @@ const POLL_MS = 4000;
 const LIVE_STATES = new Set(["running", "scheduled"]);
 
 const ACTION_META = {
-  start:  { label: "Start",  icon: Play,      cls: "bg-cyan-500 hover:bg-cyan-400 text-white" },
-  resume: { label: "Resume", icon: RotateCcw, cls: "bg-cyan-500 hover:bg-cyan-400 text-white" },
+  start:  { label: "Start",  icon: Play,      cls: "bg-cyan-700 hover:bg-cyan-600 text-white" },
+  resume: { label: "Resume", icon: RotateCcw, cls: "bg-cyan-700 hover:bg-cyan-600 text-white" },
   pause:  { label: "Pause",  icon: Pause,     cls: "bg-amber-500 hover:bg-amber-400 text-white" },
-  cancel: { label: "Cancel", icon: Ban,       cls: "bg-transparent border border-red-500/40 text-red-400 hover:bg-red-500/10" },
+  cancel: { label: "Cancel", icon: Ban,       cls: "bg-transparent border border-red-500/40 text-red-600 dark:text-red-400 hover:bg-red-500/10" },
 };
 
 export default function CampaignDetail({ campaignId, dark, onClose, onChanged }) {
@@ -40,7 +40,7 @@ export default function CampaignDetail({ campaignId, dark, onClose, onChanged })
 
   const panel = dark ? "bg-slate-900 border-slate-800" : "bg-white border-slate-200";
   const title = dark ? "text-white" : "text-slate-900";
-  const muted = dark ? "text-slate-400" : "text-slate-500";
+  const muted = "text-slate-500 dark:text-slate-400";
 
   // ── Load / refresh ─────────────────────────────────────────────────────────
   const load = useCallback(
@@ -134,7 +134,7 @@ export default function CampaignDetail({ campaignId, dark, onClose, onChanged })
           </div>
           <button
             onClick={onClose}
-            className={`p-2 rounded-lg flex-shrink-0 transition ${dark ? "text-slate-500 hover:text-slate-100 hover:bg-slate-800" : "text-slate-400 hover:text-slate-900 hover:bg-slate-100"}`}
+            className={`p-2 rounded-lg flex-shrink-0 transition ${dark ? "text-slate-500 hover:text-slate-100 hover:bg-slate-800" : "text-slate-500 dark:text-slate-400 hover:text-slate-900 hover:bg-slate-100"}`}
           >
             <X size={18} />
           </button>
@@ -150,7 +150,7 @@ export default function CampaignDetail({ campaignId, dark, onClose, onChanged })
             {/* lastError banner */}
             {campaign.lastError && (
               <div className="flex items-start gap-2.5 p-3 rounded-xl border border-amber-500/30 bg-amber-500/5">
-                <AlertTriangle size={15} className="text-amber-400 flex-shrink-0 mt-0.5" />
+                <AlertTriangle size={15} className="text-amber-700 dark:text-amber-500 flex-shrink-0 mt-0.5" />
                 <p className="text-xs text-amber-300 leading-relaxed">{campaign.lastError}</p>
               </div>
             )}
@@ -230,7 +230,7 @@ export default function CampaignDetail({ campaignId, dark, onClose, onChanged })
                         <div className="min-w-0">
                           <p className={`font-semibold truncate ${title}`}>{r.name || "—"}</p>
                           <p className={`text-xs tabular-nums ${muted}`}>{r.phone}</p>
-                          {r.error && <p className="text-[11px] text-red-400 truncate">{r.error}</p>}
+                          {r.error && <p className="text-[11px] text-red-600 dark:text-red-400 truncate">{r.error}</p>}
                         </div>
                         <span className={`text-xs font-bold flex-shrink-0 ${m.text}`}>{m.label}</span>
                       </div>

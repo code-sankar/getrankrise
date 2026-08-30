@@ -17,6 +17,7 @@ import {
   Tooltip, ResponsiveContainer, Cell,
 } from "recharts";
 import AnalyticsCard from "./AnalyticsCard.jsx";
+import { CHART } from "../../theme.js";
 
 function CustomTooltip({ active, payload, dark }) {
   if (!active || !payload?.length) return null;
@@ -26,14 +27,23 @@ function CustomTooltip({ active, payload, dark }) {
       <p className={`font-bold mb-1 ${dark ? "text-slate-200" : "text-slate-800"}`}>
         {d.payload.star}
       </p>
-      <p className="text-indigo-400 font-bold">{d.value} reviews</p>
-      <p className={dark ? "text-slate-500" : "text-slate-400"}>{d.payload.percentage}%</p>
+      <p className={`font-bold ${dark ? "text-white" : "text-slate-900"}`}>
+        {d.value} reviews
+      </p>
+      <p className={"text-slate-500 dark:text-slate-400"}>{d.payload.percentage}%</p>
     </div>
   );
 }
 
 export default function RatingDistribution({ ratingData, total, dark }) {
-  const axisColor = dark ? "#475569" : "#94a3b8";
+  const mode = dark ? "dark" : "light";
+  const axisColor = CHART.axis[mode];
+  // Star rating is an ORDERED category, which is the one case where colouring
+  // by category is correct rather than double-encoding. Index 0 is 5★, so the
+  // ramp is read in the order the rows are already in — the colour follows the
+  // star, never the bar's current rank, so filtering cannot repaint the rows.
+  const ramp = CHART.ratingRamp[mode];
+  const colorFor = (i) => ramp[Math.min(i, ramp.length - 1)];
 
   return (
     <AnalyticsCard
@@ -65,7 +75,7 @@ export default function RatingDistribution({ ratingData, total, dark }) {
             />
             <Bar dataKey="count" radius={[0, 6, 6, 0]} barSize={18} name="Reviews">
               {ratingData.map((entry, i) => (
-                <Cell key={i} fill={entry.color} />
+                <Cell key={entry.star ?? i} fill={colorFor(i)} />
               ))}
             </Bar>
           </BarChart>
@@ -77,14 +87,23 @@ export default function RatingDistribution({ ratingData, total, dark }) {
         dark ? "border-slate-800" : "border-slate-100"
       }`}>
         {ratingData.map((r, i) => (
-          <div key={i} className="text-center">
-            <p className="text-[10px] font-bold" style={{ color: r.color }}>
+          <div key={r.star ?? i} className="text-center">
+            {/* The label is ink and the swatch beside it carries the colour.
+                Painting the "1★" text itself in the ramp's lightest step put a
+                10px glyph on the card at 2.37:1 — the row that matters most in
+                a reputation product was the least legible one on it. */}
+            <p className="text-[10px] font-bold flex items-center justify-center gap-1 text-slate-600 dark:text-slate-300">
+              <span
+                className="inline-block w-1.5 h-1.5 rounded-full"
+                style={{ background: colorFor(i) }}
+                aria-hidden="true"
+              />
               {r.star.split(" ")[0]}★
             </p>
             <p className={`text-xs font-black mt-0.5 ${dark ? "text-white" : "text-slate-900"}`}>
               {r.count}
             </p>
-            <p className={`text-[9px] font-bold ${dark ? "text-slate-500" : "text-slate-400"}`}>
+            <p className={`text-[9px] font-bold text-slate-500 dark:text-slate-400`}>
               {r.percentage}%
             </p>
           </div>

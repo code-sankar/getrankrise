@@ -106,14 +106,14 @@ export default function UpgradeModal() {
 
         {/* header */}
         <div className="px-8 pt-10 pb-8 text-center">
-          <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-cyan-500/10 border border-cyan-500/20 text-cyan-400 text-[10px] font-bold tracking-[0.2em] uppercase mb-4">
+          <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-cyan-500/10 border border-cyan-500/20 text-cyan-700 dark:text-cyan-400 text-[10px] font-bold tracking-[0.2em] uppercase mb-4">
             <Sparkles size={12} />
             {copy.eyebrow}
           </div>
           <h2 className="text-3xl sm:text-4xl font-bold text-white tracking-tight mb-3">
             {copy.heading(featureName)}
           </h2>
-          <p className="text-sm text-slate-400 max-w-xl mx-auto leading-relaxed">
+          <p className="text-sm text-slate-500 dark:text-slate-400 max-w-xl mx-auto leading-relaxed">
             {message || `You're on the ${currentPlan} plan. Pick a plan below to keep moving — most teams break even within their first reclaimed review.`}
           </p>
         </div>
@@ -146,7 +146,7 @@ export default function UpgradeModal() {
               <ul className="space-y-3 mb-8 flex-grow">
                 {plan.features.map((f, i) => (
                   <li key={i} className="flex items-start gap-2 text-sm text-slate-300">
-                    <Check size={16} className="text-cyan-400 flex-shrink-0 mt-0.5" />
+                    <Check size={16} className="text-cyan-700 dark:text-cyan-400 flex-shrink-0 mt-0.5" />
                     <span>{f}</span>
                   </li>
                 ))}

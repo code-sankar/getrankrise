@@ -21,7 +21,7 @@ export default function CampaignProgress({
   const pct = (n) => (safeTotal > 0 ? (n / safeTotal) * 100 : 0);
 
   const track = dark ? "bg-slate-800" : "bg-slate-200";
-  const muted = dark ? "text-slate-400" : "text-slate-500";
+  const muted = "text-slate-500 dark:text-slate-400";
 
   const segments = [
     { key: "sent", value: sent, color: "bg-emerald-500" },

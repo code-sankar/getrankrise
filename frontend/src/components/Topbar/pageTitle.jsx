@@ -8,9 +8,15 @@ import { useTheme } from "../../context/ThemeContext";
 export default function PageTitle({ title }) {
   const { dark } = useTheme();
 
+  // `truncate` is load-bearing, not cosmetic. The wrapper in TopBar is
+  // `min-w-0` + shrinkable, so at narrow widths it shrinks below the title's
+  // natural width — and without an overflow rule the text simply carried on
+  // painting, straight across the theme toggle and the notification bell.
+  // "Unified Reviews" at 390px overlapped both.
   return (
     <h1
-      className={`text-xl font-bold tracking-tight ${
+      title={title}
+      className={`text-lg sm:text-xl font-bold tracking-tight truncate ${
         dark ? "text-slate-100" : "text-slate-900"
       }`}
     >

@@ -8,7 +8,7 @@ const SECTIONS = [
   {
     id: "collect",
     title: "Information We Collect",
-    color: "bg-indigo-500",
+    color: "bg-cyan-500",
     content: (
       <>
         <p>
@@ -143,7 +143,7 @@ const SECTIONS = [
   {
     id: "security",
     title: "Data Security",
-    color: "bg-blue-500",
+    color: "bg-cyan-500",
     highlight: true,
     content: (
       <>
@@ -436,14 +436,14 @@ function PolicySection({ section, dark, index }) {
             className={`w-1.5 h-6 rounded-full flex-shrink-0 ${section.color}`}
           />
           <span
-            className={`text-[10px] font-black uppercase tracking-widest mr-2 ${dark ? "text-slate-600" : "text-slate-400"}`}
+            className={`text-[10px] font-black uppercase tracking-widest mr-2 text-slate-500 dark:text-slate-400`}
           >
             {String(index + 1).padStart(2, "0")}
           </span>
           <h2 className={`text-base font-bold ${textHead}`}>{section.title}</h2>
         </div>
         <svg
-          className={`w-4 h-4 transition-transform duration-200 flex-shrink-0 ${dark ? "text-slate-500" : "text-slate-400"} ${open ? "rotate-180" : ""}`}
+          className={`w-4 h-4 transition-transform duration-200 flex-shrink-0 text-slate-500 dark:text-slate-400 ${open ? "rotate-180" : ""}`}
           fill="none"
           stroke="currentColor"
           viewBox="0 0 24 24"
@@ -465,7 +465,7 @@ function PolicySection({ section, dark, index }) {
           [&_ul]:list-disc [&_ul]:pl-5 [&_ul]:space-y-2 [&_ul]:mt-2
           [&_li]:leading-relaxed
           [&_strong]:font-semibold [&_strong]:${dark ? "text-slate-200" : "text-slate-800"}
-          [&_ul]:marker:text-indigo-500`}
+          [&_ul]:marker:text-cyan-500`}
         >
           {section.content}
         </div>
@@ -487,7 +487,7 @@ export default function PrivacyPolicy() {
     ? "bg-slate-900 border-slate-800"
     : "bg-white border-slate-100";
   const pillBg = dark
-    ? "bg-slate-800 text-slate-400"
+    ? "bg-slate-800 text-slate-500 dark:text-slate-400"
     : "bg-slate-100 text-slate-500";
 
   return (
@@ -518,7 +518,7 @@ export default function PrivacyPolicy() {
         <header
           className={`lg:hidden flex items-center justify-between p-4 border-b flex-shrink-0 ${headBg}`}
         >
-          <span className="font-black tracking-tight text-indigo-600 text-lg">
+          <span className="font-black tracking-tight text-cyan-700 dark:text-cyan-400 text-lg">
             Kirtify
           </span>
           <button
@@ -551,7 +551,7 @@ export default function PrivacyPolicy() {
             {/* Page Header */}
             <div className="mb-8">
               <div className="flex items-center gap-3 mb-3">
-                <div className="w-10 h-10 rounded-xl bg-indigo-600 flex items-center justify-center text-white flex-shrink-0">
+                <div className="w-10 h-10 rounded-xl bg-cyan-700 hover:bg-cyan-600 flex items-center justify-center text-white flex-shrink-0">
                   <svg
                     className="w-5 h-5"
                     fill="none"
@@ -580,10 +580,10 @@ export default function PrivacyPolicy() {
 
               {/* Intro card */}
               <div
-                className={`p-5 rounded-2xl border ${dark ? "bg-indigo-950/30 border-indigo-900/40" : "bg-indigo-50 border-indigo-100"}`}
+                className={`p-5 rounded-2xl border ${dark ? "bg-cyan-950/30 border-cyan-900/40" : "bg-cyan-50 border-cyan-100"}`}
               >
                 <p
-                  className={`text-sm leading-relaxed ${dark ? "text-indigo-200/80" : "text-indigo-800/80"}`}
+                  className={`text-sm leading-relaxed ${dark ? "text-cyan-200/80" : "text-cyan-800/80"}`}
                 >
                   At <strong>Kirtify</strong>, we build tools for healthcare
                   clinics. That means we take privacy seriously — not just as a
@@ -601,7 +601,7 @@ export default function PrivacyPolicy() {
                 <a
                   key={s.id}
                   href={`#${s.id}`}
-                  className={`text-[10px] font-bold px-3 py-1.5 rounded-full transition-colors ${pillBg} hover:text-indigo-500`}
+                  className={`text-[10px] font-bold px-3 py-1.5 rounded-full transition-colors ${pillBg} hover:text-cyan-500`}
                 >
                   {s.title}
                 </a>
@@ -622,14 +622,14 @@ export default function PrivacyPolicy() {
               className={`mt-10 p-6 rounded-2xl border text-center space-y-3 ${dark ? "bg-slate-900 border-slate-800" : "bg-white border-slate-200"}`}
             >
               <p
-                className={`text-xs font-semibold ${dark ? "text-slate-400" : "text-slate-500"}`}
+                className={`text-xs font-semibold text-slate-500 dark:text-slate-400`}
               >
                 Questions about this policy?
               </p>
               <div className="flex flex-col sm:flex-row items-center justify-center gap-3 text-xs">
                 <a
                   href="mailto:privacy@kirtify.com"
-                  className="flex items-center gap-1.5 text-indigo-500 font-semibold hover:text-indigo-400 transition-colors"
+                  className="flex items-center gap-1.5 text-cyan-700 dark:text-cyan-400 font-semibold hover:text-cyan-400 transition-colors"
                 >
                   <svg
                     className="w-3.5 h-3.5"
@@ -647,12 +647,12 @@ export default function PrivacyPolicy() {
                   privacy@kirtify.com
                 </a>
                 <span className={dark ? "text-slate-700" : "text-slate-300"}>·</span>
-                <span className={dark ? "text-slate-400" : "text-slate-500"}>
+                <span className={"text-slate-500 dark:text-slate-400"}>
                   We respond within 30 days
                 </span>
               </div>
               <p
-                className={`text-[10px] ${dark ? "text-slate-400" : "text-slate-500"}`}
+                className={`text-[10px] text-slate-500 dark:text-slate-400`}
               >
                 © {new Date().getFullYear()} Kirtify. All rights reserved.
               </p>

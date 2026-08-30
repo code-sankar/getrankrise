@@ -60,7 +60,7 @@ export default function ForgotPassword() {
         footer={
           <>
             Remembered it?{" "}
-            <Link to="/login" className="text-blue-400 font-semibold hover:text-blue-300">
+            <Link to="/login" className="text-cyan-400 font-semibold hover:text-cyan-300">
               Back to sign in
             </Link>
           </>
@@ -78,7 +78,7 @@ export default function ForgotPassword() {
         <button
           type="button"
           onClick={() => setSent(false)}
-          className="w-full mt-6 text-sm text-slate-400 hover:text-slate-200 font-medium transition-colors"
+          className="w-full mt-6 text-sm text-slate-500 dark:text-slate-400 hover:text-slate-200 font-medium transition-colors"
         >
           Use a different email
         </button>
@@ -93,7 +93,7 @@ export default function ForgotPassword() {
       footer={
         <>
           Remembered it?{" "}
-          <Link to="/login" className="text-blue-400 font-semibold hover:text-blue-300">
+          <Link to="/login" className="text-cyan-400 font-semibold hover:text-cyan-300">
             Back to sign in
           </Link>
         </>
@@ -133,8 +133,8 @@ export default function ForgotPassword() {
           disabled={loading}
           className={`${authButtonClass} ${
             loading
-              ? "bg-blue-950/60"
-              : "bg-gradient-to-r from-blue-600 via-blue-500 to-cyan-500"
+              ? "bg-cyan-950/60"
+              : "bg-gradient-to-r from-cyan-500 to-blue-600"
           }`}
         >
           {loading ? "Sending…" : "Email me a reset link"}

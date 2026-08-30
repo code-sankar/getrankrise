@@ -112,7 +112,7 @@ export default function AcceptInvite() {
         </AuthNotice>
         <Link
           to="/login"
-          className={`${authButtonClass} bg-gradient-to-r from-blue-600 via-blue-500 to-cyan-500`}
+          className={`${authButtonClass} bg-gradient-to-r from-cyan-500 to-blue-600`}
         >
           Go to sign in
         </Link>
@@ -125,7 +125,7 @@ export default function AcceptInvite() {
     return (
       <AuthShell title="Checking your invitation" subtitle="One moment…">
         <div className="flex justify-center py-6">
-          <div className="w-10 h-10 rounded-full border-2 border-slate-700 border-t-blue-500 animate-spin" />
+          <div className="w-10 h-10 rounded-full border-2 border-slate-700 border-t-cyan-500 animate-spin" />
         </div>
       </AuthShell>
     );
@@ -141,7 +141,7 @@ export default function AcceptInvite() {
         </p>
         <Link
           to="/login"
-          className={`${authButtonClass} bg-gradient-to-r from-blue-600 via-blue-500 to-cyan-500`}
+          className={`${authButtonClass} bg-gradient-to-r from-cyan-500 to-blue-600`}
         >
           Go to sign in
         </Link>
@@ -223,7 +223,7 @@ export default function AcceptInvite() {
                 id="ai-confirm"
                 type="password"
                 autoComplete="new-password"
-                placeholder="••••••••"
+                placeholder="Your password"
                 className={authInputClass}
                 {...register("confirmPassword", {
                   required: "Confirm your password",
@@ -240,7 +240,7 @@ export default function AcceptInvite() {
         )}
 
         {invite.hasAccount && (
-          <p className="text-sm text-slate-400 leading-relaxed">
+          <p className="text-sm text-slate-500 dark:text-slate-400 leading-relaxed">
             You already have a Kirtify account for this address. Accepting
             adds {invite.clinicName} to it — you'll keep your existing password.
           </p>
@@ -251,8 +251,8 @@ export default function AcceptInvite() {
           disabled={submitting}
           className={`${authButtonClass} ${
             submitting
-              ? "bg-blue-950/60"
-              : "bg-gradient-to-r from-blue-600 via-blue-500 to-cyan-500"
+              ? "bg-cyan-950/60"
+              : "bg-gradient-to-r from-cyan-500 to-blue-600"
           }`}
         >
           {submitting ? "Joining…" : `Join ${invite.clinicName}`}

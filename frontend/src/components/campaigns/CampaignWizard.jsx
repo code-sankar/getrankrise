@@ -60,7 +60,7 @@ export default function CampaignWizard({ dark, credits, onClose, onCreated }) {
   // ── Theme tokens ───────────────────────────────────────────────────────────
   const panel = dark ? "bg-slate-900 border-slate-800" : "bg-white border-slate-200";
   const title = dark ? "text-white" : "text-slate-900";
-  const muted = dark ? "text-slate-400" : "text-slate-500";
+  const muted = "text-slate-500 dark:text-slate-400";
   const inputBase = dark
     ? "bg-slate-950 border-slate-800 text-white placeholder-slate-600 focus:border-cyan-500"
     : "bg-white border-slate-200 text-slate-900 placeholder-slate-400 focus:border-cyan-500";
@@ -199,7 +199,7 @@ export default function CampaignWizard({ dark, credits, onClose, onCreated }) {
             <h2 className={`text-lg font-bold ${title}`}>New Pulse Campaign</h2>
             <button
               onClick={onClose}
-              className={`p-2 rounded-lg transition ${dark ? "text-slate-500 hover:text-slate-100 hover:bg-slate-800" : "text-slate-400 hover:text-slate-900 hover:bg-slate-100"}`}
+              className={`p-2 rounded-lg transition ${dark ? "text-slate-500 hover:text-slate-100 hover:bg-slate-800" : "text-slate-500 dark:text-slate-400 hover:text-slate-900 hover:bg-slate-100"}`}
             >
               <X size={18} />
             </button>
@@ -209,18 +209,18 @@ export default function CampaignWizard({ dark, credits, onClose, onCreated }) {
               <div key={t} className="flex items-center gap-2 flex-1">
                 <div
                   className={`flex items-center gap-2 text-xs font-bold ${
-                    i === step ? "text-cyan-400" : i < step ? (dark ? "text-slate-300" : "text-slate-600") : muted
+                    i === step ? "text-cyan-700 dark:text-cyan-400" : i < step ? (dark ? "text-slate-300" : "text-slate-600") : muted
                   }`}
                 >
                   <span
                     className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] border ${
                       i < step
-                        ? "bg-cyan-500 border-cyan-500 text-white"
+                        ? "bg-cyan-700 hover:bg-cyan-600 border-cyan-500 text-white"
                         : i === step
-                        ? "border-cyan-500 text-cyan-400"
+                        ? "border-cyan-500 text-cyan-700 dark:text-cyan-400"
                         : dark
                         ? "border-slate-700 text-slate-500"
-                        : "border-slate-300 text-slate-400"
+                        : "border-slate-300 text-slate-500 dark:text-slate-400"
                     }`}
                   >
                     {i < step ? <Check size={11} /> : i + 1}
@@ -276,7 +276,7 @@ export default function CampaignWizard({ dark, credits, onClose, onCreated }) {
                             : "border-slate-200 hover:border-slate-300"
                         }`}
                       >
-                        <span className={`inline-flex items-center gap-2 text-sm font-bold ${active ? "text-cyan-400" : title}`}>
+                        <span className={`inline-flex items-center gap-2 text-sm font-bold ${active ? "text-cyan-700 dark:text-cyan-400" : title}`}>
                           <Icon size={15} />
                           {id}
                         </span>
@@ -286,7 +286,7 @@ export default function CampaignWizard({ dark, credits, onClose, onCreated }) {
                   })}
                 </div>
                 {form.channel === "WhatsApp" && (credits?.whatsapp?.limit ?? 0) === 0 && (
-                  <p className="mt-2 text-[11px] text-amber-400">
+                  <p className="mt-2 text-[11px] text-amber-700 dark:text-amber-500">
                     Your plan doesn't include WhatsApp — creating this will prompt an upgrade.
                   </p>
                 )}
@@ -302,7 +302,7 @@ export default function CampaignWizard({ dark, credits, onClose, onCreated }) {
                   <label className={`text-xs font-bold uppercase tracking-wider ${muted}`}>
                     Message template
                   </label>
-                  <span className={`text-[11px] tabular-nums ${charCount > 1000 ? "text-red-400" : muted}`}>
+                  <span className={`text-[11px] tabular-nums ${charCount > 1000 ? "text-red-600 dark:text-red-400" : muted}`}>
                     {charCount}/1000
                   </span>
                 </div>
@@ -321,8 +321,8 @@ export default function CampaignWizard({ dark, credits, onClose, onCreated }) {
                       title={p.desc}
                       className={`px-2.5 py-1 rounded-lg text-[11px] font-mono font-semibold border transition ${
                         dark
-                          ? "border-slate-700 text-cyan-400 hover:bg-slate-800"
-                          : "border-slate-200 text-cyan-600 hover:bg-slate-50"
+                          ? "border-slate-700 text-cyan-700 dark:text-cyan-400 hover:bg-slate-800"
+                          : "border-slate-200 text-cyan-700 dark:text-cyan-400 hover:bg-slate-50"
                       }`}
                     >
                       + {p.token}
@@ -356,7 +356,7 @@ export default function CampaignWizard({ dark, credits, onClose, onCreated }) {
                   </label>
                   <label
                     className={`inline-flex items-center gap-1.5 text-[11px] font-bold cursor-pointer transition ${
-                      dark ? "text-cyan-400 hover:text-cyan-300" : "text-cyan-600 hover:text-cyan-700"
+                      dark ? "text-cyan-700 dark:text-cyan-400 hover:text-cyan-300" : "text-cyan-700 dark:text-cyan-400 hover:text-cyan-700"
                     }`}
                   >
                     <Upload size={12} />
@@ -376,7 +376,7 @@ export default function CampaignWizard({ dark, credits, onClose, onCreated }) {
                   your clinic's country code. Duplicates and opted-out numbers are removed server-side.
                 </p>
                 {rowEstimate > 0 && (
-                  <p className={`mt-1 text-[11px] font-semibold ${overCredits ? "text-amber-400" : muted}`}>
+                  <p className={`mt-1 text-[11px] font-semibold ${overCredits ? "text-amber-700 dark:text-amber-500" : muted}`}>
                     ≈ {rowEstimate} recipient{rowEstimate === 1 ? "" : "s"} detected
                     {remaining !== null && ` · ${remaining} ${channelKey.toUpperCase()} credits left this period`}
                     {overCredits && " — the campaign will pause when credits run out."}
@@ -415,7 +415,7 @@ export default function CampaignWizard({ dark, credits, onClose, onCreated }) {
 
               {invalidSample.length > 0 && (
                 <div className="p-3 rounded-xl border border-amber-500/30 bg-amber-500/5">
-                  <p className="text-[11px] font-bold text-amber-400 mb-1">Sample of skipped rows:</p>
+                  <p className="text-[11px] font-bold text-amber-700 dark:text-amber-500 mb-1">Sample of skipped rows:</p>
                   <ul className={`text-[11px] font-mono space-y-0.5 ${muted}`}>
                     {invalidSample.slice(0, 5).map((r, i) => (
                       <li key={i} className="truncate">
@@ -428,7 +428,7 @@ export default function CampaignWizard({ dark, credits, onClose, onCreated }) {
             </>
           )}
 
-          {formError && <p className="text-xs font-semibold text-red-400">{formError}</p>}
+          {formError && <p className="text-xs font-semibold text-red-600 dark:text-red-400">{formError}</p>}
         </div>
 
         {/* Footer */}
@@ -436,7 +436,7 @@ export default function CampaignWizard({ dark, credits, onClose, onCreated }) {
           <button
             onClick={step === 0 ? onClose : () => setStep((s) => s - 1)}
             className={`px-4 py-2.5 rounded-xl text-sm font-bold transition ${
-              dark ? "text-slate-400 hover:text-white hover:bg-slate-800" : "text-slate-500 hover:text-slate-900 hover:bg-slate-100"
+              dark ? "text-slate-500 dark:text-slate-400 hover:text-white hover:bg-slate-800" : "text-slate-500 hover:text-slate-900 hover:bg-slate-100"
             }`}
           >
             {step === 0 ? "Cancel" : "Back"}
@@ -445,7 +445,7 @@ export default function CampaignWizard({ dark, credits, onClose, onCreated }) {
           {step < TABS.length - 1 ? (
             <button
               onClick={goNext}
-              className="px-5 py-2.5 rounded-xl text-sm font-bold bg-cyan-500 hover:bg-cyan-400 text-white transition-colors active:scale-95"
+              className="px-5 py-2.5 rounded-xl text-sm font-bold bg-cyan-700 hover:bg-cyan-600 text-white transition-colors active:scale-95"
             >
               Continue
             </button>
@@ -453,7 +453,7 @@ export default function CampaignWizard({ dark, credits, onClose, onCreated }) {
             <button
               onClick={handleSubmit}
               disabled={submitting || form.csvText.trim().length < 3}
-              className="px-5 py-2.5 rounded-xl text-sm font-bold bg-cyan-500 hover:bg-cyan-400 disabled:opacity-40 text-white transition-colors active:scale-95"
+              className="px-5 py-2.5 rounded-xl text-sm font-bold bg-cyan-700 hover:bg-cyan-600 disabled:opacity-40 text-white transition-colors active:scale-95"
             >
               {submitting ? "Creating…" : form.scheduledAt ? "Schedule campaign" : "Create campaign"}
             </button>

@@ -33,7 +33,7 @@ function NotificationBell() {
 
   const theme = {
     text: dark ? "text-slate-100" : "text-slate-900",
-    muted: dark ? "text-slate-400" : "text-slate-500",
+    muted: "text-slate-500 dark:text-slate-400",
     btn: dark
       ? "bg-slate-800/40 border-slate-700 hover:bg-slate-700/60"
       : "bg-white border-slate-200 hover:bg-slate-50 hover:shadow-sm",
@@ -66,7 +66,7 @@ function NotificationBell() {
 
   const notifTypeColor = {
     urgent: "bg-red-500",
-    info: "bg-blue-500",
+    info: "bg-cyan-500",
     success: "bg-emerald-500",
   };
 
@@ -122,7 +122,7 @@ function NotificationBell() {
               <div className="flex items-center gap-4">
                 <button
                   onClick={() => markAllNotificationsRead(dispatch)}
-                  className="text-xs text-indigo-500 font-semibold hover:text-indigo-400"
+                  className="text-xs text-cyan-700 dark:text-cyan-400 font-semibold hover:text-cyan-400"
                 >
                   Mark all read
                 </button>
@@ -146,7 +146,7 @@ function NotificationBell() {
                   <div
                     key={n.id}
                     className={`flex items-start gap-3 px-4 py-4 lg:py-3 border-b last:border-0 ${theme.divider} transition-colors ${theme.notifItem} ${
-                      !n.read ? (dark ? "bg-slate-800/30" : "bg-indigo-50/40") : ""
+                      !n.read ? (dark ? "bg-slate-800/30" : "bg-cyan-50/40") : ""
                     }`}
                   >
                     <div className={`w-2 h-2 rounded-full mt-1.5 flex-shrink-0 ${notifTypeColor[n.type] || "bg-slate-400"}`} />
@@ -174,7 +174,7 @@ function NotificationBell() {
             <div className={`lg:hidden p-3 border-t text-center ${theme.divider}`}>
               <button 
                 onClick={() => setShowNotifs(false)}
-                className="text-xs font-bold text-indigo-500 uppercase tracking-wider"
+                className="text-xs font-bold text-cyan-700 dark:text-cyan-400 uppercase tracking-wider"
               >
                 Close Panel
               </button>

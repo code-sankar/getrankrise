@@ -66,7 +66,7 @@ export default function TabSecurity({ dark }) {
         className={`p-8 rounded-3xl border ${dark ? "bg-slate-900 border-slate-800" : "bg-white border-slate-200"}`}
       >
         <div className="flex items-center gap-3 mb-8">
-          <div className="p-2 bg-indigo-500/10 rounded-lg text-indigo-500">
+          <div className="p-2 bg-cyan-500/10 rounded-lg text-cyan-700 dark:text-cyan-400">
             <ShieldCheck size={24} />
           </div>
           <h3
@@ -80,7 +80,7 @@ export default function TabSecurity({ dark }) {
           <InputField
             label="Current Password"
             type="password"
-            placeholder="••••••••"
+            placeholder="Your password"
             dark={dark}
             value={currentPassword}
             onChange={(e) => setCurrentPassword(e.target.value)}
@@ -98,7 +98,7 @@ export default function TabSecurity({ dark }) {
           <InputField
             label="Confirm New Password"
             type="password"
-            placeholder="••••••••"
+            placeholder="Your password"
             dark={dark}
             value={confirmPassword}
             onChange={(e) => setConfirmPassword(e.target.value)}
@@ -108,7 +108,7 @@ export default function TabSecurity({ dark }) {
             type="button"
             onClick={handleUpdatePassword}
             disabled={submitting}
-            className="w-full py-3 rounded-xl bg-indigo-600 text-white font-semibold transition-opacity hover:bg-indigo-500 disabled:opacity-60 disabled:cursor-not-allowed"
+            className="w-full py-3 rounded-xl bg-cyan-700 text-white font-semibold transition-opacity hover:bg-cyan-600 disabled:opacity-60 disabled:cursor-not-allowed"
           >
             {submitting ? "Updating…" : "Update Password"}
           </button>
@@ -118,10 +118,10 @@ export default function TabSecurity({ dark }) {
       <div
         className={`p-6 rounded-3xl border border-red-200 bg-red-50/50 dark:bg-red-950/10 dark:border-red-900/30`}
       >
-        <h4 className="text-red-600 font-bold mb-2 flex items-center">
+        <h4 className="text-red-600 dark:text-red-400 font-bold mb-2 flex items-center">
           <Trash2 size={16} className="mr-2" /> Danger Zone
         </h4>
-        <p className="text-sm text-red-500/80">
+        <p className="text-sm text-red-600 dark:text-red-400/80">
           Deleting your account permanently removes all clinic data, reviews and
           campaign history. To request deletion, contact{" "}
           <a

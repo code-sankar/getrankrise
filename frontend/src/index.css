@@ -38,6 +38,20 @@
 
 @import "tailwindcss";
 
+/* ── Make `dark:` follow OUR toggle, not the operating system ────────────────
+ * Tailwind 4 changed the default: without this line `dark:` compiles to
+ * @media (prefers-color-scheme: dark) and has no connection to the `.dark`
+ * class ThemeProvider puts on <html>. The app therefore had two independent
+ * notions of "dark" — every `dark ? … : …` ternary in JSX followed the in-app
+ * toggle, while every `dark:` utility followed the OS. On a light-OS machine,
+ * switching the app to dark left all 22 of them behind; on a dark-OS machine
+ * they fired even in light mode.
+ *
+ * `:where()` keeps the variant at zero specificity, so it still loses to a
+ * later utility in the same class list rather than winning by accident.
+ */
+@custom-variant dark (&:where(.dark, .dark *));
+
 @theme {
   /* ── Palette ──────────────────────────────────────────────────────────────
    * Mirrors src/theme.js. Cyan is the accent; slate is everything else.

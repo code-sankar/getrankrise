@@ -140,7 +140,7 @@ export default function DangerZone({ dark }) {
           dark ? "border-red-500/20 bg-red-500/[0.03]" : "border-red-200 bg-red-50/40"
         }`}
       >
-        <h3 className="text-sm font-bold mb-1 text-red-500">
+        <h3 className="text-sm font-bold mb-1 text-red-600 dark:text-red-400">
           {isOwner ? "Delete this clinic" : "Delete my account"}
         </h3>
 
@@ -182,7 +182,7 @@ export default function DangerZone({ dark }) {
             {/* Money is the part people most need warning about, so it gets its
                 own line rather than being buried in the list above. */}
             {preview.subscription?.willCancelImmediately && (
-              <p className="text-xs text-amber-500 mb-4 leading-relaxed max-w-prose">
+              <p className="text-xs text-amber-700 dark:text-amber-500 mb-4 leading-relaxed max-w-prose">
                 Your <strong>{preview.subscription.plan}</strong> subscription
                 will be cancelled immediately as part of this. You won't be
                 charged again, and the remainder of the current period is not
@@ -201,13 +201,13 @@ export default function DangerZone({ dark }) {
             ) : (
               <form onSubmit={doDelete} className="space-y-4 max-w-md">
                 {deleteError && (
-                  <p className="text-xs font-medium text-red-400 bg-red-500/10 border border-red-500/20 rounded-lg px-3 py-2">
+                  <p className="text-xs font-medium text-red-600 dark:text-red-400 bg-red-500/10 border border-red-500/20 rounded-lg px-3 py-2">
                     {deleteError}
                   </p>
                 )}
 
                 <div>
-                  <label htmlFor="dz-password" className="block text-xs font-semibold mb-1 text-slate-400">
+                  <label htmlFor="dz-password" className="block text-xs font-semibold mb-1 text-slate-500 dark:text-slate-400">
                     Your password
                   </label>
                   <input
@@ -217,13 +217,13 @@ export default function DangerZone({ dark }) {
                     required
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
-                    placeholder="••••••••"
+                    placeholder="Your password"
                     className={`w-full rounded-xl border px-4 py-2.5 text-sm outline-none focus:border-red-500 ${inputCls}`}
                   />
                 </div>
 
                 <div>
-                  <label htmlFor="dz-confirm" className="block text-xs font-semibold mb-1 text-slate-400">
+                  <label htmlFor="dz-confirm" className="block text-xs font-semibold mb-1 text-slate-500 dark:text-slate-400">
                     Type <span className="font-mono text-slate-300">{expectedConfirm}</span> to confirm
                   </label>
                   <input

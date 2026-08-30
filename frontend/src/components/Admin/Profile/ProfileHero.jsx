@@ -15,7 +15,7 @@ export default function ProfileHero({
       }`}
     >
       {/* Banner */}
-      <div className="h-32 bg-gradient-to-r from-indigo-600 to-violet-600" />
+      <div className="h-32 bg-gradient-to-r from-cyan-500 to-blue-600" />
 
       <div className="px-8 pb-8">
         <div className="relative flex justify-between items-end -mt-12">
@@ -59,7 +59,7 @@ export default function ProfileHero({
                 <button
                   onClick={onSave}
                   disabled={isSaving}
-                  className="px-6 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium shadow-lg shadow-indigo-500/20 transition-all disabled:opacity-50"
+                  className="px-6 py-2 rounded-xl bg-cyan-700 hover:bg-cyan-600 text-white text-sm font-medium shadow-lg shadow-cyan-500/20 transition-all disabled:opacity-50"
                 >
                   {isSaving ? (
                     "Saving..."
@@ -88,7 +88,7 @@ export default function ProfileHero({
             {profile.name}
           </h1>
           <p
-            className={`text-sm ${dark ? "text-slate-400" : "text-slate-500"}`}
+            className={`text-sm text-slate-500 dark:text-slate-400`}
           >
             {profile.role} • {profile.clinicName}
           </p>

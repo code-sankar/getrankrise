@@ -23,8 +23,8 @@ export default function ProfileTabs({ activeTab, setActiveTab, dark }) {
             className={`px-6 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 ${
               isActive
                 ? dark
-                  ? "bg-slate-800 shadow-lg shadow-black/20 text-indigo-400"
-                  : "bg-white shadow-sm text-indigo-600"
+                  ? "bg-slate-800 shadow-lg shadow-black/20 text-cyan-700 dark:text-cyan-400"
+                  : "bg-white shadow-sm text-cyan-700 dark:text-cyan-400"
                 : dark
                   ? "text-slate-500 hover:text-slate-300 hover:bg-slate-800/50"
                   : "text-slate-500 hover:text-slate-700 hover:bg-white/50"

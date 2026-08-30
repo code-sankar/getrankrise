@@ -20,14 +20,14 @@ function StatPill({ label, value, sub, subColor, dark }) {
           : "bg-white border-slate-200 shadow-sm"
       }`}
     >
-      <p className={`text-[10px] font-bold uppercase tracking-widest ${dark ? "text-slate-500" : "text-slate-400"}`}>
+      <p className={`text-[10px] font-bold uppercase tracking-widest text-slate-500 dark:text-slate-400`}>
         {label}
       </p>
       <p className={`text-xl font-black mt-1 ${dark ? "text-white" : "text-slate-900"}`}>
         {value}
       </p>
       {sub && (
-        <p className={`text-[10px] font-bold mt-1 ${subColor || (dark ? "text-slate-500" : "text-slate-400")}`}>
+        <p className={`text-[10px] font-bold mt-1 ${subColor || ("text-slate-500 dark:text-slate-400")}`}>
           {sub}
         </p>
       )}
@@ -55,13 +55,13 @@ export default function StatPillGrid({ summary, trend, sentiment, lastMonth, dar
       label:    "Avg Rating",
       value:    `★ ${summary.avgRating}`,
       sub:      "Out of 5.0",
-      subColor: "text-amber-500",
+      subColor: "text-amber-700 dark:text-amber-500",
     },
     {
       label:    "Response Rate",
       value:    `${summary.responseRate}%`,
       sub:      summary.responseRate >= 90 ? "↑ Top tier" : "Room to improve",
-      subColor: summary.responseRate >= 90 ? "text-emerald-500" : "text-amber-500",
+      subColor: summary.responseRate >= 90 ? "text-emerald-700 dark:text-emerald-400" : "text-amber-700 dark:text-amber-500",
     },
     {
       label:    "Sentiment",
@@ -72,14 +72,14 @@ export default function StatPillGrid({ summary, trend, sentiment, lastMonth, dar
     {
       label:    "New This Month",
       value:    `+${summary.newThisMonth}`,
-      sub:      lastMonth ? `in ${lastMonth}` : "Latest month",
-      subColor: "text-indigo-400",
+      sub:      lastMonth ? `as of ${lastMonth}` : "Latest month",
+      subColor: "text-cyan-700 dark:text-cyan-400",
     },
     {
       label:    "Urgent Alerts",
       value:    summary.urgentCount,
       sub:      summary.urgentCount > 0 ? "Needs reply" : "All clear",
-      subColor: summary.urgentCount > 0 ? "text-red-400" : "text-emerald-500",
+      subColor: summary.urgentCount > 0 ? "text-red-600 dark:text-red-400" : "text-emerald-700 dark:text-emerald-400",
     },
   ];
 

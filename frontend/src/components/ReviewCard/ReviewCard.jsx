@@ -26,19 +26,25 @@ export default function ReviewCard({ review }) {
       ? "bg-slate-950/50 border-slate-800"
       : "bg-slate-50 border-slate-200",
     text: dark ? "text-slate-100" : "text-slate-900",
-    muted: dark ? "text-slate-400" : "text-slate-500",
+    muted: "text-slate-500 dark:text-slate-400",
     body: dark ? "text-slate-300" : "text-slate-600",
     textarea: dark
-      ? "bg-slate-900 border-slate-800 text-slate-200 focus:border-indigo-500"
-      : "bg-white border-slate-300 text-slate-800 focus:border-indigo-500",
+      ? "bg-slate-900 border-slate-800 text-slate-200 focus:border-cyan-500"
+      : "bg-white border-slate-300 text-slate-800 focus:border-cyan-500",
   };
 
+  // Each platform keeps its own brand hue — a Google chip that isn't blue stops
+  // being recognisable at a glance, which is the chip's whole job. What changed
+  // is the STEP: blue-500 on a 10%-blue tint measured 3.33:1, and these are
+  // 10–14px bold glyphs, which WCAG counts as normal text needing 4.5:1. A
+  // darker step in light mode and a lighter one in dark keeps the hue and
+  // clears the bar; recognition survives a step change, not a hue change.
   const getPlatform = (p) =>
     ({
-      Google: { color: "text-blue-500", bg: "bg-blue-500/10", label: "G" },
-      Yelp: { color: "text-red-500", bg: "bg-red-500/10", label: "Y" },
-      Facebook: { color: "text-blue-600", bg: "bg-blue-600/10", label: "f" },
-    })[p] || { color: "text-slate-400", bg: "bg-slate-400/10", label: "R" };
+      Google: { color: "text-blue-700 dark:text-blue-400", bg: "bg-blue-500/10", label: "G" },
+      Yelp: { color: "text-red-600 dark:text-red-400", bg: "bg-red-500/10", label: "Y" },
+      Facebook: { color: "text-blue-800 dark:text-blue-300", bg: "bg-blue-600/10", label: "f" },
+    })[p] || { color: "text-slate-600 dark:text-slate-300", bg: "bg-slate-400/10", label: "R" };
 
   const platform = getPlatform(review.platform);
 
@@ -110,50 +116,51 @@ export default function ReviewCard({ review }) {
       />
 
       <div className="p-4 sm:p-6 flex items-start gap-3 sm:gap-5">
-        {/* Avatar + platform badge */}
-        <div className="flex items-center gap-2 md:gap-0">
-          <div className="relative flex-shrink-0">
-            <div
-              className={`w-11 h-11 sm:w-12 sm:h-12 rounded-2xl ${platform.bg} ${platform.color} flex items-center justify-center font-black text-sm border border-current/20`}
-            >
-              {review.name?.[0] || "?"}
-            </div>
-            <div
-              className={`absolute -bottom-1 -right-1 w-5 h-5 rounded-full border-2 ${
-                dark ? "border-slate-900" : "border-white"
-              } ${platform.bg} ${platform.color} flex items-center justify-center text-[10px] font-black`}
-            >
-              {platform.label}
-            </div>
+        {/* ── Avatar column: the avatar, and nothing else ────────────────────
+            The reviewer's name used to live in here on mobile, in a second
+            copy of the header rendered under `md:hidden`. Between the avatar
+            and that name the left column ate roughly 140px of a 390px screen,
+            leaving the review text about 180px to wrap in — three or four
+            words a line, ten lines for a two-sentence review. One header that
+            sits in the content column at every width fixes the wrapping and
+            deletes the duplicate markup at the same time. */}
+        <div className="relative flex-shrink-0">
+          <div
+            className={`w-11 h-11 sm:w-12 sm:h-12 rounded-2xl ${platform.bg} ${platform.color} flex items-center justify-center font-black text-sm border border-current/20`}
+          >
+            {review.name?.[0] || "?"}
           </div>
-          <div className="md:hidden flex flex-col">
-            <span className={`font-bold text-sm ${theme.text}`}>
-              {review.name}
-            </span>
-            <span className="text-[10px] text-indigo-500 font-bold uppercase tracking-wider">
-              {review.platform} Review
-            </span>
+          <div
+            className={`absolute -bottom-1 -right-1 w-5 h-5 rounded-full border-2 ${
+              dark ? "border-slate-900" : "border-white"
+            } ${platform.bg} ${platform.color} flex items-center justify-center text-[10px] font-black`}
+          >
+            {platform.label}
           </div>
         </div>
 
         {/* Content */}
         <div className="flex-1 min-w-0">
-          <div className="hidden md:flex items-center gap-2 mb-1">
+          {/* flex-wrap throughout: these rows carry a variable number of
+              variable-width chips, and a row that cannot wrap can only
+              overflow. The "Action Required" badge was pushing the whole
+              document 27px wider than a 390px viewport. */}
+          <div className="flex flex-wrap items-center gap-x-2 gap-y-1 mb-1">
             <span className={`font-bold ${theme.text}`}>{review.name}</span>
-            <span className={`text-xs ${theme.muted}`}>•</span>
+            <span className={`text-xs ${theme.muted} hidden sm:inline`}>•</span>
             <span
               className={`text-[11px] font-bold uppercase tracking-widest ${theme.muted}`}
             >
               {review.platform}
             </span>
             {review.replied && (
-              <span className="ml-2 flex items-center gap-1 text-[10px] bg-emerald-500/10 text-emerald-500 px-2 py-0.5 rounded-full font-bold uppercase">
+              <span className="flex items-center gap-1 text-[10px] bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 px-2 py-0.5 rounded-full font-bold uppercase">
                 ✓ Replied
               </span>
             )}
           </div>
 
-          <div className="flex items-center gap-3 mb-3">
+          <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5 mb-3">
             <StarRating rating={review.rating} size="sm" />
             <span className={`text-xs font-medium ${theme.muted}`}>
               {review.date}
@@ -178,7 +185,7 @@ export default function ReviewCard({ review }) {
                     setShowPanel(!showPanel);
                     if (!replyText) handleGenerateReply();
                   }}
-                  className="flex items-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold rounded-xl transition-all shadow-lg shadow-indigo-600/20 active:scale-95"
+                  className="flex items-center gap-2 px-4 py-2 bg-cyan-700 hover:bg-cyan-600 text-white text-xs font-bold rounded-xl transition-all shadow-lg shadow-cyan-600/20 active:scale-95"
                 >
                   View & Reply
                   <svg
@@ -206,10 +213,10 @@ export default function ReviewCard({ review }) {
                   className={`hidden sm:flex items-center gap-2 px-3 py-2 rounded-xl border text-[11px] font-bold ${
                     dark
                       ? "border-slate-800 text-slate-500"
-                      : "border-slate-100 text-slate-400"
+                      : "border-slate-100 text-slate-500 dark:text-slate-400"
                   }`}
                 >
-                  <span className="text-indigo-500">✦</span> AI READY
+                  <span className="text-cyan-700 dark:text-cyan-400">✦</span> AI READY
                 </div>
               )}
             </div>
@@ -222,7 +229,7 @@ export default function ReviewCard({ review }) {
         <div className={`m-4 mt-0 p-5 rounded-2xl border ${theme.panel}`}>
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-2">
-              <span className="w-2 h-2 rounded-full bg-indigo-500 animate-pulse" />
+              <span className="w-2 h-2 rounded-full bg-cyan-500 animate-pulse" />
               <span
                 className={`text-xs font-bold uppercase tracking-widest ${theme.text}`}
               >
@@ -244,9 +251,9 @@ export default function ReviewCard({ review }) {
                 disabled={generating || submitting}
                 className={`px-2.5 py-1 rounded-lg text-[11px] font-bold capitalize transition-all disabled:opacity-50 ${
                   tone === t
-                    ? "bg-indigo-600 text-white"
+                    ? "bg-cyan-700 hover:bg-cyan-600 text-white"
                     : dark
-                      ? "bg-slate-800 text-slate-400 hover:text-slate-200"
+                      ? "bg-slate-800 text-slate-500 dark:text-slate-400 hover:text-slate-200"
                       : "bg-slate-100 text-slate-500 hover:text-slate-700"
                 }`}
               >
@@ -260,9 +267,9 @@ export default function ReviewCard({ review }) {
               className={`w-full h-32 rounded-xl border-2 border-dashed flex flex-col items-center justify-center gap-3 ${dark ? "border-slate-800" : "border-slate-200"}`}
             >
               <div className="flex gap-1">
-                <div className="w-2 h-2 bg-indigo-500 rounded-full animate-bounce [animation-delay:-0.3s]" />
-                <div className="w-2 h-2 bg-indigo-500 rounded-full animate-bounce [animation-delay:-0.15s]" />
-                <div className="w-2 h-2 bg-indigo-500 rounded-full animate-bounce" />
+                <div className="w-2 h-2 bg-cyan-500 rounded-full animate-bounce [animation-delay:-0.3s]" />
+                <div className="w-2 h-2 bg-cyan-500 rounded-full animate-bounce [animation-delay:-0.15s]" />
+                <div className="w-2 h-2 bg-cyan-500 rounded-full animate-bounce" />
               </div>
               <span className={`text-xs font-bold ${theme.muted}`}>
                 Analyzing sentiment & drafting...
@@ -274,7 +281,7 @@ export default function ReviewCard({ review }) {
               onChange={(e) => setReplyText(e.target.value)}
               rows={4}
               placeholder="Your reply will appear here once generated, or you can write your own..."
-              className={`w-full p-4 rounded-xl border text-sm transition-all focus:ring-4 focus:ring-indigo-500/10 outline-none resize-none ${theme.textarea}`}
+              className={`w-full p-4 rounded-xl border text-sm transition-all focus:ring-4 focus:ring-cyan-500/10 outline-none resize-none ${theme.textarea}`}
             />
           )}
 

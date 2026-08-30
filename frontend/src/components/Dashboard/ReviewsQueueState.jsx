@@ -63,13 +63,13 @@ function ErrorCard({ dark, onRetry }) {
       <p className={`text-sm font-medium ${dark ? "text-slate-300" : "text-slate-600"}`}>
         We couldn't load your reviews.
       </p>
-      <p className={`text-xs mt-1 ${dark ? "text-slate-500" : "text-slate-400"}`}>
+      <p className={`text-xs mt-1 text-slate-500 dark:text-slate-400`}>
         Check your connection and try again.
       </p>
       {onRetry && (
         <button
           onClick={onRetry}
-          className="mt-4 px-4 py-2 rounded-xl text-xs font-bold bg-cyan-500 hover:bg-cyan-400 text-white transition-colors active:scale-95"
+          className="mt-4 px-4 py-2 rounded-xl text-xs font-bold bg-cyan-700 hover:bg-cyan-600 text-white transition-colors active:scale-95"
         >
           Retry
         </button>
@@ -87,7 +87,7 @@ function NoReviewsYet({ dark }) {
     <div className="p-10 text-center">
       <div className="w-12 h-12 mx-auto mb-4 rounded-2xl bg-cyan-500/10 flex items-center justify-center">
         <svg
-          className="w-6 h-6 text-cyan-500"
+          className="w-6 h-6 text-cyan-700 dark:text-cyan-400"
           fill="none"
           stroke="currentColor"
           viewBox="0 0 24 24"
@@ -104,13 +104,13 @@ function NoReviewsYet({ dark }) {
       <h3 className={`font-bold text-base ${dark ? "text-white" : "text-slate-900"}`}>
         No reviews yet
       </h3>
-      <p className={`text-sm mt-1 max-w-sm mx-auto ${dark ? "text-slate-400" : "text-slate-500"}`}>
+      <p className={`text-sm mt-1 max-w-sm mx-auto text-slate-500 dark:text-slate-400`}>
         Once your Google Business Profile is connected and synced, your customer
         reviews will appear here automatically.
       </p>
       <Link
         to="/settings"
-        className="inline-block mt-4 px-4 py-2 rounded-xl text-xs font-bold bg-cyan-500 hover:bg-cyan-400 text-white transition-colors active:scale-95"
+        className="inline-block mt-4 px-4 py-2 rounded-xl text-xs font-bold bg-cyan-700 hover:bg-cyan-600 text-white transition-colors active:scale-95"
       >
         Check connection
       </Link>

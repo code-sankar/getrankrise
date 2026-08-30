@@ -23,8 +23,8 @@ const RoleBadge = ({ role, dark }) => (
     className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wide ${
       role === "owner"
         ? dark
-          ? "bg-indigo-500/15 text-indigo-300"
-          : "bg-indigo-50 text-indigo-700"
+          ? "bg-cyan-500/15 text-cyan-300"
+          : "bg-cyan-50 text-cyan-700"
         : dark
           ? "bg-slate-700/50 text-slate-300"
           : "bg-slate-100 text-slate-600"
@@ -168,11 +168,11 @@ export default function TeamTab({ dark }) {
   if (state.status === "error") {
     return (
       <div className="py-8 text-center">
-        <p className="text-sm text-red-400 mb-4">{state.error}</p>
+        <p className="text-sm text-red-600 dark:text-red-400 mb-4">{state.error}</p>
         <button
           type="button"
           onClick={reload}
-          className="text-sm font-bold text-indigo-500 hover:text-indigo-400"
+          className="text-sm font-bold text-cyan-700 dark:text-cyan-400 hover:text-cyan-400"
         >
           Try again
         </button>
@@ -206,7 +206,7 @@ export default function TeamTab({ dark }) {
                     <RoleBadge role={m.role} dark={dark} />
                     {isMe && <span className="text-[10px] text-slate-500 font-medium">(you)</span>}
                     {!m.emailVerified && (
-                      <span className="text-[10px] text-amber-500 font-semibold">
+                      <span className="text-[10px] text-amber-700 dark:text-amber-500 font-semibold">
                         email unconfirmed
                       </span>
                     )}
@@ -232,7 +232,7 @@ export default function TeamTab({ dark }) {
                       type="button"
                       onClick={() => remove(m)}
                       disabled={busy}
-                      className="text-xs font-bold text-red-500 hover:text-red-400 px-2 py-1.5 disabled:opacity-50"
+                      className="text-xs font-bold text-red-600 dark:text-red-400 hover:text-red-400 px-2 py-1.5 disabled:opacity-50"
                     >
                       Remove
                     </button>
@@ -270,7 +270,7 @@ export default function TeamTab({ dark }) {
                     type="button"
                     onClick={() => revoke(inv)}
                     disabled={busyId === inv.id}
-                    className="text-xs font-bold text-red-500 hover:text-red-400 px-2 py-1.5 disabled:opacity-50"
+                    className="text-xs font-bold text-red-600 dark:text-red-400 hover:text-red-400 px-2 py-1.5 disabled:opacity-50"
                   >
                     Revoke
                   </button>
@@ -295,7 +295,7 @@ export default function TeamTab({ dark }) {
               rather than creating a row nobody can ever accept. Say so here
               instead of letting the owner discover it by clicking. */}
           {!team.emailConfigured ? (
-            <p className="text-sm text-amber-500">
+            <p className="text-sm text-amber-700 dark:text-amber-500">
               Invitations need email to be configured on the server. Contact
               support and we'll switch it on.
             </p>
@@ -308,13 +308,13 @@ export default function TeamTab({ dark }) {
                 onChange={(e) => setInviteEmail(e.target.value)}
                 placeholder="colleague@yourclinic.com"
                 aria-label="Email address to invite"
-                className={`flex-1 min-w-[220px] rounded-xl border px-4 py-2.5 text-sm outline-none focus:border-indigo-500 ${inputCls}`}
+                className={`flex-1 min-w-[220px] rounded-xl border px-4 py-2.5 text-sm outline-none focus:border-cyan-500 ${inputCls}`}
               />
               <select
                 value={inviteRole}
                 onChange={(e) => setInviteRole(e.target.value)}
                 aria-label="Role"
-                className={`rounded-xl border px-3 py-2.5 text-sm font-medium outline-none focus:border-indigo-500 ${inputCls}`}
+                className={`rounded-xl border px-3 py-2.5 text-sm font-medium outline-none focus:border-cyan-500 ${inputCls}`}
               >
                 <option value="staff">Team member</option>
                 <option value="owner">Owner</option>
@@ -322,7 +322,7 @@ export default function TeamTab({ dark }) {
               <button
                 type="submit"
                 disabled={inviting || !inviteEmail.trim()}
-                className="px-5 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-bold transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                className="px-5 py-2.5 rounded-xl bg-cyan-700 hover:bg-cyan-600 text-white text-sm font-bold transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {inviting ? "Sending…" : "Send invite"}
               </button>
@@ -330,7 +330,7 @@ export default function TeamTab({ dark }) {
           )}
 
           {inviteRole === "owner" && team.emailConfigured && (
-            <p className="text-xs text-amber-500 mt-3">
+            <p className="text-xs text-amber-700 dark:text-amber-500 mt-3">
               Owners can change the plan, cancel the subscription and manage the
               team. Only invite someone as an owner if you mean it.
             </p>

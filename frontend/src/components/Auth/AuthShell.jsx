@@ -18,9 +18,9 @@ import Logo from "../Logo.jsx";
 
 export default function AuthShell({ title, subtitle, children, footer, wide = false }) {
   return (
-    <div className="relative min-h-screen w-full overflow-hidden bg-[#030712] text-white flex items-center justify-center p-4 sm:p-6 selection:bg-blue-500/30">
+    <div className="relative min-h-screen w-full overflow-hidden bg-[#030712] text-white flex items-center justify-center p-4 sm:p-6 selection:bg-cyan-500/30">
       {/* Ambient light */}
-      <div className="absolute top-[-10%] left-[-10%] w-[50%] h-[50%] rounded-full bg-blue-600/10 blur-[120px] pointer-events-none" />
+      <div className="absolute top-[-10%] left-[-10%] w-[50%] h-[50%] rounded-full bg-cyan-600/10 blur-[120px] pointer-events-none" />
       <div className="absolute bottom-[-10%] right-[-10%] w-[50%] h-[50%] rounded-full bg-cyan-600/10 blur-[120px] pointer-events-none" />
 
       {/* Background grid */}
@@ -34,7 +34,7 @@ export default function AuthShell({ title, subtitle, children, footer, wide = fa
             to="/"
             className="group flex items-center transition-transform duration-300 ease-out hover:scale-105"
           >
-            <div className="relative p-2 rounded-xl bg-white/[0.02] border border-white/[0.05] shadow-inner group-hover:border-blue-500/30 transition-colors duration-300">
+            <div className="relative p-2 rounded-xl bg-white/[0.02] border border-white/[0.05] shadow-inner group-hover:border-cyan-500/30 transition-colors duration-300">
               <Logo />
             </div>
           </Link>
@@ -45,7 +45,7 @@ export default function AuthShell({ title, subtitle, children, footer, wide = fa
             {title}
           </h1>
           {subtitle && (
-            <p className="text-sm text-slate-400 font-medium">{subtitle}</p>
+            <p className="text-sm text-slate-500 dark:text-slate-400 font-medium">{subtitle}</p>
           )}
         </div>
 
@@ -64,7 +64,7 @@ export function AuthNotice({ tone = "error", children }) {
   const tones = {
     error: "bg-red-500/10 border-red-500/20 text-red-400",
     success: "bg-emerald-500/10 border-emerald-500/20 text-emerald-400",
-    info: "bg-blue-500/10 border-blue-500/20 text-blue-300",
+    info: "bg-cyan-500/10 border-cyan-500/20 text-cyan-300",
   };
   return (
     <div
@@ -80,10 +80,10 @@ export function AuthNotice({ tone = "error", children }) {
 /** The field styling Login/SignUp use, so the new screens match without copying. */
 export const authInputClass =
   "w-full px-4 py-2.5 bg-[#0a0618]/90 border border-white/[0.08] rounded-xl text-white " +
-  "placeholder-slate-600 focus:outline-none focus:border-blue-500/80 focus:ring-4 " +
-  "focus:ring-blue-500/10 transition-all duration-200";
+  "placeholder-slate-600 focus:outline-none focus:border-cyan-500/80 focus:ring-4 " +
+  "focus:ring-cyan-500/10 transition-all duration-200";
 
 export const authButtonClass =
-  "w-full mt-2 py-2.5 rounded-xl font-semibold text-white shadow-lg shadow-blue-600/10 " +
+  "w-full mt-2 py-2.5 rounded-xl font-semibold text-white shadow-lg shadow-cyan-600/10 " +
   "active:scale-[0.98] transition-all duration-200 flex items-center justify-center " +
   "disabled:opacity-50 disabled:cursor-not-allowed border border-white/10 hover:brightness-110";

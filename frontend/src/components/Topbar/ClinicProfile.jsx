@@ -62,15 +62,24 @@ function ClinicProfile() {
         to="/admin"
         className={`flex items-center gap-3 px-3 py-1.5 rounded-xl border transition-all duration-200 ${theme.btn}`}
       >
-        <div className="flex flex-col items-end text-right">
-          <span className={`text-xs font-bold leading-tight ${theme.text}`}>
+        {/* Hidden below `sm`, where the page title needs the width more — the
+            avatar beside it still opens the same menu, so nothing is lost.
+
+            The two lines were also the wrong way round in weight: the clinic
+            name was 12px and the ADMIN label under it 13px, so the role
+            outranked the name it belonged to. */}
+        <div className="hidden sm:flex flex-col items-end text-right min-w-0">
+          <span
+            className={`text-sm font-bold leading-tight truncate max-w-[180px] ${theme.text}`}
+            title={clinicName}
+          >
             {clinicName}
           </span>
-          <span className="text-[13px] text-indigo-700 font-bold uppercase tracking-wide">
+          <span className="text-[10px] text-cyan-700 font-bold uppercase tracking-wide">
             Admin
           </span>
         </div>
-        <div className="w-8 h-8 rounded-lg bg-gradient-to-tr from-indigo-600 to-violet-600 flex items-center justify-center text-white text-xs font-bold shadow-md">
+        <div className="w-8 h-8 rounded-lg bg-gradient-to-tr from-cyan-500 to-blue-600 flex items-center justify-center text-white text-xs font-bold shadow-md">
           {initial}
         </div>
       </Link>
@@ -81,7 +90,7 @@ function ClinicProfile() {
           className={`absolute right-0 mt-3 w-64 rounded-2xl border p-4 z-50 animate-in fade-in slide-in-from-top-2 duration-200 ${theme.popup}`}
         >
           <div className="flex items-center gap-3 mb-4">
-            <div className="w-10 h-10 rounded-full bg-indigo-500/10 flex items-center justify-center text-indigo-500 font-bold">
+            <div className="w-10 h-10 rounded-full bg-cyan-500/10 flex items-center justify-center text-cyan-700 dark:text-cyan-400 font-bold">
               {initial}
             </div>
             <div className="overflow-hidden">
@@ -93,20 +102,20 @@ function ClinicProfile() {
           </div>
           <div className={`space-y-3 pt-3 border-t ${theme.divider}`}>
             <div className="flex justify-between items-center">
-              <span className="text-[13px] text-slate-400 font-medium">
+              <span className="text-[13px] text-slate-500 dark:text-slate-400 font-medium">
                 Unread Alerts
               </span>
               <span
-                className={`text-[13px] font-bold ${unreadCount > 0 ? "text-red-600" : "text-emerald-400"}`}
+                className={`text-[13px] font-bold ${unreadCount > 0 ? "text-red-600 dark:text-red-400" : "text-emerald-700 dark:text-emerald-400"}`}
               >
                 {unreadCount > 0 ? `${unreadCount} new` : "All clear"}
               </span>
             </div>
             <div className="flex justify-between items-center">
-              <span className="text-[13px] text-slate-400 font-medium">
+              <span className="text-[13px] text-slate-500 dark:text-slate-400 font-medium">
                 Plan
               </span>
-              <span className="text-[13px] font-bold text-indigo-700 uppercase">
+              <span className="text-[13px] font-bold text-cyan-700 uppercase">
                 Premium
               </span>
             </div>
@@ -116,8 +125,8 @@ function ClinicProfile() {
               to="/settings"
               className={`block w-full text-center py-2 rounded-lg text-[11px] font-bold transition-colors ${
                 dark
-                  ? "bg-slate-800 hover:bg-indigo-600 hover:text-white text-slate-300"
-                  : "bg-slate-100 hover:bg-indigo-500 hover:text-white text-slate-700"
+                  ? "bg-slate-800 hover:bg-cyan-600 hover:text-white text-slate-300"
+                  : "bg-slate-100 hover:bg-cyan-600 hover:text-white text-slate-700"
               }`}
             >
               Manage Account

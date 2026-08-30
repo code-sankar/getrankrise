@@ -50,7 +50,7 @@ function Banner({ banner }) {
     <div
       className={`mt-3 text-xs rounded-lg px-3 py-2 border ${
         banner.tone === "error"
-          ? "bg-red-500/10 border-red-500/30 text-red-400"
+          ? "bg-red-500/10 border-red-500/30 text-red-600 dark:text-red-400"
           : "bg-cyan-500/10 border-cyan-500/30 text-cyan-300"
       }`}
     >
@@ -74,7 +74,7 @@ export default function YelpConnect({ onConnected, dark = true, defaultLocation 
   // ── Theme tokens (obsidian design system, cyan accent) ──────────────────────
   const card = dark ? "bg-slate-900 border-slate-800" : "bg-white border-slate-200 shadow-sm";
   const textPrimary = dark ? "text-white" : "text-slate-900";
-  const textMuted = dark ? "text-slate-400" : "text-slate-500";
+  const textMuted = "text-slate-500 dark:text-slate-400";
   const inputBg = dark
     ? "bg-slate-800 border-slate-700 text-white placeholder-slate-500"
     : "bg-white border-slate-300 text-slate-900 placeholder-slate-400";
@@ -229,7 +229,7 @@ export default function YelpConnect({ onConnected, dark = true, defaultLocation 
           <button
             onClick={handleDisconnect}
             disabled={busy}
-            className="text-xs font-semibold px-3 py-1.5 rounded-lg text-red-400 hover:bg-red-500/10 transition-colors disabled:opacity-50"
+            className="text-xs font-semibold px-3 py-1.5 rounded-lg text-red-600 dark:text-red-400 hover:bg-red-500/10 transition-colors disabled:opacity-50"
           >
             Disconnect
           </button>
@@ -258,9 +258,9 @@ export default function YelpConnect({ onConnected, dark = true, defaultLocation 
             }}
             className={`text-xs font-semibold px-3 py-1.5 rounded-md transition-colors ${
               mode === value
-                ? "bg-cyan-600 text-white"
+                ? "bg-cyan-700 hover:bg-cyan-600 text-white"
                 : dark
-                  ? "text-slate-400 hover:text-slate-200"
+                  ? "text-slate-500 dark:text-slate-400 hover:text-slate-200"
                   : "text-slate-500 hover:text-slate-700"
             }`}
           >
@@ -289,7 +289,7 @@ export default function YelpConnect({ onConnected, dark = true, defaultLocation 
             <button
               onClick={handleSearch}
               disabled={busy}
-              className="text-sm font-semibold px-4 py-2 rounded-lg bg-cyan-600 hover:bg-cyan-500 text-white transition-colors disabled:opacity-50 whitespace-nowrap"
+              className="text-sm font-semibold px-4 py-2 rounded-lg bg-cyan-700 hover:bg-cyan-600 text-white transition-colors disabled:opacity-50 whitespace-nowrap"
             >
               {busy ? "Searching…" : "Search Yelp"}
             </button>
@@ -308,7 +308,7 @@ export default function YelpConnect({ onConnected, dark = true, defaultLocation 
             <button
               onClick={handleResolve}
               disabled={busy}
-              className="text-sm font-semibold px-4 py-2 rounded-lg bg-cyan-600 hover:bg-cyan-500 text-white transition-colors disabled:opacity-50 whitespace-nowrap"
+              className="text-sm font-semibold px-4 py-2 rounded-lg bg-cyan-700 hover:bg-cyan-600 text-white transition-colors disabled:opacity-50 whitespace-nowrap"
             >
               {busy ? "Looking up…" : "Look up"}
             </button>
@@ -331,7 +331,7 @@ export default function YelpConnect({ onConnected, dark = true, defaultLocation 
                 <p className={`text-xs truncate ${textMuted}`}>
                   {biz.address || "—"}
                   {biz.rating != null && (
-                    <span className="ml-2 text-amber-400">
+                    <span className="ml-2 text-amber-700 dark:text-amber-500">
                       ★ {biz.rating} {biz.reviewCount != null && `(${biz.reviewCount})`}
                     </span>
                   )}
@@ -340,7 +340,7 @@ export default function YelpConnect({ onConnected, dark = true, defaultLocation 
               <button
                 onClick={() => handleConnect(biz)}
                 disabled={connectingId === biz.id}
-                className="text-xs font-semibold px-3 py-1.5 rounded-lg bg-cyan-600 hover:bg-cyan-500 text-white transition-colors disabled:opacity-50 whitespace-nowrap"
+                className="text-xs font-semibold px-3 py-1.5 rounded-lg bg-cyan-700 hover:bg-cyan-600 text-white transition-colors disabled:opacity-50 whitespace-nowrap"
               >
                 {connectingId === biz.id ? "Connecting…" : "Connect"}
               </button>

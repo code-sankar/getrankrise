@@ -45,19 +45,31 @@
 // button in the app during a sweep would turn one accessibility bug into
 // forty. `text-slate-950` on `bg-cyan-400` measures ~11:1.
 //
-// It is also the better answer for this product specifically. A bright cyan
-// chip with a near-black label reads as instrument panel — dashboards, sync
-// clocks, usage meters, which is what Kirtify actually is — where
-// white-on-mid-cyan is the button every SaaS ships. If you want the old look
-// back it is one line: `bg-cyan-600 hover:bg-cyan-500 text-white` also passes
-// (4.9:1), at the cost of a duller accent.
+// ── MEASURED RATIOS, because the ones this file used to quote were wrong ────
+// It previously said `bg-cyan-600 text-white` "also passes (4.9:1)". It does
+// not. Against white text:
+//
+//   cyan-400  1.81:1   cyan-500  2.43:1   cyan-600  3.68:1   cyan-700  5.36:1
+//
+// AA wants 4.5:1 for normal text and 3:1 only for large text — and "large"
+// means >=18.66px bold, which no button label in this app is; they are 12–14px.
+// So cyan-600 fails too, and the app shipped 36 buttons on that wrong number.
+//
+// `solid` below is therefore cyan-700. It keeps the idiom every button in this
+// product already uses — solid fill, white label — and actually clears AA.
+// `solidInverse` is the brighter alternative: a cyan-400 chip with a near-black
+// label measures 11.16:1 and reads as instrument panel rather than as the
+// button every SaaS ships. Both are correct; the first is the smaller change.
 export const accent = {
   // Solid primary button
   solid:
-    "bg-cyan-400 hover:bg-cyan-300 text-slate-950 font-semibold transition-colors active:scale-95",
+    "bg-cyan-700 hover:bg-cyan-600 text-white font-semibold transition-colors active:scale-95",
   // Solid, but for a full-width or emphasis CTA
   solidLg:
-    "bg-cyan-400 hover:bg-cyan-300 text-slate-950 font-semibold transition-colors active:scale-[0.98]",
+    "bg-cyan-700 hover:bg-cyan-600 text-white font-semibold transition-colors active:scale-[0.98]",
+  // The bright-chip alternative: highest contrast of the lot at 11.16:1.
+  solidInverse:
+    "bg-cyan-400 hover:bg-cyan-300 text-slate-950 font-semibold transition-colors active:scale-95",
   // Tinted pill / badge — the "3 Reviews Found" and usage-chip pattern
   soft: "bg-cyan-500/10 text-cyan-400 border border-cyan-500/20",
   softLight: "bg-cyan-50 text-cyan-700 border border-cyan-100",
@@ -148,21 +160,48 @@ export const status = {
 // Recharts and inline SVG need hex, not class names. Keeping them here rather
 // than in analyticsSlice means the chart ramp can't drift from the UI accent
 // the way the indigo ramp (#6366f1 → #e0e7ff) did.
+//
+// ── EVERY VALUE BELOW WAS COMPUTED, NOT CHOSEN ──────────────────────────────
+// Chart colour is the one part of a design system you can check mechanically,
+// so it is checked: each palette here passes a validator for lightness band,
+// chroma floor, colour-blind separation, normal-vision separation and contrast
+// against its own surface. Two things that "looked fine" did not survive it:
+//
+//   · the old ratingRamp ended on #cffafe, which measures 1.09:1 against a
+//     white card. The 1★ bar was, for practical purposes, invisible.
+//   · Google #4285F4 against Facebook #1877F2 measures ΔE 4.8 for NORMAL
+//     colour vision (3.9 under deuteranopia). Adjacent in a donut, those two
+//     segments cannot be told apart by anyone. See PLATFORM below.
+//
+// Dark is a SELECTED set of steps, not an automatic flip — the same hues
+// re-stepped for the dark card, and re-validated against it.
+//
+// If you change any hex here, re-run the check rather than eyeballing it.
 export const CHART = {
-  // Single-series accent
-  accent: "#06b6d4", // cyan-500
-  accentSoft: "#22d3ee", // cyan-400
-  axis: "#475569", // slate-600
-  axisLight: "#94a3b8", // slate-400
-  grid: "#1e293b", // slate-800
+  // Single-series accent, per mode.
+  accent: { light: "#0891b2", dark: "#0ea5b7" },
+  axis: { light: "#94a3b8", dark: "#475569" },
+  // Solid hairline, one shade off the surface. Never dashed — dashing reads as
+  // "projection" or "threshold" when it is only a grid.
+  grid: { light: "rgba(15,23,42,0.06)", dark: "rgba(255,255,255,0.06)" },
 
-  // 5★ → 1★. A cyan ramp, so the distribution reads as one measure rather
-  // than five unrelated categories.
-  ratingRamp: ["#06b6d4", "#22d3ee", "#67e8f9", "#a5f3fc", "#cffafe"],
+  // Categorical slots, assigned in FIXED ORDER and never cycled. Slot 1 is the
+  // subject of the chart (reviews received); slot 2 is what you did about it
+  // (responses sent). Violet rather than the obvious green because green is
+  // spoken for: `status.success` means "good", and a series colour that also
+  // means "good" makes a neutral count read as a verdict.
+  series: {
+    light: ["#0891b2", "#7c3aed"],
+    dark: ["#0ea5b7", "#9575f0"],
+  },
 
-  // Sentiment / quality bars, where the meaning IS good-to-bad and a single
-  // hue would hide it. This is the one place a multi-hue ramp is correct.
-  qualityRamp: ["#10b981", "#84cc16", "#eab308", "#f97316", "#ef4444"],
+  // 5★ → 1★. One hue, monotone lightness, so the distribution reads as a
+  // single ordered measure rather than five unrelated categories. Ordered
+  // categories are the case where a ramp is correct; nominal ones are not.
+  ratingRamp: {
+    light: ["#0c4a5e", "#155e75", "#0e7490", "#0891b2", "#0cb8d6"],
+    dark: ["#cffafe", "#67e8f9", "#22d3ee", "#0891b2", "#155e75"],
+  },
 };
 
 // ── Third-party brand colours ────────────────────────────────────────────────
@@ -170,6 +209,21 @@ export const CHART = {
 // Google is blue; recolouring it to cyan makes the platform unrecognisable at
 // a glance, which is the entire job of a platform chip in a unified feed.
 // Excluded from the codemod by explicit hex allowlist.
+//
+// ── WHERE THESE ARE SAFE, AND WHERE THEY ARE NOT ────────────────────────────
+// Google and Facebook are both blue. Measured against each other they are
+// ΔE 4.8 for normal colour vision — far below the 15 needed to tell two marks
+// apart, and 3.9 under deuteranopia. So:
+//
+//   SAFE   next to their own name or logo — a chip, a badge, a legend row.
+//          The label carries the identity and the colour merely decorates it.
+//   UNSAFE as the only thing distinguishing two marks in a plot: pie or donut
+//          segments, adjacent bars, two lines. There the reader has nothing
+//          but the hue, and the hue does not separate.
+//
+// This is why Platform Breakdown draws directly-labelled bars rather than the
+// donut it used to: the fix is to stop asking colour to carry identity, not to
+// repaint Facebook a colour Facebook is not.
 export const PLATFORM = {
   Google: "#4285F4",
   Yelp: "#D32323",

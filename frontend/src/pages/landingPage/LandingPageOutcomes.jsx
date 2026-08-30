@@ -22,7 +22,7 @@ export default function Outcomes() {
         <div className="bg-[#080c14] border border-gray-900/80 rounded-xl grid grid-cols-2 lg:grid-cols-4 divide-y lg:divide-y-0 lg:divide-x divide-gray-900/80 mb-16 shadow-2xl overflow-hidden">
           {metrics.map((m, i) => (
             <div key={i} className="group p-6 sm:p-8 text-center flex flex-col justify-center min-h-[140px] hover:bg-[#0c111c] transition-colors duration-300 cursor-default">
-              <div className="text-3xl sm:text-4xl font-extrabold tracking-tight text-white mb-2 group-hover:text-blue-400 group-hover:scale-105 transition-all duration-300">{m.value}</div>
+              <div className="text-3xl sm:text-4xl font-extrabold tracking-tight text-white mb-2 group-hover:text-cyan-400 group-hover:scale-105 transition-all duration-300">{m.value}</div>
               <div className="text-[10px] sm:text-xs text-gray-500 leading-normal font-medium max-w-[120px] mx-auto group-hover:text-gray-400 transition-colors duration-300">{m.label}</div>
             </div>
           ))}

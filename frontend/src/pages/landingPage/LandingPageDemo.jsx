@@ -98,7 +98,7 @@ export default function Demo() {
               <button onClick={handleGenerate} className="text-gray-500 hover:text-white text-[10px] font-medium transition-colors duration-300">
                 Regenerate
               </button>
-              <button className="group/btn bg-[#2563eb] text-white text-[10px] font-bold px-3 py-1.5 rounded-lg flex items-center gap-1.5 hover:bg-blue-500 hover:scale-105 active:scale-95 hover:shadow-[0_0_15px_rgba(37,99,235,0.4)] transition-all duration-300">
+              <button className="group/btn bg-[#2563eb] text-white text-[10px] font-bold px-3 py-1.5 rounded-lg flex items-center gap-1.5 hover:bg-cyan-600 hover:scale-105 active:scale-95 hover:shadow-[0_0_15px_rgba(37,99,235,0.4)] transition-all duration-300">
                 <Send size={10} className="group-hover/btn:-translate-y-0.5 group-hover/btn:translate-x-0.5 transition-transform duration-300" />
                 Post to Google
               </button>

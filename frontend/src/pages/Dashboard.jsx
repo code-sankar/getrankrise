@@ -42,7 +42,7 @@ const toRatingChart = (distribution = []) => {
 const FilterGroup = ({ label, options, active, onChange, dark }) => (
   <div className="flex items-center gap-3 overflow-x-auto pb-1 no-scrollbar">
     <span
-      className={`text-[10px] font-bold uppercase tracking-widest min-w-[75px] ${dark ? "text-slate-500" : "text-slate-400"}`}
+      className={`text-[10px] font-bold uppercase tracking-widest min-w-[75px] text-slate-500 dark:text-slate-400`}
     >
       {label}
     </span>
@@ -53,9 +53,9 @@ const FilterGroup = ({ label, options, active, onChange, dark }) => (
           onClick={() => onChange(opt)}
           className={`px-4 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition-all border ${
             active === opt
-              ? "bg-indigo-600 border-indigo-600 text-white shadow-md shadow-indigo-500/20"
+              ? "bg-cyan-700 hover:bg-cyan-600 border-cyan-700 text-white shadow-md shadow-cyan-500/20"
               : dark
-                ? "border-slate-700 text-slate-400 hover:border-slate-500 bg-slate-800/40"
+                ? "border-slate-700 text-slate-500 dark:text-slate-400 hover:border-slate-500 bg-slate-800/40"
                 : "border-slate-200 text-slate-600 hover:border-slate-300 bg-white"
           }`}
         >
@@ -78,12 +78,12 @@ const EmptyState = ({ dark, onClear }) => (
     >
       Inbox Zero!
     </h3>
-    <p className={`text-sm ${dark ? "text-slate-400" : "text-slate-500"}`}>
+    <p className={`text-sm text-slate-500 dark:text-slate-400`}>
       No reviews match your current filters.
     </p>
     <button
       onClick={onClear}
-      className="mt-4 text-indigo-500 text-sm font-bold hover:text-indigo-400 transition-colors"
+      className="mt-4 text-cyan-700 dark:text-cyan-400 text-sm font-bold hover:text-cyan-400 transition-colors"
     >
       Clear all filters
     </button>
@@ -171,7 +171,7 @@ export default function Dashboard() {
             dark ? "bg-slate-900 border-slate-800" : "bg-white border-slate-100"
           }`}
         >
-          <span className="font-black tracking-tight text-indigo-600 text-lg">
+          <span className="font-black tracking-tight text-cyan-700 dark:text-cyan-400 text-lg">
             Kirtify
           </span>
           <button
@@ -213,7 +213,7 @@ export default function Dashboard() {
               label="New Reviews"
               value={String(stats.newThisMonth)}
               sub="Last 30 days"
-              subColor="text-emerald-500"
+              subColor="text-emerald-700 dark:text-emerald-400"
             />
             <StatCard
               label="AI Coverage"
@@ -240,7 +240,7 @@ export default function Dashboard() {
                     Reviews Queue
                   </h2>
                   <p
-                    className={`text-sm ${dark ? "text-slate-400" : "text-slate-500"}`}
+                    className={`text-sm text-slate-500 dark:text-slate-400`}
                   >
                     Monitor and respond to customer feedback
                   </p>
@@ -250,7 +250,7 @@ export default function Dashboard() {
                       page, which silently became the number the user believed
                       they had. It now names the server total alongside it. */}
                   <div
-                    className={`px-3 py-1 rounded-full text-xs font-bold ${dark ? "bg-indigo-500/10 text-indigo-400" : "bg-indigo-50 text-indigo-600"}`}
+                    className={`px-3 py-1 rounded-full text-xs font-bold ${dark ? "bg-cyan-500/10 text-cyan-700 dark:text-cyan-400" : "bg-cyan-50 text-cyan-700 dark:text-cyan-400"}`}
                   >
                     {filteredReviews.length} of {totalReviews} Reviews
                   </div>
@@ -326,7 +326,7 @@ export default function Dashboard() {
                     : `Load ${Math.min(REVIEWS_PAGE_SIZE, totalReviews - loadedCount)} more`}
                 </button>
                 <p
-                  className={`text-xs ${dark ? "text-slate-500" : "text-slate-400"}`}
+                  className={`text-xs text-slate-500 dark:text-slate-400`}
                 >
                   Showing {loadedCount} of {totalReviews} · filters apply to
                   loaded reviews

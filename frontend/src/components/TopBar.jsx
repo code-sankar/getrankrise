@@ -11,7 +11,7 @@ export default function TopBar({ title }) {
       ? "bg-slate-900/80 border-slate-800"
       : "bg-white/80 border-slate-200",
     text: dark ? "text-slate-100" : "text-slate-900",
-    muted: dark ? "text-slate-400" : "text-slate-500",
+    muted: "text-slate-500 dark:text-slate-400",
     btn: dark
       ? "bg-slate-800/40 border-slate-700 hover:bg-slate-700/60"
       : "bg-white border-slate-200 hover:bg-slate-50 hover:shadow-sm",
@@ -26,12 +26,18 @@ export default function TopBar({ title }) {
     <header
       className={`flex items-center justify-between px-4 md:px-8 py-3 md:py-4 border-b sticky top-0 z-50 backdrop-blur-md transition-all duration-300 ${theme.header}`}
     >
-      {/* Page Title - Now visible on all screens, but maybe smaller text on mobile inside the component */}
-      <div className="flex-shrink-1 min-w-0 mr-2">
+      {/* ── Who gets the space when there isn't enough ────────────────────────
+          At 390px the clinic block ("Northside Dental Care / ADMIN") claimed
+          around 200px and left the title with room for one letter, so the bar
+          read "U…" — worse than showing nothing. The title wins the fight now:
+          it is the only thing on screen that says which page you are on,
+          whereas the clinic name is already in the sidebar. `basis-0 grow`
+          makes it take the remaining space rather than only its own width. */}
+      <div className="flex-1 basis-0 grow min-w-0 mr-2">
         <PageTitle title={title} />
       </div>
 
-      <div className="flex items-center gap-2 md:gap-3 flex-shrink-0">
+      <div className="flex items-center gap-2 md:gap-3 flex-shrink-0 min-w-0">
         {/* Live Indicator - Hidden on extra small screens if it crowds the bar, or kept visible */}
         <div className="hidden xs:block">
           <LiveIndicator />

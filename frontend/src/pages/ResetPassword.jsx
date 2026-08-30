@@ -48,7 +48,7 @@ export default function ResetPassword() {
         </AuthNotice>
         <Link
           to="/forgot-password"
-          className={`${authButtonClass} bg-gradient-to-r from-blue-600 via-blue-500 to-cyan-500`}
+          className={`${authButtonClass} bg-gradient-to-r from-cyan-500 to-blue-600`}
         >
           Request a new link
         </Link>
@@ -85,7 +85,7 @@ export default function ResetPassword() {
       footer={
         <>
           Need a new link?{" "}
-          <Link to="/forgot-password" className="text-blue-400 font-semibold hover:text-blue-300">
+          <Link to="/forgot-password" className="text-cyan-400 font-semibold hover:text-cyan-300">
             Start over
           </Link>
         </>
@@ -129,7 +129,7 @@ export default function ResetPassword() {
             id="rp-confirm"
             type="password"
             autoComplete="new-password"
-            placeholder="••••••••"
+            placeholder="Your password"
             className={authInputClass}
             {...register("confirmPassword", {
               required: "Confirm your password",
@@ -152,8 +152,8 @@ export default function ResetPassword() {
           disabled={loading}
           className={`${authButtonClass} ${
             loading
-              ? "bg-blue-950/60"
-              : "bg-gradient-to-r from-blue-600 via-blue-500 to-cyan-500"
+              ? "bg-cyan-950/60"
+              : "bg-gradient-to-r from-cyan-500 to-blue-600"
           }`}
         >
           {loading ? "Updating…" : "Update password"}

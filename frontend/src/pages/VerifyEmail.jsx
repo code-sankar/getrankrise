@@ -57,7 +57,7 @@ export default function VerifyEmail() {
         </AuthNotice>
         <Link
           to="/login"
-          className={`${authButtonClass} bg-gradient-to-r from-blue-600 via-blue-500 to-cyan-500`}
+          className={`${authButtonClass} bg-gradient-to-r from-cyan-500 to-blue-600`}
         >
           Go to sign in
         </Link>
@@ -69,7 +69,7 @@ export default function VerifyEmail() {
     return (
       <AuthShell title="Confirming your email" subtitle="One moment…">
         <div className="flex justify-center py-6">
-          <div className="w-10 h-10 rounded-full border-2 border-slate-700 border-t-blue-500 animate-spin" />
+          <div className="w-10 h-10 rounded-full border-2 border-slate-700 border-t-cyan-500 animate-spin" />
         </div>
       </AuthShell>
     );
@@ -93,7 +93,7 @@ export default function VerifyEmail() {
 
       <Link
         to="/login"
-        className={`${authButtonClass} bg-gradient-to-r from-blue-600 via-blue-500 to-cyan-500`}
+        className={`${authButtonClass} bg-gradient-to-r from-cyan-500 to-blue-600`}
       >
         {ok ? "Continue to sign in" : "Go to sign in"}
       </Link>

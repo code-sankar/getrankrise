@@ -14,10 +14,10 @@ export default function ContactUs() {
       ? "bg-slate-900 border-slate-800"
       : "bg-white border-slate-200 shadow-sm",
     input: dark
-      ? "bg-slate-950 border-slate-800 text-white focus:border-indigo-500"
-      : "bg-slate-50 border-slate-200 text-slate-900 focus:border-indigo-500",
+      ? "bg-slate-950 border-slate-800 text-white focus:border-cyan-500"
+      : "bg-slate-50 border-slate-200 text-slate-900 focus:border-cyan-500",
     textHeader: dark ? "text-white" : "text-slate-900",
-    textMuted: dark ? "text-slate-400" : "text-slate-500",
+    textMuted: "text-slate-500 dark:text-slate-400",
   };
 
   const handleSubmit = (e) => {
@@ -59,7 +59,7 @@ export default function ContactUs() {
             dark ? "bg-slate-900 border-slate-800" : "bg-white border-slate-100"
           }`}
         >
-          <span className="font-black tracking-tight text-indigo-600 text-lg">
+          <span className="font-black tracking-tight text-cyan-700 dark:text-cyan-400 text-lg">
             Kirtify
           </span>
           <button
@@ -98,13 +98,13 @@ export default function ContactUs() {
               {/* Contact Info Cards */}
               <div className="flex flex-col sm:grid sm:grid-cols-3 lg:flex lg:flex-col gap-4">
                 <ContactInfoCard
-                  icon={<Mail className="text-indigo-500" />}
+                  icon={<Mail className="text-cyan-700 dark:text-cyan-400" />}
                   title="Email Us"
                   detail="support@kirtify.com"
                   theme={theme}
                 />
                 <ContactInfoCard
-                  icon={<Phone className="text-emerald-500" />}
+                  icon={<Phone className="text-emerald-700 dark:text-emerald-400" />}
                   title="Call Us"
                   detail="+91 6002830014"
                   theme={theme}
@@ -142,7 +142,7 @@ export default function ContactUs() {
                     <textarea rows="4" placeholder="How can we help?" className={`w-full px-4 py-3 rounded-xl outline-none border resize-none transition-all ${theme.input}`} required />
                   </div>
                   <div className="md:col-span-2 pt-2">
-                    <button type="submit" disabled={isSubmitting} className="w-full md:w-auto px-10 py-4 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-2xl shadow-lg shadow-indigo-600/20 transition-all active:scale-95 flex items-center justify-center gap-3 disabled:opacity-70 cursor-pointer">
+                    <button type="submit" disabled={isSubmitting} className="w-full md:w-auto px-10 py-4 bg-cyan-700 hover:bg-cyan-600 text-white font-bold rounded-2xl shadow-lg shadow-cyan-600/20 transition-all active:scale-95 flex items-center justify-center gap-3 disabled:opacity-70 cursor-pointer">
                       {isSubmitting ? "Sending..." : <><Send size={18} /> Send Message</>}
                     </button>
                   </div>

@@ -4,7 +4,7 @@ export default function StatCard({ label, value, sub, subColor, chart }) {
   const { dark } = useTheme();
 
   const cardBg   = dark ? "bg-slate-900 border-slate-800" : "bg-white border-slate-200";
-  const labelCol = dark ? "text-slate-400" : "text-slate-500";
+  const labelCol = "text-slate-500 dark:text-slate-400";
   const valueCol = dark ? "text-white" : "text-slate-900";
 
   return (
@@ -33,7 +33,7 @@ export default function StatCard({ label, value, sub, subColor, chart }) {
       </div>
 
       {sub && (
-        <p className={`text-sm font-medium ${subColor || (dark ? "text-slate-400" : "text-slate-500")}`}>
+        <p className={`text-sm font-medium ${subColor || ("text-slate-500 dark:text-slate-400")}`}>
           {sub}
         </p>
       )}

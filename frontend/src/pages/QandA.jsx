@@ -12,15 +12,15 @@ export default function FAQ() {
   const theme = {
     card: dark ? "bg-slate-900 border-slate-800" : "bg-white border-slate-200 shadow-sm",
     textHeader: dark ? "text-white" : "text-slate-900",
-    textMuted: dark ? "text-slate-400" : "text-slate-500",
+    textMuted: "text-slate-500 dark:text-slate-400",
     input: dark ? "bg-slate-950 border-slate-800 text-white" : "bg-slate-50 border-slate-200 text-slate-900",
-    accent: "text-indigo-500",
+    accent: "text-cyan-700 dark:text-cyan-400",
   };
 
   const faqData = [
     {
       category: "Getting Started",
-      icon: <Zap size={18} className="text-amber-500" />,
+      icon: <Zap size={18} className="text-amber-700 dark:text-amber-500" />,
       questions: [
         {
           q: "What exactly is Kirtify?",
@@ -34,7 +34,7 @@ export default function FAQ() {
     },
     {
       category: "AI & Automation",
-      icon: <Sparkles size={18} className="text-indigo-500" />,
+      icon: <Sparkles size={18} className="text-cyan-700 dark:text-cyan-400" />,
       questions: [
         {
           q: "How does the AI response generator work?",
@@ -48,7 +48,7 @@ export default function FAQ() {
     },
     {
       category: "Security & Billing",
-      icon: <ShieldCheck size={18} className="text-emerald-500" />,
+      icon: <ShieldCheck size={18} className="text-emerald-700 dark:text-emerald-400" />,
       questions: [
         {
           q: "Is my customer data secure?",
@@ -85,7 +85,7 @@ export default function FAQ() {
         
         {/* Mobile Header */}
         <header className={`lg:hidden flex items-center justify-between p-4 border-b flex-shrink-0 ${dark ? "bg-slate-900 border-slate-800" : "bg-white border-slate-100"}`}>
-          <span className="font-black tracking-tight text-indigo-600 text-lg">Kirtify</span>
+          <span className="font-black tracking-tight text-cyan-700 dark:text-cyan-400 text-lg">Kirtify</span>
           <button onClick={() => setSidebarOpen(true)} className={`p-2 rounded-xl ${dark ? "bg-slate-800 text-slate-100" : "bg-slate-100 text-slate-700"}`}>
             <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" /></svg>
           </button>
@@ -108,7 +108,7 @@ export default function FAQ() {
                   placeholder="Search your query..." 
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className={`w-full pl-12 pr-4 py-3.5 rounded-2xl outline-none border transition-all ${theme.input} focus:ring-2 focus:ring-indigo-500/20`}
+                  className={`w-full pl-12 pr-4 py-3.5 rounded-2xl outline-none border transition-all ${theme.input} focus:ring-2 focus:ring-cyan-500/20`}
                 />
               </div>
             </div>
@@ -132,12 +132,12 @@ export default function FAQ() {
 
             {/* Contact Support CTA */}
             <div className={`mt-16 p-8 rounded-[2.5rem] text-center border-2 border-dashed ${dark ? "border-slate-800 bg-slate-900/40" : "border-slate-200 bg-white"}`}>
-              <div className="w-12 h-12 bg-indigo-500 rounded-2xl flex items-center justify-center text-white mx-auto mb-4 shadow-lg shadow-indigo-500/30">
+              <div className="w-12 h-12 bg-cyan-700 hover:bg-cyan-600 rounded-2xl flex items-center justify-center text-white mx-auto mb-4 shadow-lg shadow-cyan-500/30">
                 <MessageCircle size={24} />
               </div>
               <h3 className={`text-lg font-bold mb-2 ${theme.textHeader}`}>Still have questions?</h3>
               <p className={`text-sm mb-6 ${theme.textMuted}`}>Our support team is available Monday—Friday, 9am—5pm EST.</p>
-              <button className="px-8 py-3 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl font-bold text-sm transition-all active:scale-95">
+              <button className="px-8 py-3 bg-cyan-700 hover:bg-cyan-600 text-white rounded-xl font-bold text-sm transition-all active:scale-95">
                 Contact Support
               </button>
             </div>
@@ -152,7 +152,7 @@ function FAQItem({ question, answer, theme }) {
   const [isOpen, setIsOpen] = useState(false);
 
   return (
-    <div className={`rounded-2xl border transition-all duration-300 ${theme.card} ${isOpen ? 'ring-1 ring-indigo-500/50' : ''}`}>
+    <div className={`rounded-2xl border transition-all duration-300 ${theme.card} ${isOpen ? 'ring-1 ring-cyan-500/50' : ''}`}>
       <button 
         onClick={() => setIsOpen(!isOpen)}
         className="w-full flex items-center justify-between p-5 text-left outline-none"

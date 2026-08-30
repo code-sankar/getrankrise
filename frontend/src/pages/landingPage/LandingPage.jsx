@@ -10,7 +10,7 @@ import Footer from './LandingPageFooter.jsx';
 
 function LandingPage() {
   return (
-    <div className="min-h-screen bg-[#030712] font-sans selection:bg-blue-500/30 selection:text-white antialiased">
+    <div className="min-h-screen bg-[#030712] font-sans selection:bg-cyan-500/30 selection:text-white antialiased">
       <Navbar />
       <Hero />
       <Logos />

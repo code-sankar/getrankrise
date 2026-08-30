@@ -34,8 +34,8 @@ export default function Onboarding() {
     : "bg-white border-slate-200 shadow-sm";
 
   const input = dark
-    ? "bg-slate-950 border-slate-800 text-white placeholder-slate-600 focus:border-indigo-500"
-    : "bg-slate-50 border-slate-200 text-slate-900 placeholder-slate-400 focus:border-indigo-500";
+    ? "bg-slate-950 border-slate-800 text-white placeholder-slate-600 focus:border-cyan-500"
+    : "bg-slate-50 border-slate-200 text-slate-900 placeholder-slate-400 focus:border-cyan-500";
 
   const handleChange = (e) =>
     setForm((p) => ({ ...p, [e.target.name]: e.target.value }));
@@ -141,10 +141,10 @@ export default function Onboarding() {
           <div key={s.id} className="flex items-center gap-3">
             <div className={`flex items-center gap-2 px-4 py-2 rounded-full text-xs font-bold transition-all ${
               i === step
-                ? "bg-indigo-600 text-white"
+                ? "bg-cyan-700 hover:bg-cyan-600 text-white"
                 : i < step
-                  ? "bg-emerald-500/20 text-emerald-500"
-                  : dark ? "bg-slate-800 text-slate-500" : "bg-slate-100 text-slate-400"
+                  ? "bg-emerald-500/20 text-emerald-700 dark:text-emerald-400"
+                  : dark ? "bg-slate-800 text-slate-500" : "bg-slate-100 text-slate-500 dark:text-slate-400"
             }`}>
               <span>{s.icon}</span>
               <span className="hidden sm:inline">{s.label}</span>
@@ -162,7 +162,7 @@ export default function Onboarding() {
           <h1 className={`text-2xl font-black mb-2 ${dark ? "text-white" : "text-slate-900"}`}>
             Tell us about your clinic
           </h1>
-          <p className={`text-sm mb-8 ${dark ? "text-slate-400" : "text-slate-500"}`}>
+          <p className={`text-sm mb-8 text-slate-500 dark:text-slate-400`}>
             This info appears in your review request messages.
           </p>
 
@@ -175,7 +175,7 @@ export default function Onboarding() {
           <button
             onClick={saveClinic}
             disabled={!form.clinicName || saving}
-            className="w-full mt-8 py-3.5 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-white font-bold rounded-2xl transition-all active:scale-95"
+            className="w-full mt-8 py-3.5 bg-cyan-700 hover:bg-cyan-600 disabled:opacity-50 text-white font-bold rounded-2xl transition-all active:scale-95"
           >
             {saving ? "Saving…" : "Continue →"}
           </button>
@@ -188,12 +188,12 @@ export default function Onboarding() {
           <h1 className={`text-2xl font-black mb-2 ${dark ? "text-white" : "text-slate-900"}`}>
             Connect Google Business
           </h1>
-          <p className={`text-sm mb-2 ${dark ? "text-slate-400" : "text-slate-500"}`}>
+          <p className={`text-sm mb-2 text-slate-500 dark:text-slate-400`}>
             Paste your Google Business links so we can sync and track your reviews.
           </p>
 
           {/* How-to tip */}
-          <div className={`p-4 rounded-2xl mb-8 text-xs leading-relaxed ${dark ? "bg-indigo-950/40 border border-indigo-900/50 text-indigo-300" : "bg-indigo-50 border border-indigo-100 text-indigo-800"}`}>
+          <div className={`p-4 rounded-2xl mb-8 text-xs leading-relaxed ${dark ? "bg-cyan-950/40 border border-cyan-900/50 text-cyan-300" : "bg-cyan-50 border border-cyan-100 text-cyan-800"}`}>
             <p className="font-bold mb-1">📍 How to find your links:</p>
             <p>1. Go to <strong>Google Business Profile</strong> → Info → View on Maps → copy URL</p>
             <p>2. For review link: Business Profile → Get more reviews → copy the short link</p>
@@ -208,7 +208,7 @@ export default function Onboarding() {
               review link is the payload of every request we send, so without
               it those messages go out with nowhere to click. Say so here
               rather than letting the user discover it from a patient. */}
-          <p className={`mt-5 text-xs leading-relaxed ${dark ? "text-amber-400/80" : "text-amber-700"}`}>
+          <p className={`mt-5 text-xs leading-relaxed ${dark ? "text-amber-700 dark:text-amber-500/80" : "text-amber-700"}`}>
             The review link is what we put in every review request. Skip it for
             now if you like — you can add it any time in Settings — but requests
             you send before then won&apos;t have a link for customers to follow.
@@ -217,14 +217,14 @@ export default function Onboarding() {
           <div className="flex gap-3 mt-8">
             <button
               onClick={() => setStep(2)}
-              className={`flex-1 py-3.5 rounded-2xl font-bold text-sm border transition-all ${dark ? "border-slate-700 text-slate-400 hover:bg-slate-800" : "border-slate-200 text-slate-500 hover:bg-slate-50"}`}
+              className={`flex-1 py-3.5 rounded-2xl font-bold text-sm border transition-all ${dark ? "border-slate-700 text-slate-500 dark:text-slate-400 hover:bg-slate-800" : "border-slate-200 text-slate-500 hover:bg-slate-50"}`}
             >
               Skip for now
             </button>
             <button
               onClick={saveGoogle}
               disabled={saving}
-              className="flex-1 py-3.5 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-white font-bold rounded-2xl transition-all active:scale-95"
+              className="flex-1 py-3.5 bg-cyan-700 hover:bg-cyan-600 disabled:opacity-50 text-white font-bold rounded-2xl transition-all active:scale-95"
             >
               {saving ? "Saving…" : "Save & Continue →"}
             </button>
@@ -241,7 +241,7 @@ export default function Onboarding() {
           <h1 className={`text-2xl font-black mb-3 ${dark ? "text-white" : "text-slate-900"}`}>
             You're all set!
           </h1>
-          <p className={`text-sm mb-8 leading-relaxed max-w-sm mx-auto ${dark ? "text-slate-400" : "text-slate-500"}`}>
+          <p className={`text-sm mb-8 leading-relaxed max-w-sm mx-auto text-slate-500 dark:text-slate-400`}>
             Your clinic is ready. Head to your dashboard to start collecting reviews and outranking competitors.
           </p>
 
@@ -261,7 +261,7 @@ export default function Onboarding() {
 
           <button
             onClick={() => navigate("/dashboard")}
-            className="w-full py-4 bg-indigo-600 hover:bg-indigo-500 text-white font-bold rounded-2xl transition-all active:scale-95 text-lg"
+            className="w-full py-4 bg-cyan-700 hover:bg-cyan-600 text-white font-bold rounded-2xl transition-all active:scale-95 text-lg"
           >
             Go to Dashboard →
           </button>
@@ -271,10 +271,12 @@ export default function Onboarding() {
   );
 }
 
-function Field({ label, name, value, onChange, placeholder, input, dark }) {
+// `dark` is gone from the signature: the label's colour is now expressed with
+// the `dark:` variant, so the component no longer needs to be told the mode.
+function Field({ label, name, value, onChange, placeholder, input }) {
   return (
     <div>
-      <label className={`block text-[10px] font-bold uppercase tracking-widest mb-2 ${dark ? "text-slate-500" : "text-slate-400"}`}>
+      <label className="block text-[10px] font-bold uppercase tracking-widest mb-2 text-slate-500 dark:text-slate-400">
         {label}
       </label>
       <input

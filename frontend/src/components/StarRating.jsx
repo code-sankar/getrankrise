@@ -22,7 +22,7 @@ export default function StarRating({ rating, size = "sm" }) {
           <svg
             key={star}
             className={`${iconSize} transition-colors duration-200 ${
-              isFilled ? "text-amber-400" : "text-slate-300 dark:text-slate-700"
+              isFilled ? "text-amber-700 dark:text-amber-500" : "text-slate-300 dark:text-slate-700"
             }`}
             xmlns="http://www.w3.org/2000/svg"
             viewBox="0 0 24 24"

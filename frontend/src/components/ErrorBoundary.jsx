@@ -74,7 +74,7 @@ export default class ErrorBoundary extends Component {
           </div>
 
           <h1 className="text-xl font-bold mb-2">This screen ran into a problem</h1>
-          <p className="text-sm text-slate-400 leading-relaxed mb-6">
+          <p className="text-sm text-slate-500 dark:text-slate-400 leading-relaxed mb-6">
             Something went wrong while rendering this page. Your data is safe —
             nothing was lost.
           </p>
@@ -83,7 +83,7 @@ export default class ErrorBoundary extends Component {
             <button
               type="button"
               onClick={this.handleReload}
-              className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-blue-600 to-cyan-500 text-white text-sm font-semibold hover:brightness-110 transition-all"
+              className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-600 text-white text-sm font-semibold hover:brightness-110 transition-all"
             >
               Reload the page
             </button>

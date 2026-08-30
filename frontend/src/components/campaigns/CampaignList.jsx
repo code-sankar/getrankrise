@@ -32,7 +32,7 @@ function EmptyState({ dark, onCreate }) {
     >
       <div
         className={`mx-auto w-12 h-12 rounded-2xl flex items-center justify-center mb-4 ${
-          dark ? "bg-cyan-500/10 text-cyan-400" : "bg-cyan-50 text-cyan-600"
+          dark ? "bg-cyan-500/10 text-cyan-700 dark:text-cyan-400" : "bg-cyan-50 text-cyan-700 dark:text-cyan-400"
         }`}
       >
         <Zap size={22} />
@@ -40,12 +40,12 @@ function EmptyState({ dark, onCreate }) {
       <h3 className={`text-base font-bold ${dark ? "text-white" : "text-slate-900"}`}>
         No campaigns yet
       </h3>
-      <p className={`text-sm mt-1 mb-6 ${dark ? "text-slate-400" : "text-slate-500"}`}>
+      <p className={`text-sm mt-1 mb-6 text-slate-500 dark:text-slate-400`}>
         Launch a Pulse Campaign to request reviews from a batch of customers over SMS or WhatsApp.
       </p>
       <button
         onClick={onCreate}
-        className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold bg-cyan-500 hover:bg-cyan-400 text-white transition-colors active:scale-95"
+        className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold bg-cyan-700 hover:bg-cyan-600 text-white transition-colors active:scale-95"
       >
         Create your first campaign
       </button>
@@ -60,7 +60,7 @@ function CampaignCard({ campaign, dark, onSelect }) {
 
   const card = dark ? "bg-slate-900 border-slate-800 hover:border-slate-700" : "bg-white border-slate-200 hover:border-slate-300 shadow-sm";
   const title = dark ? "text-white" : "text-slate-900";
-  const muted = dark ? "text-slate-400" : "text-slate-500";
+  const muted = "text-slate-500 dark:text-slate-400";
 
   const scheduledLabel =
     campaign.status === "scheduled" && campaign.scheduledAt
@@ -104,7 +104,7 @@ function CampaignCard({ campaign, dark, onSelect }) {
             <span className={`w-1.5 h-1.5 rounded-full ${meta.dot}`} />
             {meta.label}
           </span>
-          <ChevronRight size={18} className={dark ? "text-slate-600" : "text-slate-400"} />
+          <ChevronRight size={18} className={"text-slate-500 dark:text-slate-400"} />
         </div>
       </div>
 

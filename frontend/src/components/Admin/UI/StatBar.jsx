@@ -6,13 +6,13 @@ export default function StatBar({
   label, 
   value, 
   percentage, 
-  colorClass = "bg-indigo-600", 
+  colorClass = "bg-cyan-600", 
   dark 
 }) {
   return (
     <div className="space-y-2">
       <div className="flex justify-between items-end">
-        <span className={`text-xs font-medium ${dark ? "text-slate-400" : "text-slate-500"}`}>
+        <span className={`text-xs font-medium text-slate-500 dark:text-slate-400`}>
           {label}
         </span>
         <span className={`text-sm font-bold ${dark ? "text-white" : "text-slate-900"}`}>

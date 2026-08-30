@@ -45,7 +45,7 @@ export default function GoogleConnect({ onConnected, dark = true }) {
   // ── Theme tokens (matches the obsidian design system) ──────────────────────
   const card = dark ? "bg-slate-900 border-slate-800" : "bg-white border-slate-200 shadow-sm";
   const textPrimary = dark ? "text-white" : "text-slate-900";
-  const textMuted = dark ? "text-slate-400" : "text-slate-500";
+  const textMuted = "text-slate-500 dark:text-slate-400";
   const rowHover = dark ? "hover:bg-slate-800/60" : "hover:bg-slate-50";
   const rowSelected = dark
     ? "bg-cyan-500/10 border-cyan-500/40"
@@ -194,7 +194,7 @@ export default function GoogleConnect({ onConnected, dark = true }) {
         <div
           className={`p-4 rounded-2xl mb-6 text-xs leading-relaxed border ${
             banner.tone === "error"
-              ? "bg-red-500/5 border-red-500/30 text-red-400"
+              ? "bg-red-500/5 border-red-500/30 text-red-600 dark:text-red-400"
               : dark
                 ? "bg-cyan-950/40 border-cyan-900/50 text-cyan-300"
                 : "bg-cyan-50 border-cyan-100 text-cyan-800"
@@ -209,7 +209,7 @@ export default function GoogleConnect({ onConnected, dark = true }) {
         <button
           onClick={handleConnect}
           disabled={busy}
-          className="w-full py-3.5 bg-cyan-500 hover:bg-cyan-400 disabled:opacity-50 text-white font-bold rounded-2xl transition-all active:scale-95 flex items-center justify-center gap-3"
+          className="w-full py-3.5 bg-cyan-700 hover:bg-cyan-600 disabled:opacity-50 text-white font-bold rounded-2xl transition-all active:scale-95 flex items-center justify-center gap-3"
         >
           {/* Google "G" */}
           <svg className="w-5 h-5" viewBox="0 0 24 24" aria-hidden="true">
@@ -276,7 +276,7 @@ export default function GoogleConnect({ onConnected, dark = true }) {
             <button
               onClick={handleConfirmLocation}
               disabled={!selected || busy}
-              className="w-full mt-2 py-3.5 bg-cyan-500 hover:bg-cyan-400 disabled:opacity-40 text-white font-bold rounded-2xl transition-all active:scale-95"
+              className="w-full mt-2 py-3.5 bg-cyan-700 hover:bg-cyan-600 disabled:opacity-40 text-white font-bold rounded-2xl transition-all active:scale-95"
             >
               {busy ? "Saving…" : "Confirm location"}
             </button>
@@ -311,7 +311,7 @@ export default function GoogleConnect({ onConnected, dark = true }) {
             onClick={handleDisconnect}
             disabled={busy}
             className={`text-xs font-bold transition-colors ${
-              dark ? "text-slate-500 hover:text-red-400" : "text-slate-400 hover:text-red-500"
+              dark ? "text-slate-500 hover:text-red-400" : "text-slate-500 dark:text-slate-400 hover:text-red-500"
             }`}
           >
             {busy ? "Disconnecting…" : "Disconnect Google"}

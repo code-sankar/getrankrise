@@ -86,7 +86,7 @@ function InputField({ label, name, type = "text", value, onChange, placeholder, 
         onChange={onChange}
         placeholder={placeholder}
         disabled={disabled}
-        className={`w-full px-4 py-3 border rounded-xl text-sm transition-colors outline-none focus:border-blue-500 disabled:opacity-60 ${
+        className={`w-full px-4 py-3 border rounded-xl text-sm transition-colors outline-none focus:border-cyan-500 disabled:opacity-60 ${
           dark
             ? "bg-slate-950 border-slate-800 text-slate-100 placeholder-slate-600"
             : "bg-slate-50 border-slate-200 text-slate-900 placeholder-slate-400"
@@ -107,7 +107,7 @@ function Toggle({ label, description, enabled, onToggle, dark }) {
       <button
         type="button"
         onClick={onToggle}
-        className={`relative flex-shrink-0 w-11 h-6 rounded-full transition-colors duration-200 ${enabled ? "bg-blue-600" : dark ? "bg-slate-700" : "bg-slate-300"}`}
+        className={`relative flex-shrink-0 w-11 h-6 rounded-full transition-colors duration-200 ${enabled ? "bg-cyan-600" : dark ? "bg-slate-700" : "bg-slate-300"}`}
       >
         <span className={`absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform duration-200 ${enabled ? "translate-x-5" : "translate-x-0"}`} />
       </button>
@@ -277,7 +277,7 @@ export default function Settings() {
 
       <div className="flex-1 flex flex-col min-w-0 h-full overflow-y-auto custom-scrollbar">
         <header className={`lg:hidden flex items-center justify-between p-4 border-b flex-shrink-0 ${dark ? "bg-slate-900 border-slate-800" : "bg-white border-slate-100"}`}>
-          <span className="font-black tracking-tight text-indigo-600 text-lg">Kirtify</span>
+          <span className="font-black tracking-tight text-cyan-700 dark:text-cyan-400 text-lg">Kirtify</span>
           <button onClick={() => setSidebarOpen(true)} className={`p-2 rounded-xl ${dark ? "bg-slate-800 text-slate-100" : "bg-slate-100 text-slate-700"}`}>
             <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
@@ -288,9 +288,13 @@ export default function Settings() {
         <TopBar title="Settings" />
 
         <main className="flex-1 p-4 sm:p-6 lg:p-10 w-full max-w-5xl mx-auto">
+          {/* No second "Settings" heading. TopBar already renders the page
+              title as the h1 four lines above, so this printed the same word
+              twice within 80px and spent the most valuable strip of the page
+              saying nothing. The subtitle does carry information, so it stays
+              — as a subtitle. */}
           <div className="mb-8">
-            <h1 className={`text-2xl font-bold ${dark ? "text-white" : "text-slate-900"}`}>Settings</h1>
-            <p className="text-slate-500 text-sm mt-1">Manage your business profile, billing, and preferences</p>
+            <p className="text-slate-500 text-sm">Manage your business profile, billing, and preferences</p>
           </div>
 
           {/* Sending is blocked server-side until the address is confirmed
@@ -307,7 +311,7 @@ export default function Settings() {
                 onClick={() => { setActiveTab(tab.id); setSavedMsg(""); }}
                 className={`flex-1 min-w-fit py-2.5 px-4 rounded-lg text-sm font-bold transition-all ${
                   activeTab === tab.id
-                    ? dark ? "bg-slate-800 text-white shadow-sm" : "bg-white text-blue-600 shadow-sm"
+                    ? dark ? "bg-slate-800 text-white shadow-sm" : "bg-white text-cyan-700 dark:text-cyan-400 shadow-sm"
                     : "text-slate-500 hover:text-slate-700"
                 }`}
               >
@@ -405,7 +409,7 @@ export default function Settings() {
                       dark={dark}
                       label="Current Password"
                       type="password"
-                      placeholder="•••••••••"
+                      placeholder="Your password"
                       value={pwd.current}
                       onChange={(e) => setPwd({ ...pwd, current: e.target.value })}
                     />
@@ -413,7 +417,7 @@ export default function Settings() {
                       dark={dark}
                       label="New Password"
                       type="password"
-                      placeholder="•••••••••"
+                      placeholder="Your password"
                       value={pwd.next}
                       onChange={(e) => setPwd({ ...pwd, next: e.target.value })}
                     />
@@ -421,7 +425,7 @@ export default function Settings() {
                       dark={dark}
                       label="Confirm New Password"
                       type="password"
-                      placeholder="•••••••••"
+                      placeholder="Your password"
                       value={pwd.confirm}
                       onChange={(e) => setPwd({ ...pwd, confirm: e.target.value })}
                     />
@@ -429,7 +433,7 @@ export default function Settings() {
                       type="button"
                       onClick={handlePasswordChange}
                       disabled={savingPwd}
-                      className="px-6 py-3 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-sm font-bold transition-all active:scale-95 disabled:opacity-60"
+                      className="px-6 py-3 bg-cyan-700 hover:bg-cyan-600 text-white rounded-xl text-sm font-bold transition-all active:scale-95 disabled:opacity-60"
                     >
                       {savingPwd ? "Updating..." : "Update Password"}
                     </button>
@@ -485,10 +489,10 @@ export default function Settings() {
                   <div className={`p-6 rounded-2xl border ${dark ? "bg-slate-950 border-slate-800" : "bg-slate-50 border-slate-200"}`}>
                     <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-4">
                       <div>
-                        <p className="text-2xl font-bold text-blue-600">{currentPlan.price}<span className="text-sm font-medium text-slate-500"> / mo</span></p>
+                        <p className="text-2xl font-bold text-cyan-700 dark:text-cyan-400">{currentPlan.price}<span className="text-sm font-medium text-slate-500"> / mo</span></p>
                         <ul className="mt-2 space-y-1">
                           {currentPlan.features.map((f) => (
-                            <li key={f} className={`text-xs ${dark ? "text-slate-400" : "text-slate-600"}`}>• {f}</li>
+                            <li key={f} className={`text-xs ${dark ? "text-slate-500 dark:text-slate-400" : "text-slate-600"}`}>• {f}</li>
                           ))}
                         </ul>
                       </div>
@@ -496,12 +500,12 @@ export default function Settings() {
                         {nextUpgrade ? (
                           <UpgradeButton
                             plan={nextUpgrade}
-                            className="px-5 py-2.5 rounded-lg text-sm font-bold bg-blue-600 hover:bg-blue-500 text-white shadow-lg shadow-blue-600/20"
+                            className="px-5 py-2.5 rounded-lg text-sm font-bold bg-cyan-700 hover:bg-cyan-600 text-white shadow-lg shadow-cyan-600/20"
                           >
                             {currentPlanId === "free" ? "Upgrade plan" : `Upgrade to ${PLANS.find((p) => p.id === nextUpgrade)?.name}`}
                           </UpgradeButton>
                         ) : (
-                          <span className="text-sm font-semibold text-emerald-500 whitespace-nowrap">You're on our top plan 🎉</span>
+                          <span className="text-sm font-semibold text-emerald-700 dark:text-emerald-400 whitespace-nowrap">You're on our top plan 🎉</span>
                         )}
                         {currentPlanId !== "free" && (
                           <ManageBillingButton
@@ -540,23 +544,23 @@ export default function Settings() {
                           key={p.id}
                           className={`p-5 rounded-xl border transition-all flex flex-col ${
                             isCurrent
-                              ? "border-blue-500 ring-2 ring-blue-500/20"
+                              ? "border-cyan-500 ring-2 ring-cyan-500/20"
                               : dark ? "border-slate-800" : "border-slate-200"
                           }`}
                         >
                           <p className={`text-sm font-bold ${dark ? "text-white" : "text-slate-900"}`}>{p.name}</p>
-                          <p className="text-xl font-bold text-blue-600 mt-1">{p.price}<span className="text-xs text-slate-500"> /mo</span></p>
+                          <p className="text-xl font-bold text-cyan-700 dark:text-cyan-400 mt-1">{p.price}<span className="text-xs text-slate-500"> /mo</span></p>
                           <ul className="mt-3 space-y-1.5 flex-1">
                             {p.features.map((f) => (
-                              <li key={f} className={`text-[11px] ${dark ? "text-slate-400" : "text-slate-600"}`}>• {f}</li>
+                              <li key={f} className={`text-[11px] ${dark ? "text-slate-500 dark:text-slate-400" : "text-slate-600"}`}>• {f}</li>
                             ))}
                           </ul>
                           {isCurrent ? (
-                            <p className="mt-4 text-[10px] font-bold text-blue-500 uppercase tracking-widest">Current Plan</p>
+                            <p className="mt-4 text-[10px] font-bold text-cyan-700 dark:text-cyan-400 uppercase tracking-widest">Current Plan</p>
                           ) : isUpgrade ? (
                             <UpgradeButton
                               plan={p.id}
-                              className="mt-4 w-full py-2 rounded-lg text-xs font-bold bg-blue-600 hover:bg-blue-500 text-white"
+                              className="mt-4 w-full py-2 rounded-lg text-xs font-bold bg-cyan-700 hover:bg-cyan-600 text-white"
                             >
                               Upgrade to {p.name}
                             </UpgradeButton>
@@ -582,11 +586,11 @@ export default function Settings() {
                 <button
                   type="submit"
                   disabled={saving}
-                  className="px-8 py-3 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-sm font-bold shadow-lg shadow-blue-600/20 transition-all active:scale-95 disabled:opacity-60"
+                  className="px-8 py-3 bg-cyan-700 hover:bg-cyan-600 text-white rounded-xl text-sm font-bold shadow-lg shadow-cyan-600/20 transition-all active:scale-95 disabled:opacity-60"
                 >
                   {saving ? "Saving..." : "Save Changes"}
                 </button>
-                {savedMsg && <span className="text-emerald-500 text-sm font-medium">✓ {savedMsg}</span>}
+                {savedMsg && <span className="text-emerald-700 dark:text-emerald-400 text-sm font-medium">✓ {savedMsg}</span>}
               </div>
             )}
           </form>

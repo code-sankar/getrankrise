@@ -8,7 +8,7 @@ function PageNotFound() {
             {/* The Visuals */}
             <div className="relative group">
                 {/* Decorative Glow */}
-                <div className="absolute -inset-1 bg-gradient-to-r from-pink-600 to-purple-600 rounded-full blur opacity-25 group-hover:opacity-50 transition duration-1000"></div>
+                <div className="absolute -inset-1 bg-gradient-to-r from-cyan-500 to-blue-600 rounded-full blur opacity-25 group-hover:opacity-50 transition duration-1000"></div>
                 
                 <span className="relative rounded-2xl overflow-hidden block animate-bounce-slow">
                     <img

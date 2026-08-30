@@ -56,7 +56,7 @@ function Banner({ banner }) {
     <div
       className={`mt-3 text-xs rounded-lg px-3 py-2 border ${
         banner.tone === "error"
-          ? "bg-red-500/10 border-red-500/30 text-red-400"
+          ? "bg-red-500/10 border-red-500/30 text-red-600 dark:text-red-400"
           : "bg-cyan-500/10 border-cyan-500/30 text-cyan-300"
       }`}
     >
@@ -91,7 +91,7 @@ export default function FacebookConnect({ onConnected, dark = true }) {
   // ── Theme tokens (obsidian design system) ───────────────────────────────────
   const card = dark ? "bg-slate-900 border-slate-800" : "bg-white border-slate-200 shadow-sm";
   const textPrimary = dark ? "text-white" : "text-slate-900";
-  const textMuted = dark ? "text-slate-400" : "text-slate-500";
+  const textMuted = "text-slate-500 dark:text-slate-400";
   const rowHover = dark ? "hover:bg-slate-800/60" : "hover:bg-slate-50";
   const rowSelected = dark ? "bg-blue-500/10 border-blue-500/40" : "bg-blue-50 border-blue-300";
   const rowBorder = dark ? "border-slate-800" : "border-slate-100";
@@ -255,7 +255,7 @@ export default function FacebookConnect({ onConnected, dark = true }) {
           <button
             onClick={handleDisconnect}
             disabled={busy}
-            className="text-xs font-semibold px-3 py-1.5 rounded-lg text-red-400 hover:bg-red-500/10 transition-colors disabled:opacity-50"
+            className="text-xs font-semibold px-3 py-1.5 rounded-lg text-red-600 dark:text-red-400 hover:bg-red-500/10 transition-colors disabled:opacity-50"
           >
             Disconnect
           </button>
@@ -300,7 +300,7 @@ export default function FacebookConnect({ onConnected, dark = true }) {
             <button
               onClick={handleSelect}
               disabled={!selectedId || busy}
-              className="mt-4 text-sm font-semibold px-4 py-2 rounded-lg bg-cyan-600 hover:bg-cyan-500 text-white transition-colors disabled:opacity-50"
+              className="mt-4 text-sm font-semibold px-4 py-2 rounded-lg bg-cyan-700 hover:bg-cyan-600 text-white transition-colors disabled:opacity-50"
             >
               {busy ? "Connecting…" : "Connect this Page"}
             </button>

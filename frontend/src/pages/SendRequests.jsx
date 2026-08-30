@@ -21,10 +21,10 @@ import { getUserCredits }                    from "../hooks/credits.hook.js";
 const SEND_VIA_OPTIONS = ["SMS", "WhatsApp", "Email", "Both"];
 
 const statusStyles = {
-  Sent:     "bg-slate-800 text-slate-400 border border-slate-700",
-  Opened:   "bg-amber-950 text-amber-400 border border-amber-900",
-  Reviewed: "bg-emerald-950 text-emerald-400 border border-emerald-900",
-  Failed:   "bg-red-950 text-red-400 border border-red-900",
+  Sent:     "bg-slate-800 text-slate-500 dark:text-slate-400 border border-slate-700",
+  Opened:   "bg-amber-950 text-amber-700 dark:text-amber-500 border border-amber-900",
+  Reviewed: "bg-emerald-950 text-emerald-700 dark:text-emerald-400 border border-emerald-900",
+  Failed:   "bg-red-950 text-red-600 dark:text-red-400 border border-red-900",
 };
 
 // ── Component ────────────────────────────────────────────────────────────────
@@ -202,7 +202,7 @@ export default function SendRequests() {
               : "bg-white border-slate-100"
           }`}
         >
-          <span className="font-black tracking-tight text-cyan-500 text-lg">
+          <span className="font-black tracking-tight text-cyan-700 dark:text-cyan-400 text-lg">
             Kirtify
           </span>
           <button
@@ -295,7 +295,7 @@ export default function SendRequests() {
                     }`}
                   />
                   {errors.patientName && (
-                    <p className="text-red-400 text-xs mt-1">
+                    <p className="text-red-600 dark:text-red-400 text-xs mt-1">
                       {errors.patientName}
                     </p>
                   )}
@@ -325,8 +325,8 @@ export default function SendRequests() {
                           className={`flex-1 py-2 rounded-lg text-xs font-bold transition-all ${
                             active
                               ? dark
-                                ? "bg-slate-800 text-cyan-400"
-                                : "bg-white text-cyan-600 shadow-sm"
+                                ? "bg-slate-800 text-cyan-700 dark:text-cyan-400"
+                                : "bg-white text-cyan-700 dark:text-cyan-400 shadow-sm"
                               : disabledByPlan
                               ? "text-slate-700 cursor-not-allowed"
                               : "text-slate-500 hover:text-slate-300"
@@ -338,7 +338,7 @@ export default function SendRequests() {
                     })}
                   </div>
                   {form.sendVia === "WhatsApp" && hasWhatsAppQuota && (
-                    <p className="text-[10px] text-cyan-400/80 mt-2 tracking-wider uppercase font-semibold">
+                    <p className="text-[10px] text-cyan-700 dark:text-cyan-400/80 mt-2 tracking-wider uppercase font-semibold">
                       Premium · Routed via local WhatsApp gateway
                     </p>
                   )}
@@ -361,7 +361,7 @@ export default function SendRequests() {
                       }`}
                     />
                     {errors.phone && (
-                      <p className="text-red-400 text-xs mt-1">
+                      <p className="text-red-600 dark:text-red-400 text-xs mt-1">
                         {errors.phone}
                       </p>
                     )}
@@ -385,7 +385,7 @@ export default function SendRequests() {
                       }`}
                     />
                     {errors.email && (
-                      <p className="text-red-400 text-xs mt-1">
+                      <p className="text-red-600 dark:text-red-400 text-xs mt-1">
                         {errors.email}
                       </p>
                     )}
@@ -405,11 +405,11 @@ export default function SendRequests() {
                   </p>
                   <p
                     className={`text-sm leading-relaxed ${
-                      dark ? "text-slate-400" : "text-slate-600"
+                      dark ? "text-slate-500 dark:text-slate-400" : "text-slate-600"
                     }`}
                   >
                     Hi{" "}
-                    <span className="text-cyan-400 font-medium">
+                    <span className="text-cyan-700 dark:text-cyan-400 font-medium">
                       {form.patientName || "there"}
                     </span>
                     , thank you for visiting{" "}
@@ -420,7 +420,7 @@ export default function SendRequests() {
 
                 {/* Success banner */}
                 {successMsg && (
-                  <div className="px-4 py-3 bg-emerald-950/50 border border-emerald-800 rounded-xl text-emerald-400 text-sm">
+                  <div className="px-4 py-3 bg-emerald-950/50 border border-emerald-800 rounded-xl text-emerald-700 dark:text-emerald-400 text-sm">
                     ✓ {successMsg}
                   </div>
                 )}
@@ -487,7 +487,7 @@ export default function SendRequests() {
                       }`}
                     >
                       <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 rounded-full bg-cyan-500/10 text-cyan-400 flex items-center justify-center font-bold text-xs">
+                        <div className="w-8 h-8 rounded-full bg-cyan-500/10 text-cyan-700 dark:text-cyan-400 flex items-center justify-center font-bold text-xs">
                           {req.name?.[0] ?? "?"}
                         </div>
                         <div>

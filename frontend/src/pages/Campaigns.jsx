@@ -91,7 +91,7 @@ export default function Campaigns() {
   // ── Theme tokens ───────────────────────────────────────────────────────────
   const pageBg = dark ? "bg-slate-950" : "bg-slate-50";
   const title = dark ? "text-white" : "text-slate-900";
-  const muted = dark ? "text-slate-400" : "text-slate-500";
+  const muted = "text-slate-500 dark:text-slate-400";
 
   return (
     <div className={`h-screen overflow-hidden flex transition-colors duration-300 ${pageBg}`}>
@@ -121,7 +121,7 @@ export default function Campaigns() {
             dark ? "bg-slate-900 border-slate-800" : "bg-white border-slate-100"
           }`}
         >
-          <span className="font-black tracking-tight text-cyan-500 text-lg">Kirtify</span>
+          <span className="font-black tracking-tight text-cyan-700 dark:text-cyan-400 text-lg">Kirtify</span>
           <button
             onClick={() => setSidebarOpen(true)}
             className={`p-2 rounded-xl transition-colors active:scale-95 ${
@@ -159,7 +159,7 @@ export default function Campaigns() {
               {!blocked && (
                 <button
                   onClick={() => setWizardOpen(true)}
-                  className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold bg-cyan-500 hover:bg-cyan-400 text-white transition-colors active:scale-95"
+                  className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold bg-cyan-700 hover:bg-cyan-600 text-white transition-colors active:scale-95"
                 >
                   <Plus size={16} />
                   New Campaign
@@ -177,7 +177,7 @@ export default function Campaigns() {
             >
               <div
                 className={`mx-auto w-12 h-12 rounded-2xl flex items-center justify-center mb-4 ${
-                  dark ? "bg-cyan-500/10 text-cyan-400" : "bg-cyan-50 text-cyan-600"
+                  dark ? "bg-cyan-500/10 text-cyan-700 dark:text-cyan-400" : "bg-cyan-50 text-cyan-700 dark:text-cyan-400"
                 }`}
               >
                 <Zap size={22} />

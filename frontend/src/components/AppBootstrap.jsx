@@ -85,7 +85,7 @@ export default function AppBootstrap({ children }) {
     return (
       <div className="min-h-screen w-full flex items-center justify-center bg-[#030712]">
         <div className="flex flex-col items-center gap-4">
-          <div className="w-10 h-10 rounded-full border-2 border-slate-700 border-t-blue-500 animate-spin" />
+          <div className="w-10 h-10 rounded-full border-2 border-slate-700 border-t-cyan-500 animate-spin" />
           <p className="text-xs text-slate-500 font-medium tracking-widest uppercase">
             Loading Kirtify
           </p>

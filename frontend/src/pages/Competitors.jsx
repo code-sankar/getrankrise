@@ -68,14 +68,14 @@ const syncAge = (iso) => {
 // ── Small presentational bits ─────────────────────────────────────────────────
 function Stars({ rating }) {
   return (
-    <span className="text-amber-400 text-[10px]">
+    <span className="text-amber-700 dark:text-amber-500 text-[10px]">
       {"★".repeat(Math.round(rating))}{"☆".repeat(5 - Math.round(rating))}
     </span>
   );
 }
 function MetricBadge({ value, suffix = "", good = true }) {
   return (
-    <span className={`font-bold text-xs ${good ? "text-emerald-500" : "text-amber-500"}`}>
+    <span className={`font-bold text-xs ${good ? "text-emerald-700 dark:text-emerald-400" : "text-amber-700 dark:text-amber-500"}`}>
       {value}{suffix}
     </span>
   );
@@ -105,7 +105,7 @@ export default function Competitors() {
   const textPrimary = dark ? "text-white" : "text-slate-900";
   const textMuted   = dark ? "text-slate-300" : "text-slate-500";
   const divider     = dark ? "divide-slate-800" : "divide-slate-100";
-  const tableHead   = dark ? "bg-slate-800/50 text-slate-400" : "bg-slate-50 text-slate-500";
+  const tableHead   = dark ? "bg-slate-800/50 text-slate-500 dark:text-slate-400" : "bg-slate-50 text-slate-500";
   const tableRow    = dark ? "hover:bg-slate-800/40 transition-colors" : "hover:bg-slate-50 transition-colors";
 
   // ── Fetch overview ──────────────────────────────────────────────────────────
@@ -221,7 +221,7 @@ export default function Competitors() {
 
       <div className="flex-1 flex flex-col min-w-0 h-full overflow-y-auto custom-scrollbar">
         <header className={`lg:hidden flex items-center justify-between p-4 border-b flex-shrink-0 ${dark ? "bg-slate-900 border-slate-800" : "bg-white border-slate-100"}`}>
-          <span className="font-black tracking-tight text-indigo-600 text-lg">Kirtify</span>
+          <span className="font-black tracking-tight text-cyan-700 dark:text-cyan-400 text-lg">Kirtify</span>
           <button onClick={() => setSidebarOpen(true)} className={`p-2 rounded-xl transition-colors active:scale-95 ${dark ? "bg-slate-800 text-slate-100 hover:bg-slate-700" : "bg-slate-100 text-slate-700 hover:bg-slate-200"}`}>
             <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
@@ -248,7 +248,7 @@ export default function Competitors() {
               onClick={() => (usage.canAdd ? setModalOpen(true) : toast.info("You've reached your plan's competitor limit. Upgrade to track more."))}
               disabled={loading || (error && error.blocked)}
               className={`inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold transition-colors disabled:opacity-40 ${
-                usage.canAdd ? "bg-cyan-500 hover:bg-cyan-400 text-white" : "bg-slate-700 text-slate-300 cursor-not-allowed"
+                usage.canAdd ? "bg-cyan-700 hover:bg-cyan-600 text-white" : "bg-slate-700 text-slate-300 cursor-not-allowed"
               }`}
             >
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -262,7 +262,7 @@ export default function Competitors() {
           {error?.blocked && (
             <div className={`border rounded-2xl p-10 text-center ${cardBg}`}>
               <div className="w-12 h-12 mx-auto mb-4 rounded-2xl bg-cyan-500/10 flex items-center justify-center">
-                <svg className="w-6 h-6 text-cyan-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg className="w-6 h-6 text-cyan-700 dark:text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
                 </svg>
               </div>
@@ -276,8 +276,8 @@ export default function Competitors() {
           {/* ── Generic error ──────────────────────────────────────────── */}
           {error && !error.blocked && (
             <div className="border rounded-2xl p-6 text-center border-red-500/30 bg-red-500/5">
-              <p className="text-sm text-red-400 font-medium">{String(error)}</p>
-              <button onClick={fetchOverview} className="mt-3 text-xs font-bold text-cyan-500 hover:underline">Retry</button>
+              <p className="text-sm text-red-600 dark:text-red-400 font-medium">{String(error)}</p>
+              <button onClick={fetchOverview} className="mt-3 text-xs font-bold text-cyan-700 dark:text-cyan-400 hover:underline">Retry</button>
             </div>
           )}
 
@@ -296,7 +296,7 @@ export default function Competitors() {
           {!loading && !error && competitors.length === 0 && (
             <div className={`border rounded-2xl p-10 text-center ${cardBg}`}>
               <div className="w-12 h-12 mx-auto mb-4 rounded-2xl bg-cyan-500/10 flex items-center justify-center">
-                <svg className="w-6 h-6 text-cyan-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg className="w-6 h-6 text-cyan-700 dark:text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
                 </svg>
               </div>
@@ -329,12 +329,12 @@ export default function Competitors() {
                     </thead>
                     <tbody className={`divide-y ${divider}`}>
                       {/* You */}
-                      <tr className={dark ? "bg-indigo-500/5" : "bg-indigo-50/30"}>
+                      <tr className={dark ? "bg-cyan-500/5" : "bg-cyan-50/30"}>
                         <td className="px-6 py-4">
                           <div className="flex items-center gap-2">
-                            <div className="w-2 h-2 rounded-full bg-indigo-500 animate-pulse" />
+                            <div className="w-2 h-2 rounded-full bg-cyan-500 animate-pulse" />
                             <span className={`font-bold text-sm ${textPrimary}`}>{self?.name || "You"}</span>
-                            <span className="text-[9px] bg-indigo-500 text-white px-1.5 py-0.5 rounded uppercase font-black">You</span>
+                            <span className="text-[9px] bg-cyan-700 hover:bg-cyan-600 text-white px-1.5 py-0.5 rounded uppercase font-black">You</span>
                           </div>
                         </td>
                         <td className="px-6 py-4 text-center">
@@ -342,7 +342,7 @@ export default function Competitors() {
                           <p className={`text-xs font-bold ${textPrimary}`}>{self?.rating ?? 0}</p>
                         </td>
                         <td className="px-6 py-4 text-center text-sm font-semibold">{self?.totalReviews ?? 0}</td>
-                        <td className="px-6 py-4 text-center text-emerald-500 font-bold">+{self?.newThisMonth ?? 0}</td>
+                        <td className="px-6 py-4 text-center text-emerald-700 dark:text-emerald-400 font-bold">+{self?.newThisMonth ?? 0}</td>
                         <td className="px-6 py-4 text-center"><MetricBadge value={self?.responseRate ?? 0} suffix="%" good /></td>
                         <td className="px-6 py-4 text-center"><MetricBadge value={self?.sentiment ?? 0} suffix="%" good /></td>
                         <td className="px-6 py-4" />
@@ -356,7 +356,7 @@ export default function Competitors() {
                               <div className="w-2 h-2 rounded-full" style={{ background: colorFor(i) }} />
                               <span className={dark ? "text-slate-300" : "text-slate-700"}>{c.name}</span>
                               {c.syncStatus === "failed" && (
-                                <span className="text-[9px] bg-red-500/20 text-red-400 px-1.5 py-0.5 rounded uppercase font-black" title="Last sync failed">sync error</span>
+                                <span className="text-[9px] bg-red-500/20 text-red-600 dark:text-red-400 px-1.5 py-0.5 rounded uppercase font-black" title="Last sync failed">sync error</span>
                               )}
                             </div>
                           </td>
@@ -374,7 +374,7 @@ export default function Competitors() {
                                 onClick={() => handleRefresh(c.id)}
                                 disabled={refreshingId === c.id}
                                 title="Re-sync"
-                                className={`p-1.5 rounded-lg transition-colors ${dark ? "hover:bg-slate-700 text-slate-400" : "hover:bg-slate-100 text-slate-500"}`}
+                                className={`p-1.5 rounded-lg transition-colors ${dark ? "hover:bg-slate-700 text-slate-500 dark:text-slate-400" : "hover:bg-slate-100 text-slate-500"}`}
                               >
                                 <svg className={`w-4 h-4 ${refreshingId === c.id ? "animate-spin" : ""}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
@@ -383,7 +383,7 @@ export default function Competitors() {
                               <button
                                 onClick={() => handleDelete(c.id, c.name)}
                                 title="Stop tracking"
-                                className={`p-1.5 rounded-lg transition-colors ${dark ? "hover:bg-red-500/10 text-slate-400 hover:text-red-400" : "hover:bg-red-50 text-slate-500 hover:text-red-500"}`}
+                                className={`p-1.5 rounded-lg transition-colors ${dark ? "hover:bg-red-500/10 text-slate-500 dark:text-slate-400 hover:text-red-400" : "hover:bg-red-50 text-slate-500 hover:text-red-500"}`}
                               >
                                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
@@ -442,7 +442,7 @@ export default function Competitors() {
                         onClick={() => dispatch(selectCompetitor(c.id))}
                         className={`px-4 py-2 rounded-xl text-xs font-bold transition-all whitespace-nowrap border ${
                           selectedId === c.id
-                            ? "bg-cyan-500 border-cyan-500 text-white"
+                            ? "bg-cyan-700 hover:bg-cyan-600 border-cyan-500 text-white"
                             : dark ? "bg-slate-800 border-slate-700 text-slate-300 hover:border-slate-600" : "bg-slate-50 border-slate-200 text-slate-600 hover:border-slate-300"
                         }`}
                         style={selectedId === c.id ? undefined : { borderLeftColor: colorFor(i), borderLeftWidth: 3 }}
@@ -458,12 +458,12 @@ export default function Competitors() {
                     <div className="flex flex-wrap items-center gap-x-8 gap-y-2 mb-6 text-sm">
                       <div><span className={textMuted}>Rating </span><span className={`font-bold ${textPrimary}`}>{selected.rating}</span></div>
                       <div><span className={textMuted}>Reviews </span><span className={`font-bold ${textPrimary}`}>{selected.totalReviews}</span></div>
-                      <div><span className={textMuted}>New </span><span className="font-bold text-emerald-500">+{selected.newThisMonth}</span></div>
+                      <div><span className={textMuted}>New </span><span className="font-bold text-emerald-700 dark:text-emerald-400">+{selected.newThisMonth}</span></div>
                       <div><span className={textMuted}>Synced </span><span className={`font-bold ${textPrimary}`}>{syncAge(selected.lastSyncedAt)}</span></div>
                       <button
                         onClick={() => handleRefresh(selected.id)}
                         disabled={refreshingId === selected.id}
-                        className="ml-auto inline-flex items-center gap-1.5 text-xs font-bold text-cyan-500 hover:text-cyan-400 disabled:opacity-40"
+                        className="ml-auto inline-flex items-center gap-1.5 text-xs font-bold text-cyan-700 dark:text-cyan-400 hover:text-cyan-400 disabled:opacity-40"
                       >
                         <svg className={`w-3.5 h-3.5 ${refreshingId === selected.id ? "animate-spin" : ""}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />

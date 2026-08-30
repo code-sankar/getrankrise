@@ -19,7 +19,7 @@ export default function ToggleButton({
         </span>
         {description && (
           <span
-            className={`text-xs ${dark ? "text-slate-500" : "text-slate-400"}`}
+            className={`text-xs text-slate-500 dark:text-slate-400`}
           >
             {description}
           </span>
@@ -28,7 +28,7 @@ export default function ToggleButton({
       <button
         onClick={() => onChange(!enabled)}
         className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none ${
-          enabled ? "bg-indigo-600" : dark ? "bg-slate-700" : "bg-slate-300"
+          enabled ? "bg-cyan-600" : dark ? "bg-slate-700" : "bg-slate-300"
         }`}
       >
         <span

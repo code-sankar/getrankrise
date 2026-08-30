@@ -34,7 +34,7 @@ function barTone(used, limit) {
   const pct = used / limit;
   if (pct >= 1) return "bg-red-500";
   if (pct >= 0.8) return "bg-amber-500";
-  return "bg-indigo-500";
+  return "bg-cyan-500";
 }
 
 function Meter({ metric, data, dark }) {
@@ -55,7 +55,7 @@ function Meter({ metric, data, dark }) {
         <span className={`text-sm font-semibold ${dark ? "text-slate-200" : "text-slate-800"}`}>
           {meta.label}
         </span>
-        <span className={`text-xs font-medium tabular-nums ${dark ? "text-slate-400" : "text-slate-500"}`}>
+        <span className={`text-xs font-medium tabular-nums text-slate-500 dark:text-slate-400`}>
           {unlimited
             ? `${used.toLocaleString()} used · unlimited`
             : notIncluded
@@ -72,7 +72,7 @@ function Meter({ metric, data, dark }) {
       </div>
 
       {!unlimited && !notIncluded && used >= limit && (
-        <p className="text-xs text-red-400 font-medium mt-1.5">
+        <p className="text-xs text-red-600 dark:text-red-400 font-medium mt-1.5">
           Limit reached — resets {meta.hint === "per day" ? "tomorrow" : "next month"}.
         </p>
       )}
@@ -137,7 +137,7 @@ export default function UsageMeters({ dark }) {
     return (
       <div>
         {heading}
-        <p className="text-sm text-red-400 mt-3">{state.error}</p>
+        <p className="text-sm text-red-600 dark:text-red-400 mt-3">{state.error}</p>
       </div>
     );
   }

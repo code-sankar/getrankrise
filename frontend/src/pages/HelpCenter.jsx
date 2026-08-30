@@ -48,9 +48,9 @@ export default function HelpCenter() {
 
   const theme = {
     card: dark
-      ? "bg-slate-900 border-slate-800 hover:border-indigo-500/50"
-      : "bg-white border-slate-200 shadow-sm hover:border-indigo-500/50",
-    textMain: dark ? "text-slate-400" : "text-slate-600",
+      ? "bg-slate-900 border-slate-800 hover:border-cyan-500/50"
+      : "bg-white border-slate-200 shadow-sm hover:border-cyan-500/50",
+    textMain: dark ? "text-slate-500 dark:text-slate-400" : "text-slate-600",
     textHeader: dark ? "text-white" : "text-slate-900",
     searchBg: dark
       ? "bg-slate-900 border-slate-800"
@@ -85,7 +85,7 @@ export default function HelpCenter() {
             dark ? "bg-slate-900 border-slate-800" : "bg-white border-slate-100"
           }`}
         >
-          <span className="font-black tracking-tight text-indigo-600 text-lg">
+          <span className="font-black tracking-tight text-cyan-700 dark:text-cyan-400 text-lg">
             Kirtify
           </span>
           <button
@@ -125,7 +125,7 @@ export default function HelpCenter() {
                   className={`absolute inset-y-0 left-4 flex items-center pointer-events-none`}
                 >
                   <svg
-                    className="w-5 h-5 text-slate-400"
+                    className="w-5 h-5 text-slate-500 dark:text-slate-400"
                     fill="none"
                     stroke="currentColor"
                     viewBox="0 0 24 24"
@@ -141,7 +141,7 @@ export default function HelpCenter() {
                 <input
                   type="text"
                   placeholder="Search for articles, guides, or features..."
-                  className={`w-full pl-12 pr-4 py-4 rounded-2xl border transition-all outline-none focus:ring-2 focus:ring-indigo-500/20 ${theme.searchBg}`}
+                  className={`w-full pl-12 pr-4 py-4 rounded-2xl border transition-all outline-none focus:ring-2 focus:ring-cyan-500/20 ${theme.searchBg}`}
                 />
               </div>
             </div>
@@ -169,7 +169,7 @@ export default function HelpCenter() {
                     {cat.links.map((link, lIdx) => (
                       <li
                         key={lIdx}
-                        className="flex items-center gap-2 text-sm font-semibold text-indigo-500 hover:underline"
+                        className="flex items-center gap-2 text-sm font-semibold text-cyan-700 dark:text-cyan-400 hover:underline"
                       >
                         <svg
                           className="w-4 h-4"
@@ -202,7 +202,7 @@ export default function HelpCenter() {
               <p className={`text-sm mb-6 ${theme.textMain}`}>
                 Our support team is available Monday—Friday, 9am—5pm EST.
               </p>
-              <button className="bg-indigo-500 hover:bg-indigo-600 text-white px-8 py-3 rounded-xl font-bold transition-all transform hover:scale-105 active:scale-95">
+              <button className="bg-cyan-700 hover:bg-cyan-600 text-white px-8 py-3 rounded-xl font-bold transition-all transform hover:scale-105 active:scale-95">
                 Contact Support
               </button>
             </div>

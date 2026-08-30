@@ -66,7 +66,7 @@ export default function Pricing() {
               key={idx}
               className={`group bg-[#080c14] border rounded-2xl p-6 sm:p-8 flex flex-col justify-between relative min-h-[520px] hover:-translate-y-2 transition-all duration-500 ${
                 p.popular
-                  ? 'border-gray-700 ring-1 ring-gray-700 hover:border-blue-500/50 hover:ring-blue-500/50 hover:shadow-[0_0_40px_rgba(59,130,246,0.15)]'
+                  ? 'border-gray-700 ring-1 ring-gray-700 hover:border-cyan-500/50 hover:ring-cyan-500/50 hover:shadow-[0_0_40px_rgba(59,130,246,0.15)]'
                   : 'border-gray-900 hover:border-gray-700 hover:bg-[#0b101a] hover:shadow-2xl'
               }`}
             >
@@ -106,7 +106,7 @@ export default function Pricing() {
                       key={fIdx}
                       className="flex items-start gap-2.5 text-xs text-gray-300 font-medium group-hover:text-gray-200 transition-colors duration-300"
                     >
-                      <Check size={12} className="text-blue-500 mt-0.5 flex-shrink-0 group-hover:scale-125 transition-transform duration-300" />
+                      <Check size={12} className="text-cyan-500 mt-0.5 flex-shrink-0 group-hover:scale-125 transition-transform duration-300" />
                       <span>{f}</span>
                     </li>
                   ))}
@@ -118,7 +118,7 @@ export default function Pricing() {
 
         {/* Footnote nudge */}
         <p className="text-[11px] text-gray-600 mt-10">
-          Need 10+ locations or custom integrations? <a href="#contact" className="text-blue-400 hover:text-blue-300 font-semibold">Talk to sales →</a>
+          Need 10+ locations or custom integrations? <a href="#contact" className="text-cyan-400 hover:text-cyan-300 font-semibold">Talk to sales →</a>
         </p>
       </div>
     </section>
