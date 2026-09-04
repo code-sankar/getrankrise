@@ -158,6 +158,7 @@ SENTRY_DSN       # unset is fine — structured JSON logs to stderr regardless
 SENTRY_RELEASE   # auto-detected from RAILWAY_GIT_COMMIT_SHA / RENDER_GIT_COMMIT / GIT_COMMIT
 COOKIE_SAMESITE  # see the topology table above
 API_PUBLIC_URL   # required if you use Google or Facebook OAuth, or Twilio inbound
+                 # (safe to set on its own — it is not tied to Google)
 ```
 
 ### If email is not configured
@@ -308,4 +309,4 @@ VITE_API_URL=https://api.example.com/api/v1 npm test
 VITE_API_URL=https://api.example.com/api/v1 npm run build
 ```
 
-Current state: **127 backend tests, 45 frontend tests**, zero lint errors.
+Current state: **135 backend tests, 45 frontend tests**, zero lint errors.

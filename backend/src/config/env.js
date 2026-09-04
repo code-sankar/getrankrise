@@ -123,12 +123,27 @@ function checkGroup({ label, vars, requires = [], why }) {
 
 // ── Provider groups ──────────────────────────────────────────────────────────
 const FEATURES = {
-  // Google Business Profile OAuth. API_PUBLIC_URL is the base Google redirects
-  // back to, so it belongs to the group rather than being incidental.
+  // Google Business Profile OAuth.
+  //
+  // API_PUBLIC_URL is a PREREQUISITE here, not a member of the group — the
+  // same way Facebook declares it below. It used to sit in `vars`, which made
+  // it all-or-nothing WITH the Google credentials, and that was wrong because
+  // API_PUBLIC_URL is shared infrastructure: inboundSms.controller.js rebuilds
+  // the Twilio signature URL from it, and Twilio is REQUIRED in production.
+  //
+  // The effect was a hard, and quite confusing, deploy blocker: a deployment
+  // that used Twilio inbound STOP handling but not Google OAuth set
+  // API_PUBLIC_URL, and the process exited with "Partial Google OAuth
+  // configuration — Missing: GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET" for an
+  // integration it had never asked for.
+  //
+  // As a `requires` every safety property still holds: the two Google
+  // credentials remain all-or-nothing with each other, and Google still
+  // refuses to boot without a redirect base or an encryption key.
   googleOAuth: checkGroup({
     label: "Google OAuth",
-    vars: ["GOOGLE_CLIENT_ID", "GOOGLE_CLIENT_SECRET", "API_PUBLIC_URL"],
-    requires: ["TOKEN_ENCRYPTION_KEY"],
+    vars: ["GOOGLE_CLIENT_ID", "GOOGLE_CLIENT_SECRET"],
+    requires: ["API_PUBLIC_URL", "TOKEN_ENCRYPTION_KEY"],
     why:
       "the OAuth grant is stored in platform_connections; refusing to boot a " +
       "config that would write refresh tokens in plaintext.",

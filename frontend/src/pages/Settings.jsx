@@ -358,8 +358,20 @@ export default function Settings() {
             </div>
           )}
 
-          <form onSubmit={handleSave} className="space-y-6">
-            {/* ── CLINIC / BUSINESS PROFILE TAB ───────────────────────── */}
+          {/* ── Tabs that SUBMIT live inside the form ─────────────────────
+              The form used to wrap every tab, which put TeamTab's invite form
+              and DangerZone's delete form INSIDE it. Nested <form> elements are
+              invalid HTML, and the consequence was not cosmetic: a click on
+              "Send invite" fired no request at all, because the submit resolved
+              to the outer form (whose handler does nothing on the Team tab)
+              instead of to the invite handler. Team invitations were unusable
+              from the UI while the API behind them worked fine.
+          
+              Only `clinic` and `notifications` ever submit — handleSave acts on
+              those two, and the Save button renders for those two — so the form
+              now wraps exactly them. The remaining tabs own their own controls. */}
+          {(activeTab === "clinic" || activeTab === "notifications") && (
+            <form onSubmit={handleSave} className="space-y-6">
             {activeTab === "clinic" && (
               <div className={`border rounded-2xl p-6 sm:p-8 space-y-8 ${cardBg}`}>
                 <SectionHeader dark={dark} title="Business Profile" description="Used in review request messages sent to customers" />
@@ -392,6 +404,23 @@ export default function Settings() {
             )}
 
             {/* ── ACCOUNT TAB ────────────────────────────────────────── */}
+            {/* Save Button (only for editable tabs) */}
+            {(activeTab === "clinic" || activeTab === "notifications") && (
+              <div className="flex items-center gap-4 pt-2">
+                <button
+                  type="submit"
+                  disabled={saving}
+                  className="px-8 py-3 bg-cyan-700 hover:bg-cyan-600 text-white rounded-xl text-sm font-bold shadow-lg shadow-cyan-600/20 transition-all active:scale-95 disabled:opacity-60"
+                >
+                  {saving ? "Saving..." : "Save Changes"}
+                </button>
+                {savedMsg && <span className="text-emerald-700 dark:text-emerald-400 text-sm font-medium">✓ {savedMsg}</span>}
+              </div>
+            )}
+            </form>
+          )}
+
+          {/* Tabs with no submit of their own — deliberately outside the form. */}
             {activeTab === "account" && (
               <div className="space-y-6">
                 <div className={`border rounded-2xl p-6 sm:p-8 space-y-6 ${cardBg}`}>
@@ -580,20 +609,6 @@ export default function Settings() {
               </div>
             )}
 
-            {/* Save Button (only for editable tabs) */}
-            {(activeTab === "clinic" || activeTab === "notifications") && (
-              <div className="flex items-center gap-4 pt-2">
-                <button
-                  type="submit"
-                  disabled={saving}
-                  className="px-8 py-3 bg-cyan-700 hover:bg-cyan-600 text-white rounded-xl text-sm font-bold shadow-lg shadow-cyan-600/20 transition-all active:scale-95 disabled:opacity-60"
-                >
-                  {saving ? "Saving..." : "Save Changes"}
-                </button>
-                {savedMsg && <span className="text-emerald-700 dark:text-emerald-400 text-sm font-medium">✓ {savedMsg}</span>}
-              </div>
-            )}
-          </form>
         </main>
       </div>
     </div>
