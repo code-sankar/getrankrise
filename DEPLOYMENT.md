@@ -299,6 +299,10 @@ database backup.
 What CI runs, and what you can run locally:
 
 ```bash
+# Cross-package: fails if the SPA calls a route the API does not serve.
+# No database, no dependencies — runs in about a second.
+node scripts/check-api-contract.mjs
+
 # Backend — needs a throwaway Postgres; the helpers TRUNCATE
 cd backend && npm test
 
@@ -309,4 +313,4 @@ VITE_API_URL=https://api.example.com/api/v1 npm test
 VITE_API_URL=https://api.example.com/api/v1 npm run build
 ```
 
-Current state: **135 backend tests, 45 frontend tests**, zero lint errors.
+Current state: **138 backend tests, 45 frontend tests**, zero lint errors.

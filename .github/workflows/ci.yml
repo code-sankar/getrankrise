@@ -16,6 +16,28 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  api-contract:
+    name: API contract — frontend calls vs backend routes
+    runs-on: ubuntu-latest
+
+    # Deliberately its own job: no database, no dependencies, no build. It is a
+    # static read of both packages and finishes in about a second, so it reports
+    # long before the suites do.
+    #
+    # It exists because the two packages are separately tested and nothing
+    # between them is typed. A route renamed on one side only produces no
+    # compile error, no lint error and no failing test — just a 404 that reaches
+    # a user, usually on a feature nobody clicked that release.
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Check the API contract
+        run: node scripts/check-api-contract.mjs
+
   backend:
     name: Backend — tests
     runs-on: ubuntu-latest
@@ -87,6 +109,12 @@ jobs:
           ' $(find src -name '*.js' | sed 's|^|./|')
 
       - name: Run tests
+        # tests/tenantIsolation.test.js is part of this run and is the reason
+        # the job needs a real database AND the full Express app: it boots the
+        # app on an ephemeral port and drives every ID-addressable route over
+        # HTTP with a token belonging to a different clinic. Unit tests cannot
+        # cover that — they start with a clinicId already in hand, which is
+        # exactly the step an IDOR skips.
         run: npm test
 
   frontend:
