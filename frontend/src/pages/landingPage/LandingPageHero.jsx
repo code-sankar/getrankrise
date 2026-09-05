@@ -1,127 +1,35 @@
-import { ArrowRight, Star, Sparkles, Check } from 'lucide-react';
-import { Link } from 'react-router-dom';
-import DashboardPreview from './LandingPageDashboardPreview.jsx';
+import { ArrowRight } from "lucide-react";
+import { Link } from "react-router-dom";
+import ProductShot from "./ProductShot.jsx";
 
 /* ──────────────────────────────────────────────────────────────────────────
-   Floating signature card — the SINGLE bold element.
-   Shows an inbound 5★ review on the left, an AI-drafted reply on the right.
-   This is the entire product story compressed into one artifact.
+   Hero.
+
+   ── WHAT CHANGED AND WHY ───────────────────────────────────────────────────
+   This section used to carry four claims that were not true: a 4.9 G2 rating
+   (there is no G2 listing), "trusted by 8,400+ local businesses" (there are
+   no customers yet), SOC 2 Type II (no audit has been done — that one is a
+   compliance assertion with legal weight), and a floating "Maps Rank #2 ▲3"
+   card for a feature the product does not have.
+
+   They were removed rather than restyled. Beyond the honesty problem, they
+   were actively costing conversions: unverifiable scale claims on a brand a
+   visitor has never heard of are the single fastest way to read as fake, and
+   a clinic owner who has already been pitched by Podium or Birdeye knows what
+   real proof looks like.
+
+   What replaces them is the thing that was missing entirely — a picture of
+   the actual product. The screenshot in ProductShot is a real render of the
+   running app, not a drawing of it.
    ────────────────────────────────────────────────────────────────────────── */
-function SignatureAICard() {
-  return (
-    <div
-      className="
-        hidden lg:flex absolute -right-6 xl:-right-12 top-[18%]
-        w-[320px] xl:w-[360px] z-20
-        flex-col gap-3
-        rounded-2xl border border-slate-800/80 bg-[#0b0e14]/90 backdrop-blur-xl
-        p-4 shadow-[0_20px_80px_-20px_rgba(59,130,246,0.35),0_0_0_1px_rgba(59,130,246,0.08)]
-      "
-      aria-hidden="true"
-    >
-      {/* Header strip */}
-      <div className="flex items-center justify-between pb-3 border-b border-slate-900/70">
-        <div className="flex items-center gap-2">
-          <div className="w-6 h-6 rounded-md bg-[#3b82f6]/15 border border-[#3b82f6]/30 flex items-center justify-center">
-            <Sparkles size={12} className="text-[#60a5fa]" />
-          </div>
-          <span className="text-[11px] font-semibold text-slate-300 tracking-tight">
-            AI Response Draft
-          </span>
-        </div>
-        <div className="flex items-center gap-1.5">
-          <span className="relative flex w-1.5 h-1.5">
-            <span className="motion-safe:animate-ping absolute inline-flex h-full w-full rounded-full bg-[#3b82f6] opacity-60" />
-            <span className="relative inline-flex w-1.5 h-1.5 rounded-full bg-[#3b82f6]" />
-          </span>
-          <span className="text-[9px] font-bold tracking-[0.12em] text-[#60a5fa] uppercase">
-            Live
-          </span>
-        </div>
-      </div>
 
-      {/* The inbound review (compressed) */}
-      <div className="rounded-lg bg-[#06080c] border border-slate-900/80 p-3">
-        <div className="flex items-center justify-between mb-1.5">
-          <span className="text-[10px] font-semibold text-slate-300">Priya M.</span>
-          <div className="flex gap-0.5 text-amber-400">
-            {[...Array(5)].map((_, i) => (
-              <Star key={i} size={9} fill="currentColor" stroke="none" />
-            ))}
-          </div>
-        </div>
-        <p className="text-[10px] leading-[1.45] text-slate-400">
-          "Dr. Shah is amazing — painless cleaning and the front desk team
-          was so warm. Highly recommend."
-        </p>
-      </div>
-
-      {/* AI-drafted reply */}
-      <div>
-        <div className="flex items-center justify-between mb-1.5">
-          <span className="text-[9px] font-bold tracking-[0.12em] text-slate-400 uppercase">
-            Suggested reply
-          </span>
-          <span className="text-[9px] text-slate-400">2.3s</span>
-        </div>
-        <p className="text-[11px] leading-[1.5] text-slate-300">
-          Thank you, Priya — we're delighted the team made you comfortable.
-          We'll pass the kind words along to Dr. Shah.
-        </p>
-      </div>
-
-      {/* Footer actions */}
-      <div className="flex items-center gap-2 pt-2">
-        <button className="flex-1 text-[10px] font-semibold text-white bg-[#3b82f6] hover:bg-[#2563eb] transition-colors rounded-md py-1.5 flex items-center justify-center gap-1">
-          <Check size={11} />
-          Send reply
-        </button>
-        <button className="text-[10px] font-medium text-slate-400 hover:text-slate-200 bg-[#121620] border border-slate-900 rounded-md px-2.5 py-1.5 transition-colors">
-          Regenerate
-        </button>
-      </div>
-    </div>
-  );
-}
-
-/* ──────────────────────────────────────────────────────────────────────────
-   Small floating "Maps rank ↑" indicator on the left.
-   Quiet, single-purpose. Reinforces the outcome the product delivers.
-   ────────────────────────────────────────────────────────────────────────── */
-function MapsRankPill() {
-  return (
-    <div
-      className="
-        hidden lg:flex absolute -left-4 xl:-left-10 top-[55%]
-        z-20 items-center gap-2.5
-        rounded-xl border border-slate-800/80 bg-[#0b0e14]/90 backdrop-blur-xl
-        px-3.5 py-2.5
-        shadow-[0_20px_60px_-20px_rgba(0,0,0,0.8),0_0_0_1px_rgba(255,255,255,0.02)]
-      "
-      aria-hidden="true"
-    >
-      <div className="w-7 h-7 rounded-lg bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center">
-        <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
-          <path d="M2 8L6 4L10 8" stroke="#34d399" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
-        </svg>
-      </div>
-      <div className="text-left">
-        <div className="text-[9px] font-bold tracking-[0.1em] text-slate-400 uppercase leading-none mb-1">
-          Maps Rank
-        </div>
-        <div className="text-xs font-semibold text-white tracking-tight leading-none">
-          #2 <span className="text-emerald-400 font-medium">▲ 3</span>
-        </div>
-      </div>
-    </div>
-  );
-}
+/** Honest, checkable statements. Every one of these is true today. */
+const FACTS = ["Google, Yelp & Facebook", "Free plan, no card", "Your data exportable anytime"];
 
 export default function Hero() {
   return (
-    <section className="relative pt-40 pb-24 bg-[#0a0c10] text-white overflow-hidden flex flex-col items-center">
-
-      {/* Existing grid lattice — unchanged */}
+    <section className="relative pt-36 pb-24 bg-[#0a0c10] text-white overflow-hidden flex flex-col items-center">
+      {/* Grid lattice */}
       <div
         className="
           absolute inset-0
@@ -131,91 +39,100 @@ export default function Hero() {
           pointer-events-none
         "
       />
-
-      {/* SINGLE ambient wash — restrained, one source, top-center */}
+      {/* One ambient wash, top-centre */}
       <div
         className="
           absolute top-0 left-1/2 -translate-x-1/2
           w-[1200px] h-[700px]
-          bg-[radial-gradient(ellipse_50%_60%_at_50%_0%,rgba(59,130,246,0.10),transparent_70%)]
+          bg-[radial-gradient(ellipse_50%_60%_at_50%_0%,rgba(34,211,238,0.10),transparent_70%)]
           pointer-events-none
         "
       />
 
       <div className="relative z-10 w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col items-center text-center">
-
-        {/* Eyebrow badge */}
-        {/* <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#111622]/60 border border-slate-800/80 text-[11px] text-slate-400 mb-9 hover:border-slate-700/80 transition-colors cursor-pointer tracking-wide backdrop-blur-sm">
+        {/* Honest positioning rather than invented scale. Saying "early access"
+            out loud is more credible than claiming 8,400 customers, and it
+            sets the right expectation for the person who signs up. */}
+        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#111622]/60 border border-slate-800/80 text-[11px] text-slate-400 mb-8 tracking-wide backdrop-blur-sm">
           <span className="relative flex w-1.5 h-1.5">
-            <span className="motion-safe:animate-ping absolute inline-flex h-full w-full rounded-full bg-[#3b82f6] opacity-60" />
-            <span className="relative inline-flex w-1.5 h-1.5 rounded-full bg-[#3b82f6]" />
+            <span className="motion-safe:animate-ping absolute inline-flex h-full w-full rounded-full bg-cyan-400 opacity-60" />
+            <span className="relative inline-flex w-1.5 h-1.5 rounded-full bg-cyan-400" />
           </span>
-          <span>New — AI Review Responder v2</span>
-          <span>Just shipped: AI Responder v2 is here!</span>
-          <ArrowRight size={11} className="text-slate-400" />
-        </div> */}
+          <span>Built for clinics and local practices — now in early access</span>
+        </div>
 
-        {/* Headline */}
-        <h1 className="text-[42px] sm:text-[76px] font-semibold tracking-tight text-white mb-7 max-w-4xl mx-auto leading-[1.08]">
-          The reputation engine <br />
-          <span className="text-[#888e96] font-semibold">local businesses run on.</span>
+        {/* ── Headline ──────────────────────────────────────────────────────
+            Two lines, and the type is sized so each one actually FITS on its
+            line. The previous headline wrapped into four ragged lines with
+            "run on." dangling alone, because 76px type was set in a box far
+            too narrow to hold it — the break was left to chance.
+            "One place to answer them." is ~25 characters; at 58px that is
+            roughly 700px inside a 896px box, so it holds at every width down
+            to the sm breakpoint, where the type steps down with it. */}
+        <h1 className="text-[34px] sm:text-[58px] font-semibold tracking-tight text-white mb-6 max-w-4xl mx-auto leading-[1.08]">
+          Every review you get.
+          <br />
+          <span className="text-[#7d838c]">One place to answer them.</span>
         </h1>
 
-        {/* Subhead */}
-        <p className="text-sm sm:text-[15px] text-[#8a8f98] max-w-xl mx-auto mb-10 leading-[1.6] tracking-normal">
-          Collect more Google reviews, respond instantly with AI, and outrank
-          competitors on Maps — all from one calm, intelligent dashboard.
+        {/* Subhead: what it literally does, in the order the product does it. */}
+        <p className="text-sm sm:text-[15px] text-[#8a8f98] max-w-xl mx-auto mb-9 leading-[1.65]">
+          Kirtify pulls your Google, Yelp and Facebook reviews into one inbox,
+          drafts a reply in your clinic's voice, and puts the ones that need you
+          first at the top.
         </p>
 
         {/* CTAs */}
-        <div className="flex flex-col sm:flex-row items-center justify-center gap-3 w-full sm:w-auto mb-16">
+        <div className="flex flex-col sm:flex-row items-center justify-center gap-3 w-full sm:w-auto mb-8">
           <Link
             to="/signup"
             className="
               w-full sm:w-auto bg-white text-black font-semibold text-[13px]
-              px-5 py-3 rounded-xl flex items-center justify-center gap-1.5
+              px-6 py-3 rounded-xl flex items-center justify-center gap-1.5
               hover:bg-slate-100 transition-all group
               shadow-[0_8px_30px_-8px_rgba(255,255,255,0.3)]
             "
           >
-            Start 14-day free trial
-            <ArrowRight size={14} className="text-black group-hover:translate-x-0.5 transition-transform" />
+            Start free
+            <ArrowRight
+              size={14}
+              className="text-black group-hover:translate-x-0.5 transition-transform"
+            />
           </Link>
           <a
             href="#demo"
             className="
               w-full sm:w-auto bg-[#121620]/40 border border-slate-800/80
-              text-slate-300 font-semibold text-[13px] px-5 py-3 rounded-xl
+              text-slate-300 font-semibold text-[13px] px-6 py-3 rounded-xl
               hover:bg-[#121620]/80 hover:border-slate-700 transition-all text-center
               backdrop-blur-sm
             "
           >
-            See live demo
+            Try the AI reply
           </a>
         </div>
 
-        {/* Trust strip */}
-        <div className="w-full max-w-4xl flex flex-col sm:flex-row items-center justify-center gap-4 sm:gap-0 text-[11px] text-[#8a8f98] tracking-wide font-medium mb-16">
-          <div className="flex items-center justify-center gap-2 sm:pr-8">
-            <div className="flex text-white gap-0.5">
-              {[...Array(5)].map((_, i) => (
-                <Star key={i} size={11} fill="currentColor" stroke="none" />
-              ))}
-            </div>
-            <span>4.9 on G2 · 1,200+ reviews</span>
-          </div>
-          <div className="hidden sm:block h-3.5 w-[1px] bg-slate-800/60" />
-          <div className="sm:px-8">TRUSTED BY 8,400+ LOCAL BUSINESSES</div>
-          <div className="hidden sm:block h-3.5 w-[1px] bg-slate-800/60" />
-          <div className="sm:pl-8">SOC 2 TYPE II</div>
-        </div>
+        {/* Three plain facts, each verifiable on this page or after one click —
+            in place of the star rating and the customer count. */}
+        <ul className="flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-[11px] text-[#7d838c] mb-16">
+          {FACTS.map((f) => (
+            <li key={f} className="flex items-center gap-1.5">
+              <svg width="11" height="11" viewBox="0 0 12 12" fill="none" aria-hidden="true">
+                <path
+                  d="M2.5 6.2L4.8 8.5L9.5 3.8"
+                  stroke="#22d3ee"
+                  strokeWidth="1.6"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+              </svg>
+              {f}
+            </li>
+          ))}
+        </ul>
 
-        {/* Dashboard frame + the ONE bold signature: floating AI draft card */}
-        <div className="relative w-full">
-          <SignatureAICard />
-          <MapsRankPill />
-          <DashboardPreview />
-        </div>
+        {/* The product itself, above the fold. */}
+        <ProductShot />
       </div>
     </section>
   );

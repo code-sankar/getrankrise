@@ -21,7 +21,7 @@ export default function Pricing() {
       name: 'Starter',
       price: '$49',
       desc: 'For single-location businesses ready to automate reputation.',
-      cta: 'Start free trial',
+      cta: 'Choose Starter',
       ctaLink: '/signup',
       popular: true,
       features: [
@@ -36,7 +36,7 @@ export default function Pricing() {
       name: 'Premium',
       price: '$99',
       desc: 'For high-volume operators who need the freshest signals.',
-      cta: 'Start free trial',
+      cta: 'Choose Premium',
       ctaLink: '/signup',
       features: [
         'Everything in Starter',
@@ -54,10 +54,11 @@ export default function Pricing() {
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
         <span className="text-[13px] text-slate-400 uppercase tracking-widest font-semibold">Pricing</span>
         <h2 className="text-3xl sm:text-4xl font-bold tracking-tight mt-2 mb-3">
-          Simple pricing. Outsized returns.
+          Simple pricing. Start on the free plan.
         </h2>
         <p className="text-xs sm:text-sm text-slate-400 font-medium mb-16">
-          14-day free trial. No card required. Cancel anytime.
+          The free plan is free forever, not a trial. No card to start, and
+          you can export everything and leave whenever you like.
         </p>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 text-left items-start max-w-5xl mx-auto">

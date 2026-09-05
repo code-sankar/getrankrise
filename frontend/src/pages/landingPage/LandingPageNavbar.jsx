@@ -21,7 +21,7 @@ export default function Navbar() {
             <a href="#features" className="text-sm text-slate-400 hover:text-white transition-colors">Features</a>
             <a href="#demo" className="text-sm text-slate-400 hover:text-white transition-colors">Demo</a>
             <a href="#pricing" className="text-sm text-slate-400 hover:text-white transition-colors">Pricing</a>
-            <a href="#customers" className="text-sm text-slate-400 hover:text-white transition-colors">Customers</a>
+            <a href="#customers" className="text-sm text-slate-400 hover:text-white transition-colors">Integrations</a>
           </div>
 
           {/* Desktop CTAs */}
@@ -47,7 +47,7 @@ export default function Navbar() {
           <a href="#features"  onClick={() => setIsOpen(false)} className="block text-base text-slate-400 hover:text-white">Features</a>
           <a href="#demo"      onClick={() => setIsOpen(false)} className="block text-base text-slate-400 hover:text-white">Demo</a>
           <a href="#pricing"   onClick={() => setIsOpen(false)} className="block text-base text-slate-400 hover:text-white">Pricing</a>
-          <a href="#customers" onClick={() => setIsOpen(false)} className="block text-base text-slate-400 hover:text-white">Customers</a>
+          <a href="#customers" onClick={() => setIsOpen(false)} className="block text-base text-slate-400 hover:text-white">Integrations</a>
           <hr className="border-slate-900" />
           <div className="flex flex-col gap-3">
             <Link

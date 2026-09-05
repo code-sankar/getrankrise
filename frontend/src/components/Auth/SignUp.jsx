@@ -92,7 +92,7 @@ function SignUp() {
             Create your account
           </h2>
           <p className="text-sm text-slate-400 font-medium">
-            Start your 14-day free trial — no card required.
+            Start on the free plan — no card required.
           </p>
         </div>
 

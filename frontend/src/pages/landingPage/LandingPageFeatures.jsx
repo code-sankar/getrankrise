@@ -1,9 +1,8 @@
 import {
   Bot,
-  LineChart,
+  Inbox,
   MessageSquare,
-  ShieldAlert,
-  Sliders,
+  Users,
   Target,
   Star,
   Check,
@@ -17,16 +16,22 @@ import {
 ───────────────────────────────────────────────────────────────────────────── */
 const items = [
   {
+    icon: Inbox,
+    title: "One inbox for every platform",
+    desc: "Google, Yelp and Facebook in a single feed — newest first, with unanswered low ratings pushed to the top and an email the moment a bad one lands.",
+    accent: "#22d3ee",       // cyan — the core of the product
+    featured: true,          // gets the wide hero treatment in row 1
+  },
+  {
     icon: Bot,
     title: "AI Review Responder",
-    desc: "On-brand replies in seconds. Trained on tone, services, and policies — approve or auto-send.",
-    accent: "#3b82f6",       // blue  — this is the flagship feature
-    featured: true,          // gets the wide hero treatment in row 1
+    desc: "A reply drafted in your clinic's voice in seconds. You read it, edit it, and send it — nothing posts without you.",
+    accent: "#3b82f6",       // blue
   },
   {
     icon: Target,
     title: "Competitor Intelligence",
-    desc: "Track ratings, review velocity, and ranking shifts across every local competitor in your area.",
+    desc: "Watch the ratings and review counts of the practices down the road, tracked over time so you can see who is pulling ahead.",
     accent: "#f59e0b",       // amber — data/tracking
   },
   {
@@ -35,23 +40,28 @@ const items = [
     desc: "Request reviews at the perfect moment with deliverable, high-converting two-way messaging.",
     accent: "#34d399",       // green  — outreach/growth
   },
+  // ── Replaced, not restyled ────────────────────────────────────────────────
+  // Two cards here described software that does not exist: "Local SEO
+  // Analytics — grid-based rank tracking across every neighborhood" and
+  // "Reputation Workflows — trigger requests, routes, and escalations with
+  // rules". Kirtify has no rank grid and no rules engine. Selling either would
+  // have put the first customer's disappointment on day one.
+  //
+  // What replaced them are two things that DO ship and were, oddly, missing
+  // from the list: the unified inbox — the product's whole reason to exist —
+  // and team access with data export, which is the question a clinic asks
+  // before it trusts anyone with patient feedback.
   {
-    icon: LineChart,
-    title: "Local SEO Analytics",
-    desc: "Grid-based rank tracking across every neighborhood you serve, updated daily.",
-    accent: "#a78bfa",       // violet — analytics
+    icon: Users,
+    title: "Team access",
+    desc: "Invite the practice manager or front desk with their own sign-in. Owners handle billing; everyone else works the reviews.",
+    accent: "#a78bfa",       // violet
   },
   {
-    icon: Sliders,
-    title: "Reputation Workflows",
-    desc: "Trigger requests, routes, and escalations with rules that match how your business actually runs.",
-    accent: "#22d3ee",       // cyan   — automation
-  },
-  {
-    icon: ShieldAlert,
-    title: "Sentiment Monitoring",
-    desc: "Spot emerging issues in customer feedback before they reach the front page of Google.",
-    accent: "#f43f5e",       // rose   — alert/protection
+    icon: Star,
+    title: "Your data stays yours",
+    desc: "Export every review, reply and campaign as one file whenever you want, and close the account for good in two clicks.",
+    accent: "#22d3ee",       // cyan
   },
 ];
 

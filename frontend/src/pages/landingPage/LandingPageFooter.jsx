@@ -59,7 +59,7 @@ export default function Footer() {
     ],
     Company: [
       { label: "About", to: "#" },
-      { label: "Customers", to: "#customers" },
+      { label: "Integrations", to: "#customers" },
       { label: "Careers", to: "#" },
       { label: "Contact", to: "/contact" },
     ],
@@ -93,11 +93,15 @@ export default function Footer() {
         {/* ── CTA panel ─────────────────────────────────────────── */}
         <div className="relative bg-[#080b12] border border-white/[0.07] rounded-2xl py-20 px-6 sm:px-16 text-center mb-28 max-w-6xl mx-auto">
           <div className="max-w-2xl mx-auto flex flex-col items-center">
-            <h2 className="text-3xl sm:text-[42px] font-bold tracking-tight text-white mb-4 leading-none">
-              Start ranking. Start growing.
+            {/* "Join 8,400+ local teams already running on Kirtify" — there
+                are no 8,400 teams. The free plan is the honest version of the
+                same invitation, and it asks for less. */}
+            <h2 className="text-3xl sm:text-[42px] font-bold tracking-tight text-white mb-4 leading-none text-balance">
+              See your reviews in one place.
             </h2>
             <p className="text-[14px] text-[#8a8f98] max-w-md mx-auto mb-9">
-              Join 8,400+ local teams already running on Kirtify.
+              Connect a platform and the free plan will show you your last 20
+              reviews. No card, nothing to cancel.
             </p>
 
             <div className="flex flex-col sm:flex-row items-center justify-center gap-3 w-full sm:w-auto">
@@ -105,7 +109,7 @@ export default function Footer() {
                 to="/signup"
                 className="w-full sm:w-auto bg-white text-black font-semibold text-[13px] px-5 py-2.5 rounded-lg hover:bg-slate-200 active:scale-[0.98] transition-all duration-200 text-center"
               >
-                Start 14-day free trial
+                Start free
               </Link>
               <a
                 href="#demo"
@@ -126,7 +130,7 @@ export default function Footer() {
               <span className="font-bold text-[15px] tracking-tight">Kirtify</span>
             </Link>
             <p className="mt-3 text-[13px] text-[#8a8f98] leading-relaxed max-w-[190px]">
-              The reputation engine local businesses run on.
+              Every review you get, in one place to answer them.
             </p>
           </div>
 
@@ -155,14 +159,16 @@ export default function Footer() {
             </p>
             <div className="mt-5 flex items-center gap-2">
               <span className="h-1.5 w-1.5 rounded-full bg-cyan-400" />
-              <span className="text-[11px] text-slate-400">All systems operational</span>
+              <span className="text-[11px] text-slate-400">
+                Your data is exportable at any time
+              </span>
             </div>
           </div>
         </div>
 
         {/* ── Legal row ─────────────────────────────────────────── */}
         <div className="pt-7 border-t border-white/[0.06] text-[12px] text-slate-400 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
-          <span>&copy; {new Date().getFullYear()} Kirtify Inc. All rights reserved.</span>
+          <span>&copy; {new Date().getFullYear()} Kirtify. All rights reserved.</span>
           <div className="flex gap-5">
             <Link to="/privacy" className="hover:text-white transition-colors duration-200">
               Privacy Policy
