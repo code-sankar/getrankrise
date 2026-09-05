@@ -192,7 +192,16 @@ export const generateAIReply = async (reviewId, reviewText, tone = "professional
 export const syncReviewsNow = async () => {
   try {
     // Walks paginated provider APIs — routinely longer than the 10s default.
-    const { data } = await axiosInstance.post("/reviews/sync", null, {
+    //
+    // The body argument is `undefined`, NOT `null`. Axios serialises a null
+    // body to the four-character string "null" and still sends
+    // Content-Type: application/json, so express.json() on the other end
+    // parses it, gets a JSON null where it wants an object, and rejects the
+    // request: 400 "Unexpected token 'n', \"null\" is not valid JSON". Every
+    // click of "Sync now" 400'd before it reached the controller. With
+    // `undefined` axios sends no body and no content-type, express.json()
+    // skips it, and the request lands. Do not "tidy" this back to null.
+    const { data } = await axiosInstance.post("/reviews/sync", undefined, {
       timeout: LONG_TIMEOUT,
     });
     toast.success(data?.message || "Reviews synced.");

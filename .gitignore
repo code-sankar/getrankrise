@@ -1,0 +1,12 @@
+# Root-level ignores. backend/ and frontend/ keep their own.
+
+node_modules/
+
+# Local env files. Only .env.example is tracked.
+.env
+.env.*
+!.env.example
+
+# Output of scripts/record-oauth-demo.mjs — video files, regenerable.
+demo-video/
+*.webm

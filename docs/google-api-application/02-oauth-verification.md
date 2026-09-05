@@ -46,6 +46,29 @@ app — not localhost, not a design mockup. 3–5 minutes, screen + voice
 narration, unlisted YouTube link (not "private" — the reviewer can't request
 access to a private video).
 
+`scripts/record-oauth-demo.mjs` performs this shot list against a running app
+and records it, with the narration line for each scene burned in as an
+on-screen teleprompter.
+
+```bash
+npm i -D playwright && npx playwright install chromium
+
+# Rehearsal: localhost, mock data, watermarked. NOT submittable — it stubs the
+# consent screen, because that scene cannot be automated (see scene 3).
+node scripts/record-oauth-demo.mjs
+
+# The real thing: your deployed app, your Google account. No watermark. It
+# pauses at the consent screen and hands you the browser, then resumes when
+# Google redirects back — so the take stays continuous. Needs a display, so
+# run it on your own machine.
+DEMO_LIVE=1 DEMO_BASE_URL=https://app.kirtify.com \
+  DEMO_EMAIL=you@example.com DEMO_PASSWORD=… \
+  node scripts/record-oauth-demo.mjs
+```
+
+It records video only. Narrate over the finished file, or talk while it runs
+and capture your voice separately — the captions are timed to be read aloud.
+
 Script, scene by scene, matched to what the code actually does:
 
 **1. Show the app before connecting (10s)**
