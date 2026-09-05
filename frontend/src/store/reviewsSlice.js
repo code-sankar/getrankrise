@@ -27,6 +27,7 @@
 
 import { createSlice, createSelector } from "@reduxjs/toolkit";
 import { formatRelativeDate } from "../utils/formatRelativeDate.js";
+import { meanSentiment } from "../utils/sentiment.js";
 
 // ── Normalisation ─────────────────────────────────────────────────────────────
 // Backend Review model → the shape every component renders. Tolerates already-
@@ -43,6 +44,15 @@ export const normalizeReview = (raw = {}) => ({
   platform: raw.platform ?? "Google",
   replied: Boolean(raw.replied),
   replyText: raw.replyText ?? null,
+  // The backend scores every review 0–100 at write time and the API returns
+  // it. Dropping it here forced the Dashboard to invent its own sentiment
+  // measure from `rating` alone, which is how it ended up disagreeing with
+  // the Analytics page. Null is meaningful: reviewSentiment() falls back to
+  // the rating heuristic exactly as the SQL COALESCE does.
+  sentiment:
+    typeof raw.sentiment === "number" && Number.isFinite(raw.sentiment)
+      ? raw.sentiment
+      : null,
 });
 
 const initialState = {
@@ -173,7 +183,8 @@ export const selectFilteredReviews = createSelector(
  *
  *   avg           "4.2" | "—"
  *   coverage      0–100 (% replied)
- *   sentiment     0–100 (% of 4–5★)
+ *   sentiment     0–100 mean review sentiment — the SAME measure the
+ *                 Analytics page calls sentimentScore. See utils/sentiment.js.
  *   total         list length, for "n reviews" captions
  *   distribution  [5★,4★,3★,2★,1★] counts — drives the Avg Rating mini-chart,
  *                 which was five hardcoded percentages until Step 2
@@ -217,7 +228,14 @@ export const selectReviewStats = createSelector([selectReviewsList], (list) => {
   return {
     avg: (list.reduce((s, r) => s + r.rating, 0) / total).toFixed(1),
     coverage: Math.round((list.filter((r) => r.replied).length / total) * 100),
-    sentiment: Math.round((list.filter((r) => r.rating >= 4).length / total) * 100),
+    // The SAME definition the backend uses for `summaryStats.sentimentScore`,
+    // not a second one. This was `% of reviews rated 4★+`, which is a
+    // different measure that happened to share the label and the % sign — on
+    // real data the Dashboard read 56% while Analytics read 70% for the same
+    // clinic. The two still legitimately differ in SCOPE (this covers the
+    // loaded feed, Analytics covers the selected date range, and that page
+    // says so), but they no longer differ in what they mean.
+    sentiment: meanSentiment(list),
     total,
     distribution,
     newThisMonth,
