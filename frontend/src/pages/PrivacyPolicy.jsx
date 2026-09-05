@@ -200,9 +200,33 @@ const SECTIONS = [
         </p>
         <ul>
           <li>
-            <strong>Google APIs</strong> — Used to fetch and manage your Google
-            Business Profile reviews. Governed by Google's Privacy Policy and
-            API Terms of Service.
+            <strong>Google Business Profile API</strong> — When you connect
+            your Google Business Profile, Kirtify requests the{" "}
+            <code>https://www.googleapis.com/auth/business.manage</code>{" "}
+            scope to read your business's reviews (reviewer name, star
+            rating, review text and timestamp) and to publish replies you
+            write or approve back to Google. Kirtify's use and transfer of
+            information received from Google APIs adheres to the{" "}
+            <a
+              href="https://developers.google.com/terms/api-services-user-data-policy"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              Google API Services User Data Policy
+            </a>
+            , including the Limited Use requirements. This data is used only
+            to provide the review-management features described in this
+            policy; it is never sold, and it is never used for advertising.
+            You can revoke this access at any time from Settings →
+            Integrations, or directly at your{" "}
+            <a
+              href="https://myaccount.google.com/permissions"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              Google Account permissions
+            </a>{" "}
+            page.
           </li>
           <li>
             <strong>Twilio</strong> — Used to send SMS and WhatsApp review
